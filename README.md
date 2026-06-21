@@ -1,9 +1,18 @@
 # Foyer — cadre d'agents pour le logiciel sobre, durable, transmissible
 
+[![Documentation](https://github.com/gilmry/foyer/actions/workflows/docs.yml/badge.svg)](https://github.com/gilmry/foyer/actions/workflows/docs.yml)
+[![Site](https://img.shields.io/badge/📖_documentation-gilmry.github.io%2Ffoyer-deeporange)](https://gilmry.github.io/foyer/)
+
 > Production intellectuelle de Gilles Maury, dérivée du Manifeste Maury (CC BY-SA 4.0).
 > Cadre **généralisable à toute organisation** qui arbitre, sous responsabilité humaine (*répondre-de*), ses **choix technologiques hybrides** — cloud / on-premise, propriétaire / open source, avec ou sans support, IA souveraine / API tierce. La même machinerie de décision gouverne chacune de ces surfaces ; l'agent IA n'en est qu'une (voir `skills/arbitrage-hybride.md`).
 
 *Dérivé du Manifeste & de la Méthode Maury (CC BY-SA 4.0). Portable : chaque fichier se charge dans le contexte d'un agent (`AGENTS.md` pour OpenCode/Codex/Aider, `CLAUDE.md` pour Claude Code, ou champ `instructions` d'`opencode.json`).*
+
+## 📖 Documentation en ligne
+
+**➡️ [gilmry.github.io/foyer](https://gilmry.github.io/foyer/)** — site MkDocs Material qui rassemble le Manifeste, la méthode, les skills, les personas et la **[galerie de supports pédagogiques](https://gilmry.github.io/foyer/supports.html)** : vidéos, podcasts, infographies et pitchs.
+
+Le site est reconstruit et redéployé automatiquement à chaque push sur `main` (GitHub Actions → Pages). La galerie de supports se régénère seule depuis `notebooklm/` — voir `scripts/gen_supports.py` et `.github/workflows/docs.yml`.
 
 ## L'idée en une phrase
 
