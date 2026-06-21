@@ -1,0 +1,66 @@
+site_name: Méthode Foyer
+site_description: >-
+  Cadre d'agents pour un logiciel sobre, durable et transmissible —
+  Manifeste, méthode, skills, personas et supports pédagogiques.
+site_author: Gilles Maury
+site_url: https://gilmry.github.io/foyer/
+copyright: >-
+  © Gilles Maury — dérivé du Manifeste Maury (CC BY-SA 4.0).
+
+repo_url: https://github.com/gilmry/foyer
+repo_name: gilmry/foyer
+edit_uri: ""
+
+# Le contenu est assemblé au build (voir .github/workflows/docs.yml) :
+# les .md de la racine, skills/, personas/, bmad/ et les médias notebooklm/
+# sont copiés dans docs/. La page supports.md est générée par scripts/gen_supports.py.
+docs_dir: docs
+use_directory_urls: false
+
+theme:
+  name: material
+  language: fr
+  icon:
+    repo: fontawesome/brands/github
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.top
+    - navigation.indexes
+    - navigation.footer
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep orange
+      accent: deep orange
+      toggle:
+        icon: material/weather-night
+        name: Passer au thème sombre
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep orange
+      accent: deep orange
+      toggle:
+        icon: material/weather-sunny
+        name: Passer au thème clair
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - footnotes
+  - toc:
+      permalink: true
+  - pymdownx.superfences
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+
+plugins:
+  - search:
+      lang: fr

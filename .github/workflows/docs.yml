@@ -1,0 +1,71 @@
+name: Documentation
+
+# Construit le site MkDocs Material et le publie sur GitHub Pages.
+# Prérequis (une seule fois) : Settings → Pages → Source = "GitHub Actions".
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "**/*.md"
+      - "notebooklm/**"
+      - "mkdocs.yml"
+      - "requirements-docs.txt"
+      - "scripts/gen_supports.py"
+      - ".github/workflows/docs.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Une seule publication à la fois ; on ne coupe pas un déploiement en cours.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Installer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+          cache: pip
+
+      - name: Installer MkDocs Material
+        run: pip install -r requirements-docs.txt
+
+      - name: Assembler le contenu dans docs/
+        run: |
+          set -euo pipefail
+          mkdir -p docs
+          cp Manifeste-Foyer.md Methode-Foyer.md Boucle-de-retroaction.md Simulateur-Synthese.md docs/
+          cp README.md docs/carte.md
+          cp -r skills personas bmad docs/
+          cp -r notebooklm docs/notebooklm
+          python scripts/gen_supports.py
+
+      - name: Construire le site
+        run: mkdocs build
+
+      - name: Téléverser l'artefact Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Déployer sur GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
