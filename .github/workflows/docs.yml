@@ -37,6 +37,7 @@ jobs:
         with:
           python-version: "3.x"
           cache: pip
+          cache-dependency-path: requirements-docs.txt
 
       - name: Installer MkDocs Material
         run: pip install -r requirements-docs.txt
