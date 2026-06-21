@@ -36,6 +36,7 @@ skills/                    Les 4 outils d'objectivation (enfants de la primitive
   abaque-cout-capacite.md    estimation prospective TCO + ROI + empreinte mémoire
   arbitrage-hybride.md       grille de souveraineté pour tout choix hybride (cloud/on-prem, proprio/OSS, support, IA)
   enforcement.md             les 3 anneaux : permissions / plugin / substrat
+  conformite.md              mapping mondial→européen→belge (ISO 42001/27001, AI Act, NIS2/CyFun, CRA) + angles morts
   bootstrap-delivrabilite.md story habilitante aboutie : git clone + agent = tout configuré
 
 personas/                  PHASES 2-4 · qui tient le cercle

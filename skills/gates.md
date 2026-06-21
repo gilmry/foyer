@@ -24,7 +24,9 @@ Objective la **surface d'exposition**. C'est le shift-left : on cherche avant de
 - **Dépendances (SCA)** — `pip-audit` · `npm audit` ; refus des vulnérabilités connues non justifiées
 - **Secrets** — `gitleaks`/`trufflehog` ; aucun secret dans l'arbre ni l'historique
 - **Licences** — compatibilité des dépendances (cohérence AGPL/permissives)
+- **SBOM + provenance** — *à la release* : génération du *Software Bill of Materials* (CycloneDX/SPDX) + attestation de provenance (style SLSA). Exigible sous **CRA** (obligations pleines déc. 2027). *Angle mort actuel — voir `conformite.md` §5.*
 - **DAST** — sur l'environnement E2E quand applicable
+- **Injection de prompt** — *si le produit livré embarque un LLM* : tests d'injection (OWASP LLM #1), cloisonnement contenu/instructions. À ne pas confondre avec la limitation d'*agency* de l'agent de fabrication (`enforcement.md`).
 
 ## Conditionnement par archétype
 
@@ -35,7 +37,13 @@ Objective la **surface d'exposition**. C'est le shift-left : on cherche avant de
 
 ## Ancrage conformité
 
-La security gate est le point où **ISO 27001 / NIS2** s'objectivent dans la fabrication : chaque contrôle pertinent (gestion des accès, des dépendances, des secrets) a une vérification correspondante. Voir le mapping ISO 27001 → IaC du livrable Architecture.
+La security gate est le point où les standards **s'objectivent dans la fabrication** : chaque contrôle pertinent a une vérification correspondante.
+
+- **ISO 27001:2022 / CyFun®** (Belgique) — gestion des accès, des dépendances, des secrets. Le **niveau CyFun visé** (Small/Basic/Important/Essential) fixe le **seuil** des gates.
+- **NIS2 · CRA · NIST SSDF** — secure-SDLC, gestion des vulnérabilités, *security-by-design*.
+- **ISO 42001 / EU AI Act** — la traçabilité (registre TRACE, ADR/RFC) et le répondre-de portent le volet IA, pas la gate code.
+
+Le mapping complet des trois cercles (mondial → européen → belge) et le **backlog des angles morts** (SBOM, reporting d'incident, injection de prompt) vivent dans **`conformite.md`**. Voir aussi le mapping ISO 27001 → IaC du livrable Architecture.
 
 ## Condition de sortie
 
