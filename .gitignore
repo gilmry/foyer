@@ -1,0 +1,6 @@
+# Médias générés (NotebookLM, slides, vidéos, audio, images) — exclus du versionnage
+notebooklm/*.mp4
+notebooklm/*.m4a
+notebooklm/*.pptx
+notebooklm/*.pdf
+notebooklm/*.png

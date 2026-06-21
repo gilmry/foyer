@@ -52,6 +52,8 @@ On reboucle **tant qu'un test ou une gate réfute** (rouge, gate bloquée, e2e e
 - **Tokens** — génération des tests puis du code → coût modèle.
 - **Wall-clock** — quasi nul pour l'unitaire/BDD ; plus élevé pour E2E et run CI → coût superviseur.
 
+Le tour se tient idéalement **en binôme** (rouge à deux pour poser le critère, revue du bleu à deux) : transmissibilité et anti-*bus factor 1*, au prix d'un wall-clock assumé — un investissement, pas un surcoût (cf. Manifeste, conviction 3).
+
 Le nombre de tours d'une story est estimé au **point 0** (Brief/Stories) et resserré story après story par le **CSI**.
 
 ---

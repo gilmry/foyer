@@ -13,6 +13,7 @@ Par capacité/jalon : `coût ≈ stories × tours/story × coût_tour(tokens) + 
 - `coût_tour` = `(tokens_in × prix_in + tokens_out × prix_out)`. **Négligeable** dans le total.
 - **Le poste dominant est le superviseur**, pas le modèle. Optimiser les tokens ne déplace presque rien.
 - `ratio_supervision` (agents qu'un pair tient en parallèle) est le **plafond *répondre-de***, pas une variable budgétaire : au-delà, on ne peut plus *répondre de* ce qui est produit. Quand il faut plus de parallélisme, on ajoute un *pair* (coût en marche d'escalier), pas seulement des agents.
+- Le `coût_pair_jour` (binôme, parfois trio/mob) **n'est pas un surcoût à raboter** mais un **investissement wall-clock** dans la transmissibilité, le répondre-de et la lutte contre le *bus factor 1*. Réduire le pair à une personne seule pour « aller plus vite » est une fausse économie : on gagne du wall-clock et on rachète du risque — savoir non transmis, responsabilité non partagée, compréhension qui part avec la personne. **Recommandation fondamentale** (Manifeste, conviction 3).
 - Calibrage stories : `total ≈ scénarios BDD ÷ 4` (les 4 tags `@happy @negative @edge @security` de `cycle-dev`), réparti par jalon (fondation la plus lourde).
 
 ## 2. Coût récurrent — l'heuristique qui renverse l'intuition

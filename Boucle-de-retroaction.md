@@ -43,6 +43,8 @@ Sans outil pour objectiver, pas d'Évaluation, donc pas de cercle. **Mettre en p
 
 Coût d'une story ≈ *N* tours × (tokens + wall-clock). L'asymétrie des terrains (IaC, DevSecOps : peu de tokens, fort wall-clock) n'est qu'une ventilation différente de ces deux coûts.
 
+> Le superviseur est idéalement un **binôme** (parfois un trio), pas une personne seule : le wall-clock supplémentaire est un **investissement** dans la transmissibilité et contre le *bus factor 1* — un répondre-de tenu par une seule tête est fragile. Voir Manifeste (conviction 3) et `skills/abaque-cout-capacite.md`.
+
 ## Les deux axes de spécialisation
 
 Le cercle se spécialise selon **deux axes orthogonaux** — à ne pas mélanger :
