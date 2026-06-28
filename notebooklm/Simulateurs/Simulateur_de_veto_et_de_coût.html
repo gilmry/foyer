@@ -194,7 +194,7 @@
   .dcol .k{font-family:var(--mono);font-size:9px;letter-spacing:.05em;text-transform:uppercase;color:var(--dim2);display:block;margin-bottom:2px}
   .dcol .v{font-family:var(--mono);font-size:13px;color:var(--paper)}
   .dcol .v.risk{color:var(--veto)}
-  .dcol .v.tot{color:var(--ember)}
+  .dcol .v.hl{color:var(--ember)}
   @media(max-width:680px){.drow{grid-template-columns:1fr 1fr;row-gap:10px}.drow .dname,.drow > div:first-child{grid-column:1/-1}.dcol{text-align:left}}
 
   /* role cards + TCO */
@@ -895,7 +895,7 @@ function render(){
       <div><span class="dname">${r.who} — ${e.o.name}</span><span class="dtag">${path}${e.recevable?'':' · recalé porte '+(e.firstVeto+1)}</span></div>
       <div class="dcol"><span class="k">Coût fabrication (one-shot)</span><span class="v">${eur(build)}</span></div>
       <div class="dcol"><span class="k">Coût du risque / an</span><span class="v risk">${eur(ra)}</span></div>
-      <div class="dcol"><span class="k">1ʳᵉ année (build + risque)</span><span class="v tot">${eur(build+ra)}</span></div>`;
+      <div class="dcol"><span class="k">1ʳᵉ année (build + risque)</span><span class="v hl">${eur(build+ra)}</span></div>`;
     dual.appendChild(d);
   });
   let dnote='';
@@ -1013,7 +1013,7 @@ function renderTCO(naif, foyerWin){
     d.innerHTML=`
       <div><span class="dname">${r.who} — ${r.e.o.name}</span><span class="dtag">build ${eur(t.build)} · risque ${eur(t.risk)}/an · maint ${eur(t.maint)}/an</span></div>
       <div class="dcol"><span class="k">Récurrent / an</span><span class="v risk">${eur(t.maint+t.risk)}</span></div>
-      <div class="dcol"><span class="k">TCO ${N} ans</span><span class="v tot">${eur(t.tco)}</span></div>
+      <div class="dcol"><span class="k">TCO ${N} ans</span><span class="v hl">${eur(t.tco)}</span></div>
       <div class="dcol"><span class="k">ROI ${N} ans</span><span class="v">${roi>=0?'+':''}${roi.toFixed(0)}%</span></div>`;
     el.appendChild(d);
   });
