@@ -43,14 +43,25 @@ SECTIONS = [
         "desc": "Visuels de synthèse — cliquer pour agrandir.",
     },
     {
+        "dir": "Simulateurs",
+        "label": "🧮 Simulateurs interactifs",
+        "desc": "Artefacts manipulables — se règlent directement dans la page, "
+        "ou s'ouvrent en plein écran.",
+    },
+    {
         "dir": "Pitchs",
         "label": "📑 Pitchs (PDF)",
         "desc": "Supports de présentation, téléchargeables.",
     },
 ]
 
-MEDIA_EXTS = {".mp4", ".m4a", ".png", ".pdf"}
+MEDIA_EXTS = {".mp4", ".m4a", ".png", ".pdf", ".html"}
 STYLE = 'style="width:100%;max-width:820px"'
+# Les simulateurs occupent toute la largeur disponible (grilles 2 colonnes).
+IFRAME_STYLE = (
+    'style="width:100%;max-width:1100px;height:1500px;'
+    'border:1px solid rgba(128,128,128,.25);border-radius:10px"'
+)
 
 
 def title_of(path: Path) -> str:
@@ -91,6 +102,13 @@ def render(path: Path, level: int = 3) -> str:
         )
     if suf == ".pdf":
         return f"- 📄 [{title}]({url}){{ target=_blank }} — *PDF*"
+    if suf == ".html":
+        return (
+            f"{h} {title}\n\n"
+            f'[Ouvrir en plein écran ↗]({url}){{ target=_blank rel=noopener }}\n\n'
+            f'<iframe src="{url}" title="{title}" loading="lazy" {IFRAME_STYLE}>'
+            f'</iframe>\n'
+        )
     return f"- [{title}]({url})"
 
 
@@ -114,8 +132,8 @@ def main() -> None:
         "# Supports pédagogiques",
         "",
         "Ressources générées pour présenter et transmettre la Méthode Foyer. "
-        "Vidéos et podcasts se lisent directement dans la page ; les pitchs "
-        "sont téléchargeables.",
+        "Vidéos, podcasts et simulateurs se manipulent directement dans la "
+        "page ; les pitchs sont téléchargeables.",
     ]
 
     rendered_any = False

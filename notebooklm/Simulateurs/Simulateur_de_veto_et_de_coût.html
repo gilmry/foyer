@@ -1,0 +1,587 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulateur de veto & coût — Méthode Foyer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,560;1,9..144,400&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#15191F; --ink2:#1B212B; --ink3:#232C39;
+    --line:rgba(233,224,209,.10); --line2:rgba(233,224,209,.20);
+    --paper:#ECE6DA; --dim:#9BA3AE; --dim2:#727A86;
+    --ember:#E2742F; --ember-soft:rgba(226,116,47,.16);
+    --veto:#D2504A; --veto-soft:rgba(210,80,74,.15);
+    --pass:#6FA98A; --pass-soft:rgba(111,169,138,.15);
+    --serif:'Fraunces',Georgia,serif;
+    --sans:'IBM Plex Sans',system-ui,sans-serif;
+    --mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--ink); color:var(--paper);
+    font-family:var(--sans); font-size:14px; line-height:1.5;
+    -webkit-font-smoothing:antialiased; padding:28px 22px 60px;
+  }
+  .wrap{max-width:1080px;margin:0 auto}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+  /* header */
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--ember);margin:0 0 10px}
+  h1{font-family:var(--serif);font-weight:560;font-size:clamp(28px,4.4vw,44px);line-height:1.05;letter-spacing:-.01em;margin:0 0 14px}
+  .lede{font-family:var(--serif);font-style:italic;font-weight:400;font-size:clamp(15px,2vw,18px);color:var(--paper);max-width:62ch;margin:0 0 4px}
+  .lede .q{color:var(--ember)}
+  .sub{color:var(--dim);max-width:70ch;margin:14px 0 0}
+  .rule{height:1px;background:var(--line);margin:26px 0}
+
+  /* generic panel */
+  .panel{background:var(--ink2);border:1px solid var(--line);border-radius:14px;padding:18px 18px}
+  .panel + .panel{margin-top:18px}
+  .ptitle{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin:0 0 14px;display:flex;align-items:center;gap:10px}
+  .ptitle .n{color:var(--ember)}
+
+  /* controls grid */
+  .controls{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  @media(max-width:760px){.controls{grid-template-columns:1fr}}
+  .field{margin-bottom:16px}
+  .field:last-child{margin-bottom:0}
+  .flabel{display:flex;justify-content:space-between;align-items:baseline;font-size:12.5px;color:var(--dim);margin-bottom:7px}
+  .fval{font-family:var(--mono);color:var(--paper);font-size:12.5px}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:3px;background:var(--line2);border-radius:3px;outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;background:var(--ember);cursor:pointer;border:3px solid var(--ink2);box-shadow:0 0 0 1px var(--ember)}
+  input[type=range]::-moz-range-thumb{width:13px;height:13px;border-radius:50%;background:var(--ember);cursor:pointer;border:3px solid var(--ink2)}
+  input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 3px var(--ember-soft),0 0 0 1px var(--ember)}
+
+  /* segmented control */
+  .seg{display:flex;gap:0;border:1px solid var(--line2);border-radius:10px;overflow:hidden}
+  .seg button{flex:1;background:transparent;color:var(--dim);border:0;padding:9px 6px;font-family:var(--sans);font-size:12.5px;cursor:pointer;transition:background .15s,color .15s;border-right:1px solid var(--line2)}
+  .seg button:last-child{border-right:0}
+  .seg button[aria-pressed=true]{background:var(--ember-soft);color:var(--paper)}
+  .seg button:focus-visible{outline:2px solid var(--ember);outline-offset:-2px}
+  .seg-note{font-size:12px;color:var(--dim2);margin-top:8px;min-height:16px}
+
+  /* gate sequence — the signature */
+  .gates-head{display:grid;grid-template-columns:200px repeat(4,1fr);gap:0;margin-bottom:6px}
+  @media(max-width:760px){.gates-head{grid-template-columns:120px repeat(4,1fr)}}
+  .gh{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);text-align:center;padding:0 4px}
+  .gh.lbl{text-align:left;color:var(--dim2)}
+  .gh .ord{color:var(--ember);margin-right:5px}
+
+  .lane{display:grid;grid-template-columns:200px 1fr;gap:0;align-items:center;padding:9px 0;border-top:1px solid var(--line)}
+  @media(max-width:760px){.lane{grid-template-columns:120px 1fr}}
+  .lane .who{padding-right:12px}
+  .lane .name{font-size:13px;font-weight:500;display:flex;align-items:center;gap:7px}
+  .lane .meta{font-family:var(--mono);font-size:10.5px;color:var(--dim2);margin-top:2px}
+  .badge{display:inline-block;font-family:var(--mono);font-size:9.5px;letter-spacing:.04em;padding:1px 6px;border-radius:5px;border:1px solid var(--line2);color:var(--dim)}
+  .badge.jur-EEA{color:var(--pass);border-color:rgba(111,169,138,.4)}
+  .badge.jur-US,.badge.jur-CN{color:var(--ember);border-color:rgba(226,116,47,.4)}
+
+  .track{display:grid;grid-template-columns:repeat(4,1fr);position:relative}
+  .cell{height:34px;display:flex;align-items:center;justify-content:center;position:relative;border-left:1px solid var(--line)}
+  .cell:first-child{border-left:0}
+  .seg-bar{position:absolute;inset:13px 0;background:var(--line);border-radius:2px}
+  .seg-bar.pass{background:linear-gradient(90deg,var(--ember-soft),rgba(226,116,47,.32))}
+  .seg-bar.veto{background:var(--veto-soft)}
+  .dot{position:relative;width:13px;height:13px;border-radius:50%;background:var(--ink3);border:1.5px solid var(--line2);z-index:1;transition:all .2s}
+  .dot.pass{background:var(--ember);border-color:var(--ember);box-shadow:0 0 9px rgba(226,116,47,.55)}
+  .dot.veto{background:var(--veto);border-color:var(--veto);box-shadow:0 0 9px rgba(210,80,74,.5)}
+  .dot.veto::after{content:"";position:absolute;inset:3px;border-left:1.5px solid #fff;border-top:1.5px solid #fff;transform:rotate(45deg) translate(-1px,1px);opacity:.85}
+  .verdict-chip{font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:20px;white-space:nowrap}
+  .verdict-chip.ok{background:var(--pass-soft);color:var(--pass)}
+  .verdict-chip.ko{background:var(--veto-soft);color:var(--veto)}
+  .rankpill{font-family:var(--mono);font-size:10px;background:var(--ember);color:#15191F;font-weight:600;border-radius:5px;padding:1px 6px;margin-left:auto}
+
+  /* verdicts */
+  .verdicts{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:760px){.verdicts{grid-template-columns:1fr}}
+  .vcard{border:1px solid var(--line);border-radius:13px;padding:16px}
+  .vcard.foyer{border-color:rgba(226,116,47,.45);background:linear-gradient(180deg,var(--ember-soft),transparent 60%)}
+  .vcard.naif{background:var(--ink2)}
+  .vk{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin:0 0 4px}
+  .vk.foyer{color:var(--ember)}
+  .vpick{font-family:var(--serif);font-size:21px;font-weight:560;line-height:1.15;margin:2px 0 6px}
+  .vwhy{font-size:12.5px;color:var(--dim)}
+  .vcost{font-family:var(--mono);font-size:13px;color:var(--paper);margin-top:8px}
+  .conflict{margin-top:12px;font-size:12px;color:var(--veto);background:var(--veto-soft);border:1px solid rgba(210,80,74,.3);border-radius:8px;padding:8px 10px;display:none}
+  .conflict.show{display:block}
+  .agree{margin-top:12px;font-size:12px;color:var(--pass);background:var(--pass-soft);border:1px solid rgba(111,169,138,.3);border-radius:8px;padding:8px 10px;display:none}
+  .agree.show{display:block}
+
+  /* naive weights */
+  .weights{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  @media(max-width:620px){.weights{grid-template-columns:1fr 1fr}}
+  .wnote{font-size:12px;color:var(--dim2);margin-top:12px;font-style:italic}
+
+  /* cost breakdown */
+  .costbar{display:flex;height:30px;border-radius:7px;overflow:hidden;border:1px solid var(--line);margin:4px 0 10px}
+  .costbar > div{display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10.5px;color:#15191F;min-width:0;transition:width .25s}
+  .cb-token{background:#8FB0C9}
+  .cb-sup{background:var(--ember)}
+  .cb-host{background:var(--pass)}
+  .cost-legend{display:flex;gap:18px;flex-wrap:wrap;font-size:12px;color:var(--dim)}
+  .cost-legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px;vertical-align:middle}
+
+  /* dual cost — voies d'accès */
+  .dual{display:flex;flex-direction:column;gap:10px}
+  .drow{display:grid;grid-template-columns:1.4fr auto auto auto;gap:16px;align-items:center;padding:13px 15px;border:1px solid var(--line);border-radius:11px;background:var(--ink2)}
+  .drow.foyer{border-color:rgba(226,116,47,.45);background:linear-gradient(180deg,var(--ember-soft),transparent 70%)}
+  .drow .dname{font-weight:500;font-size:13px}
+  .drow .dtag{font-family:var(--mono);font-size:10px;color:var(--dim2);display:block;margin-top:3px}
+  .dcol{text-align:right}
+  .dcol .k{font-family:var(--mono);font-size:9px;letter-spacing:.05em;text-transform:uppercase;color:var(--dim2);display:block;margin-bottom:2px}
+  .dcol .v{font-family:var(--mono);font-size:13px;color:var(--paper)}
+  .dcol .v.risk{color:var(--veto)}
+  .dcol .v.tot{color:var(--ember)}
+  @media(max-width:680px){.drow{grid-template-columns:1fr 1fr;row-gap:10px}.drow .dname,.drow > div:first-child{grid-column:1/-1}.dcol{text-align:left}}
+
+  /* table */
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th,td{text-align:left;padding:8px 8px;border-top:1px solid var(--line)}
+  th{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim2);font-weight:500}
+  td.num{font-family:var(--mono);text-align:right;color:var(--paper)}
+  tr.vetoed td{color:var(--dim2)}
+  tr.vetoed td.name{text-decoration:line-through;text-decoration-color:var(--veto)}
+  .st{font-family:var(--mono);font-size:10px;padding:1px 6px;border-radius:5px}
+  .st.ok{background:var(--pass-soft);color:var(--pass)}
+  .st.ko{background:var(--veto-soft);color:var(--veto)}
+
+  /* insights */
+  .insights{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+  @media(max-width:760px){.insights{grid-template-columns:1fr}}
+  .ins{border-left:2px solid var(--ember);padding:2px 0 2px 14px}
+  .ins h4{font-family:var(--mono);font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--ember);margin:0 0 6px}
+  .ins p{margin:0;font-size:12.5px;color:var(--dim)}
+  .foot{margin-top:34px;font-size:11.5px;color:var(--dim2);font-family:var(--mono)}
+  .foot a{color:var(--dim)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <p class="eyebrow">Méthode Foyer · grille d'arbitrage hybride</p>
+  <h1>Le coût ne parle qu'en dernier</h1>
+  <p class="lede">Chaque option franchit quatre portes dans l'ordre. <span class="q">« Pourrai-je en répondre, et devant qui ? »</span> — le veto tranche avant le prix.</p>
+  <p class="sub">Un classement façon leaderboard range les modèles sur un score composite où le coût pèse lourd. Le veto lexicographique fait l'inverse : <b>altérité → réversibilité → érosion → coût</b>. Une option recalée à une porte est éliminée, quelle que soit la suite. Le coût ne départage que les survivantes. Réglez la tâche et le budget, et regardez les deux verdicts diverger.</p>
+
+  <div class="rule"></div>
+
+  <!-- CONTROLS -->
+  <div class="panel">
+    <p class="ptitle"><span class="n">01</span> Cadrage de la tâche &amp; du volume</p>
+    <div class="controls">
+      <div>
+        <div class="field">
+          <div class="flabel"><span>Classe de tâche — nature du risque</span></div>
+          <div class="seg" id="seg-task" role="group" aria-label="Classe de tâche">
+            <button data-task="public" aria-pressed="false">Donnée publique</button>
+            <button data-task="internal" aria-pressed="false">Donnée interne</button>
+            <button data-task="thirdparty" aria-pressed="true">Tiers non-consentant</button>
+          </div>
+          <div class="seg-note" id="task-note"></div>
+        </div>
+        <div class="field">
+          <div class="flabel"><span>Requêtes / mois</span><span class="fval" id="v-req"></span></div>
+          <input type="range" id="r-req" min="1000" max="500000" step="1000" value="50000">
+        </div>
+        <div class="field">
+          <div class="flabel"><span>Tokens moyens / requête</span><span class="fval" id="v-tok"></span></div>
+          <input type="range" id="r-tok" min="500" max="20000" step="500" value="4000">
+        </div>
+        <div class="field">
+          <div class="flabel"><span>Coût du superviseur humain (€ / h)</span><span class="fval" id="v-rate"></span></div>
+          <input type="range" id="r-rate" min="0" max="150" step="5" value="75">
+        </div>
+      </div>
+      <div>
+        <div class="field">
+          <div class="flabel"><span>Plancher réversibilité (porte 2)</span><span class="fval" id="v-rmin"></span></div>
+          <input type="range" id="r-rmin" min="0" max="3" step="1" value="1">
+        </div>
+        <div class="field">
+          <div class="flabel"><span>Plancher érosion acceptée (porte 3)</span><span class="fval" id="v-emin"></span></div>
+          <input type="range" id="r-emin" min="0" max="3" step="1" value="0">
+        </div>
+        <div class="field">
+          <div class="flabel"><span>Plafond budgétaire (porte 4)</span><span class="fval" id="v-budg"></span></div>
+          <input type="range" id="r-budg" min="0" max="15000" step="250" value="0">
+        </div>
+        <div class="field">
+          <div class="flabel"><span>Exposition max. en cas d'incident (€)</span><span class="fval" id="v-expo"></span></div>
+          <input type="range" id="r-expo" min="0" max="2000000" step="50000" value="250000">
+        </div>
+        <div class="field" style="margin-top:18px">
+          <div class="flabel"><span>Pondération du score « naïf »</span></div>
+          <div class="weights">
+            <div><div class="flabel" style="font-size:11px"><span>Capacité</span><span class="fval" id="v-wc"></span></div><input type="range" id="r-wc" min="0" max="100" step="5" value="30"></div>
+            <div><div class="flabel" style="font-size:11px"><span>Réversib.</span><span class="fval" id="v-wr"></span></div><input type="range" id="r-wr" min="0" max="100" step="5" value="10"></div>
+            <div><div class="flabel" style="font-size:11px"><span>Érosion</span><span class="fval" id="v-we"></span></div><input type="range" id="r-we" min="0" max="100" step="5" value="10"></div>
+            <div><div class="flabel" style="font-size:11px"><span>Coût</span><span class="fval" id="v-wcost"></span></div><input type="range" id="r-wcost" min="0" max="100" step="5" value="50"></div>
+          </div>
+          <p class="wnote">Aucun réglage de ces curseurs ne reproduit le veto : un veto est un poids infini, hors d'atteinte d'une somme pondérée.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GATE SEQUENCE (signature) -->
+  <div class="panel">
+    <p class="ptitle"><span class="n">02</span> La séquence de portes — où chaque option s'arrête</p>
+    <div class="gates-head">
+      <div class="gh lbl">Option</div>
+      <div class="gh"><span class="ord">1</span>Altérité</div>
+      <div class="gh"><span class="ord">2</span>Réversibilité</div>
+      <div class="gh"><span class="ord">3</span>Érosion</div>
+      <div class="gh"><span class="ord">4</span>Coût</div>
+    </div>
+    <div id="lanes"></div>
+  </div>
+
+  <!-- VERDICTS -->
+  <div class="panel">
+    <p class="ptitle"><span class="n">03</span> Deux verdicts pour la même réalité</p>
+    <div class="verdicts">
+      <div class="vcard naif">
+        <p class="vk">Classement naïf · score composite</p>
+        <p class="vpick" id="naif-pick">—</p>
+        <p class="vwhy" id="naif-why"></p>
+        <p class="vcost" id="naif-cost"></p>
+      </div>
+      <div class="vcard foyer">
+        <p class="vk foyer">Verdict Foyer · veto lexicographique</p>
+        <p class="vpick" id="foyer-pick">—</p>
+        <p class="vwhy" id="foyer-why"></p>
+        <p class="vcost" id="foyer-cost"></p>
+      </div>
+    </div>
+    <div class="conflict" id="conflict"></div>
+    <div class="agree" id="agree"></div>
+  </div>
+
+  <!-- COST BREAKDOWN -->
+  <div class="panel">
+    <p class="ptitle"><span class="n">04</span> Décomposition du coût mensuel — <span id="cb-name" style="color:var(--paper);text-transform:none;letter-spacing:0"></span></p>
+    <div class="costbar" id="costbar"></div>
+    <div class="cost-legend">
+      <span><i class="cb-token"></i>Tokens <span class="fval" id="lg-token"></span></span>
+      <span><i style="background:var(--ember)"></i>Supervision humaine <span class="fval" id="lg-sup"></span></span>
+      <span><i style="background:var(--pass)"></i>Hébergement <span class="fval" id="lg-host"></span></span>
+    </div>
+    <p class="wnote" id="cb-note"></p>
+  </div>
+
+  <!-- ACCESS PATHS + RISK COST -->
+  <div class="panel">
+    <p class="ptitle"><span class="n">05</span> Deux voies d'accès — coût projet vs coût du risque</p>
+    <p class="sub" style="margin:0 0 16px">Une équipe a deux voies d'accès : un <b>modèle souverain auto-hébergé</b> ou une <b>API tierce</b>. Ce n'est pas un choix de capacité, mais de <i>répondre-de</i>. Et les deux coûts qui en découlent ne vivent pas sur le même axe — le coût projet se paie en factures mensuelles, le coût du risque en exposition juridictionnelle et sanctions.</p>
+    <div class="dual" id="dual"></div>
+    <p class="wnote" id="dual-note"></p>
+  </div>
+
+  <!-- TABLE -->
+  <div class="panel">
+    <p class="ptitle"><span class="n">06</span> Toutes les options — attributs &amp; coût objectivé</p>
+    <div style="overflow-x:auto">
+    <table>
+      <thead><tr>
+        <th>Option</th><th>Juridiction</th><th>Rév.</th><th>Éros.</th>
+        <th style="text-align:right">€/M tok</th><th style="text-align:right">h sup./1k</th>
+        <th style="text-align:right">Coût/mois</th><th>Statut Foyer</th>
+      </tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    </div>
+  </div>
+
+  <!-- INSIGHTS -->
+  <div class="panel">
+    <p class="ptitle"><span class="n">07</span> Trois choses que ce simulateur objective</p>
+    <div class="insights">
+      <div class="ins">
+        <h4>Le veto n'est pas un poids</h4>
+        <p>Les préférences lexicographiques ne sont représentables par <i>aucune</i> fonction d'utilité continue. Mettez le curseur « Coût » à 100 % : le score naïf peut élire une option illégale, jamais le verdict Foyer. L'altérité (RGPD, tiers) est une contrainte de droit, pas une vertu pondérable.</p>
+      </div>
+      <div class="ins">
+        <h4>Le superviseur domine la facture</h4>
+        <p>Mettez les tokens au maximum : la barre bleue reste mince. Le coût de fabrication est gouverné par l'heure humaine de vérification, pas par le token. Un modèle « pas cher au token » mais moins fiable demande plus de supervision — et peut coûter <i>plus</i>.</p>
+      </div>
+      <div class="ins">
+        <h4>Le veto est relatif au terrain</h4>
+        <p>Basculez « Publique » → « Tiers non-consentant » : la même option chinoise passe puis se fait recaler à la porte 1. Le cadre n'est pas protectionniste — il route des <i>classes</i> de tâche selon la nature du risque. Le classifieur hérite du plus haut niveau qu'il traite.</p>
+      </div>
+    </div>
+  </div>
+
+  <p class="foot">Pédagogique — chiffres illustratifs (capacité ≈ ordre de grandeur llm-stats.com, coûts à calibrer sur votre infra réelle ; coût du risque = exposition × coefficient par classe de veto). Dérivé du Manifeste Maury / Méthode Foyer (CC BY-SA 4.0) · <a href="https://gilmry.github.io/foyer/skills/arbitrage-hybride.html">skill arbitrage hybride</a></p>
+</div>
+
+<script>
+"use strict";
+
+// ---- options seed (capacité ~ llm-stats; coûts illustratifs, à calibrer) ----
+// reversibility: 3 poids ouverts/rotatable, 2 API rotatable, 1 lock-in partiel, 0 irréversible
+// erosionResist: 3 faible dérive, 0 forte dérive
+// supHoursPer1k: heures de supervision humaine pour 1000 requêtes (proxy inverse de fiabilité)
+const OPTIONS = [
+  {id:'opus',  name:'Claude Opus 4.8',           jur:'US',  rev:2, ero:3, price:7.22, sup:0.4, host:0},
+  {id:'gpt',   name:'GPT-5.4',                   jur:'US',  rev:2, ero:3, price:3.89, sup:0.5, host:0},
+  {id:'glmcn', name:'GLM-5.2 · API Chine',       jur:'CN',  rev:3, ero:2, price:1.18, sup:0.7, host:0},
+  {id:'qwen',  name:'Qwen3.7 Max · API Chine',   jur:'CN',  rev:2, ero:2, price:1.53, sup:0.7, host:0},
+  {id:'glmeu', name:'GLM-5.2 · auto-hébergé UE', jur:'EEA', rev:3, ero:2, price:0.60, sup:0.9, host:1400},
+  {id:'mist',  name:'Mistral souverain · UE',    jur:'EEA', rev:3, ero:1, price:0.50, sup:1.0, host:500},
+];
+
+const state = {
+  task:'thirdparty',
+  req:50000, tok:4000, rate:75,
+  rmin:1, emin:0, budg:0, expo:250000,
+  wc:30, wr:10, we:10, wcost:50,
+};
+
+const TASK_NOTE = {
+  public:"Aucun tiers exposé. La porte 1 ne se déclenche pas.",
+  internal:"Donnée de l'organisation. Exposition = choix (rupture externe), pas altérité.",
+  thirdparty:"Donnée RGPD / patient d'un tiers non-consentant. Toute exposition à une juridiction étrangère = veto de droit.",
+};
+
+const REV_LABEL = ["irréversible","lock-in partiel","API rotatable","poids ouverts"];
+const ERO_LABEL = ["forte dérive","dérive notable","dérive modérée","faible dérive"];
+
+const $ = s => document.querySelector(s);
+
+function cost(o){
+  const token = state.req * state.tok / 1e6 * o.price;
+  const sup   = (state.req/1000) * o.sup * state.rate;
+  const host  = o.host;
+  return {token, sup, host, total: token+sup+host};
+}
+
+// coût du risque : exposition × coefficient annuel par classe de veto (illustratif)
+// altérité = non-conformité de droit (quasi-certaine) ; réversibilité = lock-in ;
+// érosion = dérive ; recevable / veto-coût = risque résiduel seulement.
+function riskCoef(e){
+  if(e.recevable) return 0.03;
+  if(e.firstVeto===0) return 0.85;
+  if(e.firstVeto===1) return 0.40;
+  if(e.firstVeto===2) return 0.22;
+  return 0.03;
+}
+function riskAnnual(e){ return riskCoef(e)*state.expo; }
+function projAnnual(e){ return e.c.total*12; }
+
+// altérité veto: tiers non-consentant exposé hors UE
+function alteriteVeto(o){
+  if(state.task==='thirdparty') return o.jur!=='EEA';
+  return false;
+}
+
+// évalue les 4 portes en séquence; renvoie statut par porte + 1re porte de veto
+function evaluate(o){
+  const c = cost(o);
+  const gates = [];
+  let dead = false, firstVeto = -1;
+
+  // porte 1 — altérité
+  let v1 = alteriteVeto(o);
+  gates.push(v1?'veto':'pass'); if(v1){dead=true;firstVeto=0;}
+  // porte 2 — réversibilité
+  if(dead) gates.push('none'); else { let v=o.rev<state.rmin; gates.push(v?'veto':'pass'); if(v){dead=true;firstVeto=1;} }
+  // porte 3 — érosion
+  if(dead) gates.push('none'); else { let v=o.ero<state.emin; gates.push(v?'veto':'pass'); if(v){dead=true;firstVeto=2;} }
+  // porte 4 — coût (plafond optionnel: 0 = pas de plafond)
+  if(dead) gates.push('none'); else { let v=state.budg>0 && c.total>state.budg; gates.push(v?'veto':'pass'); if(v){dead=true;firstVeto=3;} }
+
+  return {o, c, gates, firstVeto, recevable: firstVeto===-1};
+}
+
+function foyerRank(evals){
+  const ok = evals.filter(e=>e.recevable);
+  // tri lexicographique parmi survivantes: rev desc, ero desc, coût asc
+  ok.sort((a,b)=> b.o.rev-a.o.rev || b.o.ero-a.o.ero || a.c.total-b.c.total);
+  ok.forEach((e,i)=>e.rank=i+1);
+  return ok;
+}
+
+function naifPick(evals){
+  // normalisations sur l'ensemble (vetos ignorés — c'est tout le problème)
+  const sups = evals.map(e=>e.o.sup), costs = evals.map(e=>e.c.total);
+  const sMin=Math.min(...sups), sMax=Math.max(...sups);
+  const cMin=Math.min(...costs), cMax=Math.max(...costs);
+  const capN = o => sMax===sMin?1:1-(o.sup-sMin)/(sMax-sMin); // sup bas = capacité haute
+  const costN = c => cMax===cMin?1:1-(c-cMin)/(cMax-cMin);     // coût bas = mieux
+  const W = state.wc+state.wr+state.we+state.wcost || 1;
+  let best=null, bs=-1;
+  evals.forEach(e=>{
+    const score = (state.wc*capN(e.o) + state.wr*(e.o.rev/3) + state.we*(e.o.ero/3) + state.wcost*costN(e.c.total))/W;
+    e.naif=score;
+    if(score>bs){bs=score;best=e;}
+  });
+  return best;
+}
+
+function eur(x){ return '€'+Math.round(x).toLocaleString('fr-BE'); }
+
+function render(){
+  // sync labels
+  $('#v-req').textContent  = state.req.toLocaleString('fr-BE');
+  $('#v-tok').textContent  = state.tok.toLocaleString('fr-BE');
+  $('#v-rate').textContent = state.rate+' €/h';
+  $('#v-rmin').textContent = state.rmin+' · '+REV_LABEL[state.rmin]+' min.';
+  $('#v-emin').textContent = state.emin===0?'0 · aucune exigence':state.emin+' · '+ERO_LABEL[state.emin]+' min.';
+  $('#v-budg').textContent = state.budg===0?'désactivé':eur(state.budg)+'/mois';
+  $('#v-expo').textContent = state.expo===0?'aucune':eur(state.expo);
+  $('#v-wc').textContent=state.wc+'%'; $('#v-wr').textContent=state.wr+'%'; $('#v-we').textContent=state.we+'%'; $('#v-wcost').textContent=state.wcost+'%';
+  $('#task-note').textContent = TASK_NOTE[state.task];
+  document.querySelectorAll('#seg-task button').forEach(b=>b.setAttribute('aria-pressed', b.dataset.task===state.task));
+
+  const evals = OPTIONS.map(evaluate);
+  const ranked = foyerRank(evals);
+  const foyerWin = ranked[0] || null;
+  const naif = naifPick(evals);
+
+  // --- lanes (signature) ---
+  const lanes = $('#lanes'); lanes.innerHTML='';
+  evals.forEach(e=>{
+    const lane=document.createElement('div'); lane.className='lane';
+    const jurTxt = e.o.jur==='EEA'?'UE':(e.o.jur==='US'?'États-Unis':'Chine');
+    let verdict = e.recevable
+      ? `<span class="verdict-chip ok">recevable</span>`
+      : `<span class="verdict-chip ko">recalée · porte ${e.firstVeto+1}</span>`;
+    let rankpill = (e.recevable && e.rank) ? `<span class="rankpill">#${e.rank}</span>`:'';
+    lane.innerHTML = `
+      <div class="who">
+        <div class="name">${e.o.name}${rankpill}</div>
+        <div class="meta"><span class="badge jur-${e.o.jur}">${jurTxt}</span> · rév ${e.o.rev} · éros ${e.o.ero} · ${eur(e.c.total)}/mois</div>
+        <div class="meta" style="margin-top:4px">${verdict}</div>
+      </div>
+      <div class="track">${e.gates.map((g,i)=>cell(g)).join('')}</div>`;
+    lanes.appendChild(lane);
+  });
+
+  // --- verdicts ---
+  if(naif){
+    $('#naif-pick').textContent = naif.o.name;
+    const naifVetoed = !naif.recevable;
+    $('#naif-why').textContent = naifVetoed
+      ? `Maximise le score pondéré (coût ${state.wcost}%) — mais cette option est recalée à la porte ${naif.firstVeto+1}.`
+      : `Maximise le score pondéré (coût ${state.wcost}%).`;
+    $('#naif-cost').textContent = eur(naif.c.total)+' / mois · score '+(naif.naif*100).toFixed(0)+'/100';
+  }
+  if(foyerWin){
+    $('#foyer-pick').textContent = foyerWin.o.name;
+    // explication: pourquoi celle-ci en tête
+    const second = ranked[1];
+    let why = 'Seule survivante des quatre portes.';
+    if(second){
+      if(foyerWin.o.rev>second.o.rev) why=`Réversibilité supérieure (porte 2) — décidée avant le coût.`;
+      else if(foyerWin.o.ero>second.o.ero) why=`Érosion plus faible (porte 3) — l'emporte même en étant ${foyerWin.c.total>second.c.total?'la plus chère':'départagée'} des recevables.`;
+      else why=`À critères égaux, le coût tranche en dernier (porte 4).`;
+    }
+    $('#foyer-why').textContent = why;
+    $('#foyer-cost').textContent = eur(foyerWin.c.total)+' / mois · '+ranked.length+' option(s) recevable(s)';
+  } else {
+    $('#foyer-pick').textContent = 'Aucune option recevable';
+    $('#foyer-why').textContent = 'Recadrer la tâche, ou changer d\'architecture (chiffrement client, validation humaine déterministe).';
+    $('#foyer-cost').textContent = '';
+  }
+
+  // conflict / agree banners
+  const conflict=$('#conflict'), agree=$('#agree');
+  conflict.classList.remove('show'); agree.classList.remove('show');
+  if(naif && foyerWin){
+    if(naif.o.id!==foyerWin.o.id){
+      conflict.classList.add('show');
+      conflict.innerHTML = !naif.recevable
+        ? `⚠ Divergence — le score naïf élit <b>${naif.o.name}</b>, que le veto élimine (porte ${naif.firstVeto+1}). Aucun re-réglage des poids ne corrige cela : c'est la signature d'un veto.`
+        : `⚠ Divergence — naïf et Foyer recommandent des options différentes. Toutes deux recevables ici, mais l'ordre lexicographique privilégie réversibilité/érosion avant le coût.`;
+    } else {
+      agree.classList.add('show');
+      agree.innerHTML = `✓ Convergence — aucune porte ne se déclenche contre l'option la moins chère pertinente, donc naïf et Foyer s'accordent. Le cadre ne pénalise pas par principe.`;
+    }
+  }
+
+  // --- cost breakdown (Foyer winner, sinon 1re option) ---
+  const cbE = foyerWin || evals[0];
+  $('#cb-name').textContent = cbE.o.name;
+  const c=cbE.c, T=c.total||1;
+  const cb=$('#costbar'); cb.innerHTML='';
+  [['cb-token',c.token],['cb-sup',c.sup],['cb-host',c.host]].forEach(([cls,val])=>{
+    const w=val/T*100; const d=document.createElement('div');
+    d.className=cls; d.style.width=w+'%';
+    d.textContent = w>9?Math.round(w)+'%':'';
+    cb.appendChild(d);
+  });
+  $('#lg-token').textContent=eur(c.token); $('#lg-sup').textContent=eur(c.sup); $('#lg-host').textContent=eur(c.host);
+  const supPct=Math.round(c.sup/T*100);
+  $('#cb-note').textContent = `La supervision humaine pèse ${supPct}% du coût mensuel de cette option. Les tokens : ${Math.round(c.token/T*100)}%.`;
+
+  // --- dual cost : voies d'accès, coût projet vs coût du risque ---
+  const dual=$('#dual'); dual.innerHTML='';
+  const same = naif && foyerWin && naif.o.id===foyerWin.o.id;
+  const drows=[];
+  if(naif) drows.push({e:naif, who: same?'Naïf = Foyer':'Choix naïf', foyer:same});
+  if(foyerWin && !same) drows.push({e:foyerWin, who:'Verdict Foyer', foyer:true});
+  drows.forEach(r=>{
+    const e=r.e, pa=projAnnual(e), ra=riskAnnual(e), tot=pa+ra;
+    const path = e.o.jur==='EEA' ? 'modèle souverain · auto-hébergé UE'
+               : 'API tierce · '+(e.o.jur==='US'?'États-Unis':'Chine');
+    const d=document.createElement('div'); d.className='drow'+(r.foyer?' foyer':'');
+    d.innerHTML = `
+      <div><span class="dname">${r.who} — ${e.o.name}</span><span class="dtag">${path}${e.recevable?'':' · recalée porte '+(e.firstVeto+1)}</span></div>
+      <div class="dcol"><span class="k">Coût projet / an</span><span class="v">${eur(pa)}</span></div>
+      <div class="dcol"><span class="k">Coût du risque / an</span><span class="v risk">${eur(ra)}</span></div>
+      <div class="dcol"><span class="k">Coût complet</span><span class="v tot">${eur(tot)}</span></div>`;
+    dual.appendChild(d);
+  });
+  // note de synthèse
+  let dnote='';
+  if(state.expo===0){
+    dnote = `Exposition fixée à zéro : le coût du risque disparaît et seul le coût projet parle. Remontez le curseur d'exposition pour faire réapparaître l'axe que le veto protège.`;
+  } else if(naif && foyerWin && !naif.recevable){
+    const dRisk = riskAnnual(naif)-riskAnnual(foyerWin);
+    const dProj = projAnnual(foyerWin)-projAnnual(naif);
+    dnote = `Le choix naïf ${dProj>0?'économise '+eur(dProj)+'/an de coût projet':'ne coûte même pas moins en projet'}, mais porte ${eur(dRisk)}/an de coût du risque en plus — un ordre de grandeur que la facture mensuelle ne montre jamais. Le veto paie la prime projet pour effondrer l'exposition.`;
+  } else if(same){
+    dnote = `Aucune porte ne s'oppose à l'option la moins chère : coût projet et coût du risque pointent dans le même sens, naïf et Foyer coïncident.`;
+  } else {
+    dnote = `Les deux options sont recevables ; l'écart de coût du risque est résiduel, l'arbitrage se joue alors légitimement sur le coût projet — c'est la seule situation où comparer sur le prix est correct.`;
+  }
+  $('#dual-note').textContent = dnote;
+
+  // --- table ---
+  const tb=$('#tbody'); tb.innerHTML='';
+  // ordre: recevables d'abord (par rang), puis recalées
+  const ordered=[...ranked, ...evals.filter(e=>!e.recevable)];
+  ordered.forEach(e=>{
+    const tr=document.createElement('tr');
+    if(!e.recevable) tr.className='vetoed';
+    const jurTxt=e.o.jur==='EEA'?'UE':(e.o.jur==='US'?'US':'Chine');
+    const st = e.recevable?`<span class="st ok">#${e.rank} recevable</span>`:`<span class="st ko">porte ${e.firstVeto+1}</span>`;
+    tr.innerHTML=`<td class="name">${e.o.name}</td><td>${jurTxt}</td><td>${e.o.rev}</td><td>${e.o.ero}</td>
+      <td class="num">${e.o.price.toFixed(2)}</td><td class="num">${e.o.sup.toFixed(1)}</td>
+      <td class="num">${eur(e.c.total)}</td><td>${st}</td>`;
+    tb.appendChild(tr);
+  });
+}
+
+function cell(g){
+  const bar = g==='pass'?'pass':(g==='veto'?'veto':'');
+  const dot = g==='pass'?'pass':(g==='veto'?'veto':'');
+  return `<div class="cell"><div class="seg-bar ${bar}"></div><div class="dot ${dot}"></div></div>`;
+}
+
+// ---- wiring ----
+function bindRange(id,key,fn){ const el=$(id); el.addEventListener('input',()=>{ state[key]=fn?fn(+el.value):+el.value; render(); }); }
+bindRange('#r-req','req'); bindRange('#r-tok','tok'); bindRange('#r-rate','rate');
+bindRange('#r-rmin','rmin'); bindRange('#r-emin','emin'); bindRange('#r-budg','budg'); bindRange('#r-expo','expo');
+bindRange('#r-wc','wc'); bindRange('#r-wr','wr'); bindRange('#r-we','we'); bindRange('#r-wcost','wcost');
+document.querySelectorAll('#seg-task button').forEach(b=>{
+  b.addEventListener('click',()=>{ state.task=b.dataset.task; render(); });
+});
+
+render();
+</script>
+</body>
+</html>
