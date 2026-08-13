@@ -59,8 +59,8 @@ flowchart LR
     C --> D[<b>É</b>valuation]
     D --> E[<b>A</b>mélioration]
     E --> A
-    C --- F((Un <b>outil externe<br/>objective le résultat</b>))
-    D --- G((<b></b>Responsabilité humaine</b><br/>« Pourrai‑je en répondre,<br/>et devant qui ? »))
+    C --- F((Un <b>outil externe\nobjective le résultat</b>))
+    D --- G((<b></b>Responsabilité humaine\n« Pourrai‑je en répondre,<br/>et devant qui ? »))
 ```
 
 ## Les trois axes
