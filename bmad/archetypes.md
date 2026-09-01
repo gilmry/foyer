@@ -17,7 +17,7 @@ Combinaisons courantes : *stateless API-first* (transform exposé), *stateful AP
 
 **API-first** — le **contrat API (OpenAPI/AsyncAPI) est un délivrable de premier rang, écrit avant le code** · exigences PRD exprimées en endpoints · **versioning et rétro-compatibilité** · BDD au niveau contrat, **contract tests** · couche Frontend : N/A · point irréversible propre : **rupture de contrat / changement de version majeure**.
 
-**Full-stack** — **les sept couches**, dont Frontend (pages Astro statiques + îlots Svelte 5) · **E2E cross-stack + Documentation Vivante** (flux critiques filmés) · point irréversible : cumul (schéma + contrat + mapping branche→env). **Le contrat API doit être matérialisé, pas seulement décrit** — annotation exhaustive + client généré + désérialisation stricte + contract tests CI, voir `../skills/contrat-api.md` (skill né d'un incident réel : contrat non matérialisé → NO-GO en production).
+**Full-stack** — **les sept couches**, dont Frontend (statique, découplé du backend via le client généré) · **E2E cross-stack (gate) + Documentation Vivante (preuve de valeur)** : un parcours de référence rejoué à la vitesse (gate) **et** en cadence 1 action/1s (galerie + vidéo, rapport non bloquant), sans dette de doc — voir `../skills/contrat-api.md` (correctness) et `../skills/documentation-vivante.md` (valeur) · point irréversible : cumul (schéma + contrat + mapping branche→env). **Le contrat API doit être matérialisé, pas seulement décrit** — annotation exhaustive + client généré + désérialisation stricte + contract tests CI, voir `../skills/contrat-api.md` (skill né d'un incident réel : contrat non matérialisé → NO-GO en production).
 
 ## Matrice d'applicabilité des sections
 
@@ -32,10 +32,12 @@ Combinaisons courantes : *stateless API-first* (transform exposé), *stateful AP
 | **Contrat API (OpenAPI)** + versioning — *matérialisé, pas décrit* ¹ | ○ | ○ | ✓ | ✓ |
 | Frontend UX / îlots / arborescence pages | — | — | — | ✓ |
 | Couche Frontend (architecture) | — | — | — | ✓ |
-| E2E cross-stack + Documentation Vivante | ○ | ○ | contract tests | ✓ |
+| E2E cross-stack (gate) + Preuve de valeur (doc vivante) ² | ○ | ○ | contract tests | ✓ |
 | Couches Application · IaC · CI/CD · Monitoring | ✓ | ✓ | ✓ | ✓ |
 
 ¹ Un `✓` ici n'est acquis que si les quatre éléments de `../skills/contrat-api.md` sont en place (annotation exhaustive, client généré, désérialisation stricte, contract tests CI) — une section PRD §9bis en prose sans ces mécanismes reste un `—` de facto, quelle que soit la case cochée.
+
+² Un `✓` ici n'est acquis que si le parcours de référence est **une source de vérité partagée** rejouée par **deux harnais** (E2E gate + preuve de valeur cadencée) et verrouillé par un invariant anti-dette — `../skills/documentation-vivante.md`. Une liste de « flux à couvrir » en prose reste un `—` de facto.
 
 ## Conséquence pour chaque persona
 

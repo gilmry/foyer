@@ -30,7 +30,11 @@ Tu écris le **minimum de code** pour faire passer toute la suite au vert. Rien 
 
 1. **Refactor** sous la protection de la suite verte (lisibilité, SOLID, DRY).
 2. **Quality gate** (code) → voir `gates.md` *(à écrire)*.
-3. **Compléter** avec **E2E + tests d'intégration**.
+3. **Compléter** avec **E2E + tests d'intégration**. Pour le full-stack : le
+   **parcours de référence** (`journeys/`) est posé **ici, au fil de l'eau** —
+   le **gate E2E** (rapide, bloquant) et la **preuve de valeur** (même
+   parcours rejoué en cadence 1 action/1s, galerie + vidéo, rapport non
+   bloquant) → `documentation-vivante.md`.
 4. **Security gate** (code + e2e) → voir `gates.md`.
 5. **Commit.** Hooks locaux (DRY avec la CI) ; **au plus tard en pre-push : CI complète**.
 
@@ -41,7 +45,7 @@ Tu adaptes `@edge`, le harnais et le `@security` selon l'archétype :
 - **stateless** — `@edge` = property-based sur les entrées ; **pas de harnais DB** ; tests d'**idempotence/pureté**.
 - **stateful** — `@edge` = concurrence et transitions d'état ; **intégration DB** en phase bleue.
 - **API-first** — BDD **au niveau contrat** ; **contract tests** ; `@security` = abus de contrat, autorisation, versioning.
-- **full-stack** — **E2E cross-stack** en bleu ; `@security` inclut CSP/XSS sur les îlots Svelte ; **Documentation Vivante** (flux critiques filmés).
+- **full-stack** — **E2E cross-stack** en bleu (gate) **+ la preuve de valeur** : le parcours de référence rejoué en cadence 1 action/1s (galerie + vidéo, rapport non bloquant) — voir `documentation-vivante.md` ; `@security` inclut CSP/XSS sur les îlots Svelte.
 
 ## La condition de sortie
 

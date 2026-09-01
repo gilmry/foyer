@@ -91,7 +91,10 @@ skills/                    Les 4 outils d'objectivation (enfants de la primitive
   arbitrage-hybride.md       grille de souveraineté pour tout choix hybride (cloud/on-prem, proprio/OSS, support, IA)
   enforcement.md             les 3 anneaux : permissions / plugin / substrat
   conformite.md              mapping mondial→européen→belge (ISO 42001/27001, AI Act, NIS2/CyFun, CRA) + angles morts
-  bootstrap-delivrabilite.md story habilitante aboutie : git clone + agent = tout configuré
+   bootstrap-delivrabilite.md story habilitante aboutie : git clone + agent = tout configuré
+   bootstrap-nouveau-projet.md    partir d'un projet neuf avec le kit : archétype, harnais d'abord, métier ensuite
+   migration-projet-existant.md   rétrofit d'un projet non conforme : diagnostic, strangler, verrouillage
+   documentation-vivante.md       la preuve de valeur : parcours rejoué en cadence (galerie + vidéo), sans dette de doc (sœur de contrat-api.md)
 
 tools/gates/               Le COMMENT exécutable, en regard du pourquoi de skills/gates.md
   ADR-outillage.md           LA LISTE CONSOLIDÉE — un outil par gate, verdict de veto
