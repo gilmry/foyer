@@ -63,7 +63,7 @@ La liste consolidée des outils qui remplissent ce contrat, avec le verdict de v
 - **stateless** — surtout SCA + secrets ; pas de check de migration.
 - **stateful** — SAST injection SQL ; **fichier de retour de migration au plancher** ; secrets DB.
 - **API-first** — `@security` de contrat : autorisation par endpoint, schémas stricts, **pas de rupture de version non déclarée** (point irréversible).
-- **full-stack** — CSP/XSS sur les îlots Svelte ; en-têtes de sécurité ; DAST sur les flux E2E critiques.
+- **full-stack** — CSP/XSS sur les îlots Svelte ; en-têtes de sécurité ; DAST sur les flux E2E critiques ; **régression visuelle** (goldens du parcours partagé, tolérance définie) **bloquante à la bascule de rendu D2** (îlots-first) — c'est la 3e harnais de `documentation-vivante.md`, et la preuve exigée par la bascule n°2 de `migration-projet-existant.md`.
 
 ## Ancrage conformité
 

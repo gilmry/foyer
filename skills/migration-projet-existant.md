@@ -22,7 +22,8 @@ L'agent **mesure** l'écart à l'architecture de référence, et le **consigne**
 |---|---|---|
 | **Architecture** | le domaine est-il pur ? | `use Symfony\*` / `use Doctrine\*` dans la couche métier ; la logique métier dans les controllers/ORM |
 | **Contrat API** | est-il matérialisé ? | client front à la main, `fetch` inline non typés, pas de spec, casing divergent front↔back |
-| **Frontend** | est-il découplé du backend ? | frontend **collé** : `fetch`/`axios` en dur, URL d'endpoint dupliquées, aucun parcours de référence partagé, pas de preuve de valeur (doc filmée) |
+| **Frontend — contrat (D1)** | est-il découplé du backend ? | frontend **collé** : `fetch`/`axios` en dur, URL d'endpoint dupliquées, aucun parcours de référence partagé, pas de preuve de valeur (doc filmée) |
+| **Frontend — rendu (D2)** | quelle techno de rendu, et est-elle îlots-first ? | **rendu applicatif côté back** (le serveur génère le HTML) ; **SPA monolithique** (bundle lourd, tout le rendu à la main) ; code mort significatif côté front. Destination : **îlots-first (Astro + îlots Svelte)** — un frontend porteur de dérive migre là (règle de sobriété, phase 2) |
 | **Migrations** | portables et réversibles ? | SQL inline, `ALTER` à la main, pas de `down.sql`, `datetime('now')` / `AUTO_INCREMENT` non portables |
 | **Tests** | les 4 couches existent ? | pas de tests, ou des tests E2E seuls (le sommet de la pyramide sans socle) |
 | **Secrets** | dans le dépôt ? | mot de passe en clair dans la config commitée, `.env` commité |
@@ -52,10 +53,13 @@ On extrait **une couche à la fois**, dans l'ordre de la dépendance (du plus pu
                        (tests Intégration 4 classes + harnais contrat)
 4. Le contrat       — matérialiser l'OpenAPI : annotation, client généré,
                        désérialisation stricte (les 4 éléments de contrat-api.md)
-5. Le frontend      — le découpler : consommer SEULEMENT le client généré
+5. Le frontend D1   — le découpler : consommer SEULEMENT le client généré
                        (supprimer les fetch/axios/URL en dur), poser le parcours
                         de référence partagé + E2E (gate) + preuve de valeur
-                        cadencée (documentation-vivante.md)
+                         cadencée (documentation-vivante.md)
+6. Le frontend D2   — CONDITIONNEL (règle de sobriété) : si le front porte la
+                       dérive, le migrer îlots-first (Astro + îlots Svelte),
+                       régression visuelle (golden) incluse
 ```
 
 **Le découplage du frontend (étape 5) est un mini-strangler.** Le projet
@@ -76,6 +80,29 @@ des `fetch` inline non typés, des endpoints dupliqués (le piège OpenMajor,
 
 Un invariant verrouille le résultat : aucun `fetch`/`axios`/URL d'endpoint en
 dur hors du client généré — un appel réseau à la main = rouge.
+
+**Le rendu du frontend (étape 6) est un mini-strangler à part, conditionnel.**
+L'étape 5 prouve que le front **consomme le contrat** ; l'étape 6 décide de
+**comment le front se rend**. La destination est **îlots-first** (Astro pour
+le squelette + les pages, Svelte pour les îlots interactifs) : c'est le
+rendu léger par défaut du moule, et le point d'arrivée des fronts dérivés
+(SPA monolithique, HTML généré par le serveur applicatif). La même mécanique
+que l'étape 5, mais avec un harnais de plus :
+
+1. **Golden d'apparence** : capturer l'apparence actuelle du périmètre
+   (screenshots de référence, **dérivés** des mêmes parcours, jamais recopiés
+   à la main). C'est la 3e harnais du rétrofit, après la caractérisation
+   (comportement) et l'E2E (correctness) : la **régression visuelle**, gate
+   de la bascule n°2.
+2. **Construire îlots-first** : l'écran en Astro + îlots Svelte, qui
+   consomme le client généré (étape 5), côte à côte avec l'ancien rendu.
+3. **Prouver l'équivalence** : E2E verts **et** régression visuelle verte
+   (les goldens comparés, tolérance définie). Les deux font foi : un E2E
+   vert ne prouve pas que l'écran ressemble à l'ancien.
+4. **Bascule n°2** (point irréversible) : les écrans sont servis en îlots-
+   first ; l'humain valide sur les deux preuves.
+5. **Supprimer l'ancien rendu** du périmètre (même règle que l'étape 5 :
+   le git est l'archive).
 
 **La règle d'or du rétrofit** : le code legacy et le nouveau code **coexistent** pendant la migration, et c'est le **traffic réel** (ou la suite de caractérisation) qui tranche lequel est bon — pas l'opinion de l'agent. Un périmètre n'est déclaré « migré » que quand :
 
@@ -108,15 +135,29 @@ Le rétrofit est fini quand le diagnostic de la phase 0 est **re-mesuré et vert
 | « La migration est finie parce que l'app tourne » | « ça marche » = conforme | La phase 4 re-mesure le diagnostic. « Ça tourne » est l'état initial — il était déjà vrai avant, et le projet n'en était pas moins dérivé. |
 | « On saute la persistance, c'est le plus long » | migrer d'abord le domaine (court) | L'ordre de la dépendance (phase 2) impose de finir une couche avant de passer : un adaptateur persistance half-migré laisse le domaine s'appuyer sur du legacy, et la pureté n'est pas prouvable. |
 | « L'E2E passé, le frontend est migré — la doc, plus tard » | un périmètre « fait » mais illisible | Le découplage (étape 5) inclut la **preuve de valeur** (parcours partagé + cadence), dérivée du test. « Plus tard » = la doc qui s'érige (`documentation-vivante.md`). |
+| « L'E2E est vert, l'écran est donc migré » (étape 6) | correctness = apparence | L'E2E prouve que **ça marche**, pas que **ça ressemble à l'ancien**. La bascule n°2 exige la **régression visuelle** (goldens) en plus : sans elle, l'utilisateur voit un écran qui marche mais qui a changé sans qu'on le sache. |
+| « Le golden, je le recopie à la main sur le nouveau rendu » | l'apparence « validée » à l'œil | Un golden recopié sur le **nouveau** rendu prouve que le nouveau est égal à lui-même. Les goldens sont **dérivés du rendu ancien** (même parcours, capture avant bascule) : c'est la référence, pas la copie. |
+| « Le front est découplé (D1 vert), donc le rendu, on le laisse » | D1 = D2 | D1 (contrat) et D2 (rendu) sont **deux dimensions distinctes** (règle de sobriété) : D1 vert ne dispense pas de **décider** D2 — soit migration îlots-first, soit ADR qui consigne la dérive acceptée. |
 
 ## Les points irréversibles — l'humain valide
 
-Comme dans le bootstrap, mais avec un ajout propre au rétrofit :
+Comme dans le bootstrap, mais le rétrofit a **deux bascules nommées**, irréversibles, validées par l'humain sur preuve :
+
+- **Bascule n°1 — backend** : les routes servent les adaptateurs (le SQL inline est retiré du périmètre), et le frontend consomme le client généré (l'ancien client à la main est supprimé du périmètre). C'est la bascule du contrat + de l'extraction ; l'humain valide sur tests 4 couches + caractérisation.
+- **Bascule n°2 — frontend** : les écrans sont servis en îlots-first, l'ancien rendu est supprimé du périmètre (étape 6). L'humain valide sur E2E verts **+ régression visuelle verte** (goldens comparés). N'existe que si la règle de sobriété a déclenché l'étape 6.
+
+Les autres points irréversibles du rétrofit :
 
 - La **suppression d'un périmètre legacy** (phase 2) : irréversible en pratique (le trafic y est passé) → l'humain valide, sur la preuve (tests 4 couches + caractérisation).
-- Le **basculement du contrat** (l'ancien client à la main → le client généré) : rupture potentielle pour les consommateurs externes → point irréversible, ADR + validation.
 - La **suppression d'une migration legacy** ou sa réversion en production : le point irréversible propre à l'état (`archetypes.md` § stateful).
 - Le **passage à l'architecture engagée** (phase 4) : l'humain valide sur la grille de diagnostic revenue verte.
+
+## La règle de sobriété — D1 est obligatoire, D2 l'est au poids de la dérive
+
+Le frontend a deux dimensions, et elles ne pèsent pas le même :
+
+- **D1 (contrat)** — le front **consomme le contrat** (client généré, pas de `fetch`/URL en dur). **Toujours obligatoire** : c'est le découplage, c'est ce qui rend le périmètre répondable. Aucun ADR ne dispense D1.
+- **D2 (rendu)** — le front se rend **îlots-first** (Astro + Svelte). **Conditionnelle** : elle est obligatoire **si le front porte la dérive** (rendu applicatif côté back, SPA monolithique, code mort significatif — les signaux de la phase 0). **Sinon, c'est un point de décision humain** : l'humain décide de migrer le rendu ou de le laisser en l'état, et la décision est **consignée en ADR** (avec le poids de la dérive mesuré). On ne migre pas le rendu « pour la propreté » : sobriété.
 
 ## Conditionnement
 
@@ -130,9 +171,10 @@ Comme dans le bootstrap, mais avec un ajout propre au rétrofit :
 2. Le harnais est en place **avant** toute extraction (phase 1 verte).
 3. Chaque périmètre est migré par la séquence rouge/vert/bleu, ses 4 classes de tests sont vertes dans les 4 couches, et la caractérisation prouve le comportement inchangé.
 4. Le harnais contrat est matérialisé (les 4 éléments de `contrat-api.md`).
-5. **Le frontend est découplé** (consomme le client généré, pas de `fetch`/URL en dur) **et la preuve de valeur est dérivée** (parcours partagé + cadence — `documentation-vivante.md`).
-6. Les gates plancher bloquent en CI, la protection de branche est active, l'`AGENTS.md` engage l'architecture.
-7. Le diagnostic re-mesuré (phase 4) est **vert sur toutes les dimensions** — et l'humain a validé.
+5. **Le frontend D1 est découplé** (consomme le client généré, pas de `fetch`/URL en dur) **et la preuve de valeur est dérivée** (parcours partagé + cadence — `documentation-vivante.md`).
+6. **Le frontend D2 est tranché** (règle de sobriété) : soit la migration îlots-first est prouvée (E2E + régression visuelle, bascule n°2 validée, ancien rendu supprimé), soit un ADR consigne la dérive de rendu acceptée.
+7. Les gates plancher bloquent en CI, la protection de branche est active, l'`AGENTS.md` engage l'architecture.
+8. Le diagnostic re-mesuré (phase 4) est **vert sur toutes les dimensions** — et l'humain a validé.
 
 ---
 

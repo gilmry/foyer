@@ -58,7 +58,7 @@ Le CRUD de référence du kit (ex. Contact) est un **sparring partner**, pas du 
 
 Si l'archétype est **full-stack**, le bootstrap **complète** le socle avec le frontend — et le kit le démontre (`frontend/`). La séquence :
 
-1. **Le frontend statique, découplé du backend.** Le frontend (ex. Vite + TS) ne parle à l'API **qu'à travers le client généré** (`contrat-api.md` élément 2) : aucun `fetch`/`axios`/URL d'endpoint en dur. Un invariant le verrouille (un appel réseau à la main hors `src/generated/` = rouge). C'est le **second pilier anti-drift**, en regard du premier (le contrat).
+1. **Le frontend îlots-first, découplé du backend.** Le frontend se rend **îlots-first** (Astro pour le squelette et les pages, îlots Svelte pour l'interactivité) et ne parle à l'API **qu'à travers le client généré** (`contrat-api.md` élément 2) : aucun `fetch`/`axios`/URL d'endpoint en dur. Un invariant le verrouille (un appel réseau à la main hors `src/generated/` = rouge). C'est le **second pilier anti-drift**, en regard du premier (le contrat). C'est le **rendu par défaut du moule** : un projet qui s'en éloigne (SPA monolithique, rendu applicatif côté back) se met en dérive D2 et doit justifier par ADR (`migration-projet-existant.md`, règle de sobriété).
 2. **Le parcours de référence (source de vérité partagée).** Un `journeys/` contient le parcours de référence (étapes id + description en langage métier + action + assertion). C'est **l'objet unique** consommé par les deux harnais — pas une copie dans le test et une dans la doc.
 3. **Les deux harnais sur ce parcours** (`documentation-vivante.md`) :
    - **E2E** (gate, bloquant) : rejoue le parcours **à la vitesse**.

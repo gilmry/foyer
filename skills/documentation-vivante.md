@@ -20,6 +20,26 @@ Le problème n'est pas de *plus* de tests : c'est que le test et la preuve de va
 
 C'est **`contrat-api.md`** en miroir : là, on empêche la dérive du *contrat* (correctness) ; ici, on produit et on **garantit** la *valeur lisible* du parcours. Les deux ne se remplacent pas — un parcours peut être *correct* (test vert) et *incompréhensible* (aucune preuve de valeur), et inversement.
 
+## Le troisième harnais — la régression visuelle (la dimension D2)
+
+Les deux harnais ci-dessus répondent de **l'existence** de l'écran (ça marche, ça se voit). Ils ne répondent pas de **l'invariance** de l'apparence — et c'est exactement ce que la **bascule de rendu D2** (îlots-first, `migration-projet-existant.md` étape 6) exige de prouver : l'écran migré doit **ressembler à l'écran qu'il remplace**.
+
+Le **troisième harnais** consomme **le même parcours partagé** et ajoute une lecture :
+
+| | **Régression visuelle** (apparence) |
+|---|---|
+| Rejoue le parcours | à la vitesse, **avant et après** la bascule D2 |
+| Rend | **goldens** (captures de référence) + comparaison (diff, tolérance définie) |
+| Bloquent le build ? | **oui** — c'est la gate de la bascule n°2 |
+| Répond à | « l'écran migré **ressemble**-il à l'ancien ? » |
+
+Deux règles, sinon le harnais se délite :
+
+1. **Les goldens sont dérivés du rendu ancien** — capturés sur le parcours partagé **avant** la bascule, jamais recopiés à la main, jamais « recalés » sur le nouveau rendu (un golden dérivé du nouveau prouve que le nouveau est égal à lui-même).
+2. **L'invariant anti-recopie** — comme l'invariant anti-dette (4) : le harnais visuel **doit** importer le parcours partagé, et la référence doit être une **capture**, pas un artefact dessiné — sinon le harnais ne prouve plus rien.
+
+Ainsi le parcours partagé rejoué une seule fois porte **trois lectures** : correctness (E2E), valeur (cadence), apparence (goldens) — la même anti-dérive que `contrat-api.md`, appliquée au rendu.
+
 ## Ce qui rend une preuve de valeur réelle (et pas décorative)
 
 Quatre éléments, **non optionnels**, à poser comme le harnais de contrat (pas en GO-forward) :
@@ -52,7 +72,7 @@ Deux conséquences opérationnelles : il n'y a **pas de phase** « il faut maint
 
 ## Conditionnement par archétype
 
-- **Full-stack** — les quatre éléments s'appliquent intégralement : c'est la combinaison que le kit démontre (`frontend/journeys/` → `frontend/e2e/` + `frontend/docs-living/`).
+- **Full-stack** — les quatre éléments s'appliquent intégralement : c'est la combinaison que le kit démontre (`frontend/journeys/` → `frontend/e2e/` + `frontend/docs-living/`). La **régression visuelle** (troisième harnais) s'ajoute dès qu'une **bascule D2** (îlots-first) est engagée : c'est sa gate.
 - **API-first** — il n'y a **pas de frontend à filmer** : la preuve de valeur n'est pas un parcours filmé, elle est le **contrat matérialisé** (les contract tests de `contrat-api.md`) qui prouve, pour un consommateur, ce que l'API vaut. Le skill se réduit à « la valeur lisible = le contrat », mais l'idée (valeur objectivée, pas décrite) reste.
 - **Stateless** — pas de parcours UI ; la preuve de valeur est la doc des fonctions/contrats, le cadence ne s'applique pas.
 - **Petit projet (1-3 BC)** — même logique, un seul parcours de référence suffit souvent ; la cadence et l'harnais séparé restent (le coût de la preuve de valeur dérivée est quasi nul, celui de la doc érigée est asymétrique).

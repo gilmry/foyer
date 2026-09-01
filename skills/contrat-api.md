@@ -29,6 +29,8 @@ Pour toute facette **full-stack** (et *API-first*), les quatre éléments suivan
 
 Les quatre ensemble ferment la boucle : (1) empêche d'oublier d'annoter, (2) empêche la duplication manuelle, (3) transforme un drift silencieux en échec bruyant, (4) empêche la régression de passer inaperçue jusqu'au merge.
 
+**Ce skill ne couvre que D1 (la dimension contrat).** Un frontend découplé (client généré, aucun `fetch`/URL en dur) n'est **pas** un frontend *rendu* conformément au moule : la dimension **D2 (rendu — îlots-first, Astro + îlots Svelte)** est une décision à part, tranchée par la **règle de sobriété** de `migration-projet-existant.md` (obligatoire si le front porte la dérive, sinon ADR) et posée par défaut dans `bootstrap-nouveau-projet.md` (geste 5). D1 sans D2 tranchée = un front qui consomme le contrat mais dont l'apparence n'est ni prouvée ni engagée.
+
 ## Où ça se rattache dans BMAD
 
 - **Product Manager (A2)** — PRD §9bis n'est pas satisfait par de la prose décrivant des conventions. Doit nommer le mécanisme concret : outil d'annotation, emplacement du fichier spec généré, outil de codegen. Une section §9bis purement descriptive est un signal à remonter, pas une case cochée.
@@ -39,7 +41,7 @@ Les quatre ensemble ferment la boucle : (1) empêche d'oublier d'annoter, (2) em
 ## Conditionnement
 
 - **Stateless / API-first sans frontend propre** : le contrat est déjà `✓` premier rang (`archetypes.md`), ce skill s'applique presque tel quel (moins l'élément 2, pas de client généré si aucun frontend interne au périmètre).
-- **Full-stack** : les quatre éléments s'appliquent intégralement — c'est la combinaison qui a fait défaut chez OpenMajor.
+- **Full-stack** : les quatre éléments s'appliquent intégralement — c'est la combinaison qui a fait défaut chez OpenMajor. Ils couvrent **D1** ; la dimension **D2 (rendu)** se décide en regard de la règle de sobriété (`migration-projet-existant.md`) : îlots-first par défaut, ADR sinon.
 - **Petit projet (Micro/Petit, 1-3 BC)** : l'investissement en outillage codegen peut sembler disproportionné au premier coup d'œil — il ne l'est pas dès que le projet dépasse une poignée d'endpoints, precisément parce que le coût de la dérive est asymétrique (invisible jusqu'au NO-GO). Ne pas sauter les 4 éléments sous prétexte de petite taille ; en réduire éventuellement le formalisme de l'ADR, pas le mécanisme lui-même.
 
 ---

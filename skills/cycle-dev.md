@@ -45,7 +45,7 @@ Tu adaptes `@edge`, le harnais et le `@security` selon l'archétype :
 - **stateless** — `@edge` = property-based sur les entrées ; **pas de harnais DB** ; tests d'**idempotence/pureté**.
 - **stateful** — `@edge` = concurrence et transitions d'état ; **intégration DB** en phase bleue.
 - **API-first** — BDD **au niveau contrat** ; **contract tests** ; `@security` = abus de contrat, autorisation, versioning.
-- **full-stack** — **E2E cross-stack** en bleu (gate) **+ la preuve de valeur** : le parcours de référence rejoué en cadence 1 action/1s (galerie + vidéo, rapport non bloquant) — voir `documentation-vivante.md` ; `@security` inclut CSP/XSS sur les îlots Svelte.
+- **full-stack** — **E2E cross-stack** en bleu (gate) **+ la preuve de valeur** : le parcours de référence rejoué en cadence 1 action/1s (galerie + vidéo, rapport non bloquant) **+ la régression visuelle** (goldens du même parcours, bloquante si une bascule de rendu D2 îlots-first est engagée — `migration-projet-existant.md`) — voir `documentation-vivante.md` ; `@security` inclut CSP/XSS sur les îlots Svelte.
 
 ## La condition de sortie
 
