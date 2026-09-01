@@ -90,6 +90,7 @@ Créer la production, poser la protection de branche, provisionner un datastore,
 
 - **Archétype** — voir le geste 1. Le kit se **réduit** (stateless : persistance et migrations sortent) ou se **complète** (full-stack : frontend + E2E Playwright + unit front), mais l'ordre ne change jamais : **harnais d'abord, métier ensuite**.
 - **Taille** — même pour un Micro (1-3 BC), les 4 éléments du contrat et les 4 couches restent : le coût de la dérive est asymétrique, invisible jusqu'au NO-GO. On peut réduire le *formalisme* (un ADR d'une page), jamais le *mécanisme*.
+- **Stack** — la stack du kit (Symfony + ApiPlatform + Doctrine) **fait partie de la cible** : le harnais contrat et les migrations automatiques en sont mécanisés, et c'est le point d'arrivée de tout projet (bootstrap **et** rétrofit, `migration-projet-existant.md`). Un brief qui l'exclut (contrainte d'hébergement, toolchain existante) est un **arbitrage produit humain**, consigné en ADR — avec le résidu de risque mesuré (`contrat-api.md` § stack sans écosystème d'annotation) ; ce n'est pas un jugement de sobriété de l'agent.
 
 ## Definition of Done du bootstrap
 
