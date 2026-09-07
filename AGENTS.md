@@ -9,6 +9,24 @@ This is a framework for AI agents in software development, derived from Gilles M
 - `Boucle-de-retroaction.md`: Core feedback loop
 - `skills/`: Tools for objective evaluation (cycle-dev, gates, convergence-iac, adoption, etc.)
 - `personas/`: Roles that hold the feedback loop (chef-de-projet, scrum-master, lead-developer, etc.)
+- `pilote/`: **Agentic driver** — makes the method executable by agents across heterogeneous tools.
+
+## Pilote — driving the method with agents (start here)
+
+To run a project with agents: **clone this repo, then hand `pilote/BOOTSTRAP.md` to an AI agent.**
+It bootstraps, asks what you want to do — **Q0: new project / retrofit / release** — creates a
+shared **state register**, and drives the journey. Portable *multiagent*: one open core (Markdown +
+scripts), thin per-tool adapters. Devs run it on Claude Code, POs on ChatGPT/Qwen, both on the
+**same committed state register**.
+
+- Launcher: `pilote/BOOTSTRAP.md` · Dispatcher: `pilote/parcours.md`
+- Shared state (PO↔dev source of truth): `pilote/state.template.md`
+- Irreversible-point arbitration (modality, never destination): `pilote/arbitrage.md`
+- Gate CLI contract (stable names, exit codes): `pilote/gates/README.md`
+- Adapters: `pilote/adapters/{claude,generic,opencode}/`
+
+The pilote does not reinvent anything: it **sequences** the existing `skills/`, `personas/` and
+`bmad/` into three journeys with a state register and arbitration gates. See `pilote/README.md`.
 
 ## Workflow
 
