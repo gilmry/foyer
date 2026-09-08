@@ -40,13 +40,14 @@ Tester l'e2e sur Doctrine : `TODO_PERSISTENCE=doctrine bash harness/e2e-smoke.sh
 - `src/Http/` + `src/Application.php` — `Request`/`Response`, routeur REST. **Seule couche qui
   traduit les exceptions du domaine en codes HTTP** (400 validation, 404 introuvable).
 - `frontend-todos/` — îlot Svelte 5. **N'écrit jamais d'URL d'endpoint en dur** : passe par le
-  client généré `public/generated/todos.client.js`.
+  client **typé** généré `frontend-todos/src/generated/api.ts`.
 
 ## Contrat API — matérialisé, pas décrit
 
-Source de vérité : `openapi/todos.openapi.json`. Le client JS est **généré** par
-`harness/codegen-todos-client.php` → `public/generated/todos.client.js`. **Ne jamais éditer le
-client à la main** : le gate `contrat` (C1 dans `verify.php`) échoue si le fichier diverge de la spec.
+Source de vérité : `openapi/todos.openapi.json`. Le client **TypeScript typé** est **généré** par
+`frontend-todos/scripts/gen-api.mjs` → `frontend-todos/src/generated/api.ts` (au `npm run prebuild`),
+bundlé dans l'îlot. **Ne jamais éditer `api.ts` à la main** : le gate `contrat`
+(`harness/run-contract.sh`) le régénère et échoue s'il diverge du contrat.
 
 ## Commandes (gates — noms stables, exit 0 = 🟢)
 
@@ -58,7 +59,7 @@ Aucun PHP local requis : tout passe par Docker, images **publiques** construites
 |---|---|---|
 | `verify` / `plancher` (G1/G2/H1/C1) | `bash harness/run-verify.sh` | non |
 | `unit` + `bdd` (domaine + application) | `bash harness/run-phpunit.sh` | non |
-| `contrat` (codegen client) | `docker run --rm -v "$PWD":/app -w /app php:8.3-cli php harness/codegen-todos-client.php` | non |
+| `contrat` (client typé api.ts à jour) | `bash harness/run-contract.sh` | non |
 | `integration` (PDO réel) | `bash harness/run-integration.sh` | **oui** |
 | `e2e` (smoke HTTP) | `bash harness/e2e-smoke.sh` | **oui** |
 | `visuel` (goldens Chromium) | `bash harness/run-visual.sh` (`VISUAL_MODE=capture` pour régénérer) | **oui** |

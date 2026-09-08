@@ -1,12 +1,10 @@
 <script>
   import { onMount } from 'svelte';
   import { createBrowserTransport } from './transport';
+  import { createTodosClient } from './generated/api';
 
-  // Client généré (D1) = seule porte d'accès à l'API todos.
-  const client =
-    typeof window !== 'undefined' && typeof window.createTodosClient === 'function'
-      ? window.createTodosClient(createBrowserTransport())
-      : null;
+  // Client généré et TYPÉ (issu d'OpenAPI) = seule porte d'accès à l'API todos.
+  const client = createTodosClient(createBrowserTransport());
 
   let todos = $state([]);
   let title = $state('');

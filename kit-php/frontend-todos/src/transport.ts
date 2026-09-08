@@ -1,7 +1,6 @@
 // Couche réseau de l'îlot : fetch + gestion d'erreur. Aucune URL d'endpoint en dur ici —
-// les chemins viennent du client généré (public/generated/todos.client.js).
-
-export type Transport = (url: string, options?: RequestInit) => Promise<unknown>;
+// les chemins et les types viennent du client généré (src/generated/api.ts, issu d'OpenAPI).
+import type { Transport } from './generated/api';
 
 export function createBrowserTransport(): Transport {
   return async (url, options = {}) => {

@@ -54,9 +54,9 @@ au vert quel que soit l'adaptateur sélectionné (ex. `integration` rejoué sur 
 
 ## Backlog (à faire)
 
-- **Client `api.ts` typé** — aujourd'hui les kits génèrent un client JS (`public/generated/todos.client.js`)
-  depuis OpenAPI. À faire dans **tous les kits** : générer un client **TypeScript typé** (`api.ts`,
-  types issus des schémas OpenAPI) consommé par le front Astro/Svelte, en remplacement/complément du JS.
+- ✅ **Client `api.ts` typé** — fait pour `kit-php` et `kit-fastapi` : `frontend-todos/scripts/gen-api.mjs`
+  génère `frontend-todos/src/generated/api.ts` (interfaces des schémas OpenAPI + `createTodosClient`
+  typé), bundlé dans l'îlot ; gate `contrat` (`run-contract.sh`) anti-drift. À reprendre dans `kit-actix`.
 - **kit-php · adaptateur HTTP API Platform** — second choix `TODO_HTTP=vanilla|apiplatform` (Symfony +
   API Platform via Composer), à côté du routeur vanilla. Persistance déjà au choix (CQRS ↔ Doctrine).
 - **kit-fastapi · adaptateur HTTP alternatif** — un second choix (ex. ASGI nu / Starlette) pour prouver

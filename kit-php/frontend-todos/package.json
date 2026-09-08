@@ -3,6 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "prebuild": "node scripts/gen-api.mjs",
+    "gen:api": "node scripts/gen-api.mjs",
     "build": "vite build"
   },
   "devDependencies": {

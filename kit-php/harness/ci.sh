@@ -8,11 +8,11 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 run() { echo ""; echo "▶ $*"; "$@"; }
 
-# 1. Contrat : le client généré doit être à jour (regénère puis verify vérifie l'anti-drift).
-run docker run --rm -v "$ROOT":/app -w /app php:8.3-cli php harness/codegen-todos-client.php
-
-# 2. Plancher + structurel (G1/G2/H1/C1).
+# 1. Plancher + structurel (G1/G2/H1 + C1 contrat présent).
 run bash "$ROOT/harness/run-verify.sh"
+
+# 2. Contrat : client TYPÉ api.ts à jour vs OpenAPI (anti-drift, image node).
+run bash "$ROOT/harness/run-contract.sh"
 
 # 3. Tests domaine + application (sans DB).
 run bash "$ROOT/harness/run-phpunit.sh"

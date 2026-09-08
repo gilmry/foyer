@@ -22,8 +22,8 @@ Domain (pur)  →  Application (use-cases + ports)  →  Adapter (HTTP / persist
 - `app/http/api.py` — **adaptateur HTTP FastAPI** : routes → use-cases, exceptions domaine → codes
   HTTP (400/404), désérialisation stricte (Pydantic `extra='forbid'`). C'est le SEUL fichier qui
   connaît FastAPI.
-- `frontend-todos/` — îlot Svelte ; **n'écrit jamais d'URL en dur**, passe par le client généré
-  `public/generated/todos.client.js` (issu de `openapi/todos.openapi.json`, lui-même dumpé de FastAPI).
+- `frontend-todos/` — îlot Svelte ; **n'écrit jamais d'URL en dur**, passe par le client **typé**
+  `frontend-todos/src/generated/api.ts` (issu de `openapi/todos.openapi.json`, lui-même dumpé de FastAPI).
 
 ## Adaptateurs enfichables (le cœur ne change jamais)
 
@@ -57,8 +57,9 @@ Tester l'e2e sur l'ORM : `TODO_PERSISTENCE=orm bash harness/e2e-smoke.sh`.
 ## Contrat — matérialisé, pas décrit
 
 FastAPI **est** la source du contrat. `harness/dump_openapi.py` écrit `openapi/todos.openapi.json` ;
-`harness/codegen_client.py` en génère le client JS. Le gate `verify` (C1) échoue si le client
-diverge du contrat. **Ne jamais éditer le client à la main.**
+`frontend-todos/scripts/gen-api.mjs` en génère le client **TypeScript typé** `api.ts`. Le gate
+`verify` (C1) vérifie que le contrat committé == l'app ; le gate `contrat` (`run-contract.sh`)
+vérifie qu'`api.ts` est à jour vs le contrat. **Ne jamais éditer `api.ts` à la main.**
 
 ## Règles de l'agent
 - Respecter l'ordre des couches ; jamais d'infra dans domaine/application (gate H1).

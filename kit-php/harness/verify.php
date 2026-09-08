@@ -6,7 +6,7 @@ declare(strict_types=1);
  * Gate `verify` / `plancher` — invariants structurels (exit 0 = 🟢, ≠0 = 🔴).
  * Exécuté via Docker : bash harness/run-verify.sh (ou docker run … php harness/verify.php).
  * Checks : G1 (secrets hors dépôt), G2 (migrations réversibles + SQL portable),
- *          H1 (pureté hexagonale Domain/Application), C1 (contrat client à jour).
+ *          H1 (pureté hexagonale Domain/Application), C1 (contrat OpenAPI présent).
  */
 $root = dirname(__DIR__);
 $failures = [];
@@ -48,20 +48,10 @@ foreach ($pureDirs as $dir) {
     }
 }
 
-/** C1 — le client généré est à jour vs la spec (anti-drift). */
-$client = $root . '/public/generated/todos.client.js';
-if (!is_file($client)) {
-    $failures[] = 'C1: client généré absent (lancer harness/codegen-todos-client.php).';
-} else {
-    $before = (string) file_get_contents($client);
-    $tmp = tempnam(sys_get_temp_dir(), 'todosclient');
-    putenv('TODOS_CLIENT_OUT=' . $tmp);
-    require $root . '/harness/codegen-todos-client.php';
-    $after = (string) file_get_contents($tmp);
-    @unlink($tmp);
-    if (trim($before) !== trim($after)) {
-        $failures[] = 'C1: client généré désynchronisé de la spec OpenAPI (regénérer).';
-    }
+/** C1 — le contrat OpenAPI (source de vérité) est présent. La fraîcheur du client TYPÉ api.ts
+ *  vs OpenAPI est vérifiée par le gate `contrat` (harness/run-contract.sh, image node). */
+if (!is_file($root . '/openapi/todos.openapi.json')) {
+    $failures[] = 'C1: openapi/todos.openapi.json absent (contrat matérialisé manquant).';
 }
 
 if ($failures === []) {
