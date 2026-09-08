@@ -6,14 +6,31 @@
 > métier voulu. Tous les kits partagent la **même loi** (ordre des couches, contrat matérialisé,
 > triple harnais E2E + visuel + doc vivante) ; seules la **pile** et les **adaptateurs** changent.
 
+## Le principe : tout adaptateur est un CHOIX enfichable
+
+Le cœur (Domaine + Application) est **pur** et **stable** ; il ne connaît ni le framework HTTP ni
+la techno de stockage. Chaque **port** admet donc **plusieurs adaptateurs interchangeables**, que
+l'on sélectionne par configuration **sans toucher une ligne de métier** :
+
+- **Adaptateur HTTP** — choix du framework d'exposition : `FastAPI`, `vanilla` (routeur maison),
+  `API Platform`, `Actix`, `Flask`… Le port, ce sont les **use-cases** ; le framework n'est qu'un
+  traducteur requête↔use-case.
+- **Adaptateur de persistance** — choix du paradigme de stockage : **CQRS SQL pur** (commandes/
+  requêtes séparées, migrations `up`/`down`) **ou ORM** (SQLAlchemy, Doctrine…). Même port
+  `TodoRepository`, implémentations permutables. Choix tracé en **ADR** (`bmad/archetypes.md`),
+  jamais une question au PO non-dev (défaut annoncé, `pilote/defaults.md`).
+
+Chaque kit **livre au moins deux choix par adaptateur** et le prouve : la même suite de gates passe
+au vert quel que soit l'adaptateur sélectionné (ex. `integration` rejoué sur CQRS **et** ORM).
+
 ## Invariants communs à tous les kits (la partie qui ne change jamais)
 
 - **Architecture hexagonale** : `Domain (pur) → Application (use-cases + ports) → Adapter → Http → Frontend`.
   Le domaine et l'application ne connaissent **aucune** techno (ni ORM, ni framework, ni SQL).
-- **Adaptateur HTTP soigné** : routeur explicite, désérialisation stricte, exceptions du domaine
-  traduites en codes HTTP (400/404/409…), jamais de logique métier dans le routeur.
-- **Adaptateur de persistance soigné** : un **port** de repository côté domaine, une implémentation
-  côté adapter ; migrations **réversibles** (`up`/`down`), SQL portable, mapping ligne↔entité isolé.
+- **Adaptateur HTTP soigné** : désérialisation stricte, exceptions du domaine traduites en codes
+  HTTP (400/404/409…), jamais de logique métier dans le routeur — **quel que soit le framework**.
+- **Adaptateur de persistance soigné** : un **port** de repository côté domaine, ≥ 2 implémentations
+  côté adapter (CQRS SQL ↔ ORM) ; migrations **réversibles** (`up`/`down`), mapping ligne↔entité isolé.
 - **Contrat API matérialisé** : OpenAPI = source de vérité → **client généré** consommé par le
   front (jamais d'URL en dur), contract tests (gate `contrat` anti-drift).
 - **Frontend îlots-first** : Astro pour le squelette + îlots Svelte pour l'interactivité, découplés
@@ -24,15 +41,16 @@
 
 ## Kits de la famille
 
-| Kit | Front | Back | Persistance | Adaptateurs clés | Statut |
+| Kit | Front | Adaptateur HTTP (choix) | Persistance (choix) | DB | Statut |
 |---|---|---|---|---|---|
-| **`kit-php`** | Astro + Svelte | **PHP 8.3 vanilla** | **MySQL** (PDO) | `PdoTodoRepository`, routeur PHP, codegen JS | ✅ **disponible** (ce dépôt) |
-| `kit-fastapi` | Astro + Svelte | **FastAPI** (Python) | **PostgreSQL** | repo SQLAlchemy/SQL pur, routeur FastAPI, OpenAPI natif | 🔜 à venir |
-| `kit-actix` | Astro + Svelte | **Actix** (Rust) | **PostgreSQL** | repo `sqlx`, extractors Actix, OpenAPI généré | 🔜 à venir |
+| **`kit-fastapi`** | Astro + Svelte | **FastAPI** (vanilla ASGI à venir) | **CQRS SQL** ↔ **ORM SQLAlchemy** | PostgreSQL | ✅ **disponible** |
+| **`kit-php`** | Astro + Svelte | **vanilla PHP** ↔ **API Platform** (en cours) | **CQRS SQL** ↔ **Doctrine** (en cours) | MySQL | ✅ base dispo, choix en cours |
+| `kit-actix` | Astro + Svelte | **Actix** (Rust) | **CQRS SQL** ↔ ORM (`sea-orm`) | PostgreSQL | 🔜 à venir |
 
-> Chaque futur kit **réimplémente uniquement les adaptateurs** (Http + persistance) et le point
-> d'entrée ; le Domaine et l'Application restent structurés à l'identique. Un même parcours de
-> référence (créer → lister → basculer → supprimer une entité) sert de test d'acceptation du kit.
+> Chaque kit **réimplémente uniquement les adaptateurs** (HTTP + persistance) et le point d'entrée ;
+> le Domaine et l'Application restent structurés à l'identique. Un même parcours de référence
+> (créer → lister → basculer → supprimer une entité) sert de test d'acceptation du kit, rejoué
+> **pour chaque combinaison d'adaptateurs**.
 
 ## Choix du kit par le pilote (sans friction pour le PO)
 

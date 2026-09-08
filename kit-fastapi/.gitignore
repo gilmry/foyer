@@ -1,0 +1,19 @@
+# Config locale avec secrets — jamais versionnée (gate plancher G1).
+/app/config_local.py
+
+# Caches Python.
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Dépendances front / harnais (réinstallables).
+/frontend-todos/node_modules/
+/harness/visual/node_modules/
+/harness/demo/node_modules
+
+# Fichiers de vérification/temporaires du contrat.
+/public/generated/.todos.client.check.js
+
+# Sorties du harnais visuel (les goldens sont versionnés).
+/harness/visual/test-results/
+/harness/demo/vitrine/videos/apercu.png
