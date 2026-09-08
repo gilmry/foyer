@@ -35,8 +35,18 @@ Le gate `integration` rejoue le parcours sur **les deux** (12 assertions). Choix
 (`bmad/archetypes.md`), pas une question au PO (défaut annoncé, `pilote/defaults.md`).
 Tester l'e2e sur Doctrine : `TODO_PERSISTENCE=doctrine bash harness/e2e-smoke.sh`.
 
-> Adaptateur HTTP : `vanilla` (routeur maison) aujourd'hui ; **API Platform** à venir comme second
-> choix (`TODO_HTTP=vanilla|apiplatform`), cf. `../KITS.md`.
+### HTTP — choix enfichable (`TODO_HTTP`)
+
+Même parcours, deux adaptateurs HTTP permutables (`api/index.php` route selon `TODO_HTTP`) :
+
+- `vanilla` (défaut) : routeur maison (`src/Application.php`), contrat `{items:[…]}`, DELETE→200.
+  Aucun Composer requis. Gate : `bash harness/e2e-smoke.sh`.
+- `apiplatform` : **API Platform** (Symfony) — ressource DTO + **State Provider/Processor** délégant
+  aux **mêmes use-cases** (`src/Http/ApiPlatform/`). Conventions propres à API Platform (collection =
+  tableau JSON, DELETE→204). Nécessite `composer install`. Gate : `bash harness/e2e-apiplatform.sh`.
+
+Le domaine et l'application ne changent pas d'un adaptateur HTTP à l'autre — seule la traduction
+requête↔use-case change. Choix = point d'ADR, pas une question au PO.
 - `src/Http/` + `src/Application.php` — `Request`/`Response`, routeur REST. **Seule couche qui
   traduit les exceptions du domaine en codes HTTP** (400 validation, 404 introuvable).
 - `frontend-todos/` — îlot Svelte 5. **N'écrit jamais d'URL d'endpoint en dur** : passe par le

@@ -44,7 +44,7 @@ au vert quel que soit l'adaptateur sélectionné (ex. `integration` rejoué sur 
 | Kit | Front | Adaptateur HTTP (choix) | Persistance (choix) | DB | Statut |
 |---|---|---|---|---|---|
 | **`kit-fastapi`** | Astro + Svelte | **FastAPI** (vanilla ASGI à venir) | **CQRS SQL** ↔ **ORM SQLAlchemy** | PostgreSQL | ✅ **disponible** |
-| **`kit-php`** | Astro + Svelte | **vanilla PHP** (API Platform à venir) | **CQRS SQL** ↔ **Doctrine** ✅ | MySQL | ✅ persistance au choix ; HTTP API Platform en cours |
+| **`kit-php`** | Astro + Svelte | **vanilla PHP ↔ API Platform** ✅ | **CQRS SQL** ↔ **Doctrine** ✅ | MySQL | ✅ **HTTP et persistance au choix** · CI verte |
 | **`kit-actix`** | Astro + Svelte | **Actix** (Rust) | **CQRS SQL** (`sqlx`) ✅ (ORM `sea-orm` backlog) | PostgreSQL | ✅ **disponible** · CI verte |
 
 > Chaque kit **réimplémente uniquement les adaptateurs** (HTTP + persistance) et le point d'entrée ;
@@ -57,8 +57,6 @@ au vert quel que soit l'adaptateur sélectionné (ex. `integration` rejoué sur 
 - ✅ **Client `api.ts` typé** — fait pour `kit-php` et `kit-fastapi` : `frontend-todos/scripts/gen-api.mjs`
   génère `frontend-todos/src/generated/api.ts` (interfaces des schémas OpenAPI + `createTodosClient`
   typé), bundlé dans l'îlot ; gate `contrat` (`run-contract.sh`) anti-drift. À reprendre dans `kit-actix`.
-- **kit-php · adaptateur HTTP API Platform** — second choix `TODO_HTTP=vanilla|apiplatform` (Symfony +
-  API Platform via Composer), à côté du routeur vanilla. Persistance déjà au choix (CQRS ↔ Doctrine).
 - **kit-fastapi · adaptateur HTTP alternatif** — un second choix (ex. ASGI nu / Starlette) pour prouver
   la permutabilité HTTP comme pour la persistance.
 - **`kit-actix` · second adaptateur de persistance ORM** — l'adaptateur `sqlx` CQRS est fait ✅ ;

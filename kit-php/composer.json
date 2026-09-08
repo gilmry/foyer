@@ -6,7 +6,10 @@
         "php": ">=8.3",
         "doctrine/orm": "^3.3",
         "doctrine/dbal": "^4.2",
-        "symfony/cache": "^7.2"
+        "symfony/cache": "^7.2",
+        "api-platform/core": "^4.3",
+        "symfony/framework-bundle": "^7.2",
+        "symfony/runtime": "^7.2"
     },
     "autoload": {
         "psr-4": {
@@ -14,6 +17,10 @@
         }
     },
     "config": {
-        "sort-packages": true
+        "sort-packages": true,
+        "allow-plugins": {
+            "symfony/runtime": true,
+            "php-http/discovery": true
+        }
     }
 }

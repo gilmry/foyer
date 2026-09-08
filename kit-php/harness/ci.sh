@@ -21,7 +21,8 @@ run bash "$ROOT/harness/run-phpunit.sh"
 run bash "$ROOT/harness/run-integration.sh"
 
 # 5. E2E smoke HTTP (serveur PHP réel + MySQL).
-run bash "$ROOT/harness/e2e-smoke.sh"
+run bash "$ROOT/harness/e2e-smoke.sh"        # adaptateur HTTP vanilla
+run bash "$ROOT/harness/e2e-apiplatform.sh"  # adaptateur HTTP API Platform (mêmes use-cases)
 
 # 6. Régression visuelle (Chromium, goldens). VISUAL_MODE=compare par défaut.
 run bash "$ROOT/harness/run-visual.sh"
