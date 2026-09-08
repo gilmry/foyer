@@ -23,7 +23,7 @@ done
 
 # H1 — domaine + application ne dépendent d'aucune infra. On cible les VRAIS usages de crate
 # (`use X` ou `X::`), commentaires retirés — pas les noms de méthode (ex. le port `uuid()`).
-CRATES='actix_web|actix_files|actix|sqlx|serde_json|serde|chrono|uuid|tokio'
+CRATES='actix_web|actix_files|actix|sqlx|sea_orm|serde_json|serde|chrono|uuid|tokio'
 if find "$ROOT/src/domain" "$ROOT/src/application" -name '*.rs' -print0 2>/dev/null \
      | xargs -0 sed 's://.*::' 2>/dev/null \
      | grep -qE "(use[[:space:]]+($CRATES))|(($CRATES)::)"; then

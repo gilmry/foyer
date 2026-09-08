@@ -7,6 +7,9 @@ use sqlx::FromRow;
 
 use crate::domain::{Clock, IdGenerator, RepoError, Todo, TodoRepository};
 
+/// Adaptateur de persistance alternatif : ORM sea-orm (même port `TodoRepository`).
+pub mod orm;
+
 /// Horloge réelle — horodatage ISO-8601 (UTC).
 pub struct RealClock;
 impl Clock for RealClock {

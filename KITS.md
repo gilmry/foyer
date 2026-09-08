@@ -45,7 +45,7 @@ au vert quel que soit l'adaptateur sélectionné (ex. `integration` rejoué sur 
 |---|---|---|---|---|---|
 | **`kit-fastapi`** | Astro + Svelte | **FastAPI** (vanilla ASGI à venir) | **CQRS SQL** ↔ **ORM SQLAlchemy** | PostgreSQL | ✅ **disponible** |
 | **`kit-php`** | Astro + Svelte | **vanilla PHP ↔ API Platform** ✅ | **CQRS SQL** ↔ **Doctrine** ✅ | MySQL | ✅ **HTTP et persistance au choix** · CI verte |
-| **`kit-actix`** | Astro + Svelte | **Actix** (Rust) | **CQRS SQL** (`sqlx`) ✅ (ORM `sea-orm` backlog) | PostgreSQL | ✅ **disponible** · CI verte |
+| **`kit-actix`** | Astro + Svelte | **Actix** (Rust) | **CQRS SQL** (`sqlx`) ↔ **ORM** (`sea-orm`) ✅ | PostgreSQL | ✅ **persistance au choix** · CI verte |
 
 > Chaque kit **réimplémente uniquement les adaptateurs** (HTTP + persistance) et le point d'entrée ;
 > le Domaine et l'Application restent structurés à l'identique. Un même parcours de référence
@@ -54,14 +54,14 @@ au vert quel que soit l'adaptateur sélectionné (ex. `integration` rejoué sur 
 
 ## Backlog (à faire)
 
-- ✅ **Client `api.ts` typé** — fait pour `kit-php` et `kit-fastapi` : `frontend-todos/scripts/gen-api.mjs`
+- ✅ **Client `api.ts` typé** — fait pour les **trois** kits : `frontend-todos/scripts/gen-api.mjs`
   génère `frontend-todos/src/generated/api.ts` (interfaces des schémas OpenAPI + `createTodosClient`
-  typé), bundlé dans l'îlot ; gate `contrat` (`run-contract.sh`) anti-drift. À reprendre dans `kit-actix`.
+  typé), bundlé dans l'îlot ; gate `contrat` (`run-contract.sh`) anti-drift.
+- ✅ **Adaptateurs enfichables prouvés** — kit-php : HTTP vanilla↔API Platform **et** persistance
+  CQRS↔Doctrine ; kit-fastapi : persistance CQRS↔ORM ; kit-actix : persistance CQRS↔sea-orm.
 - **kit-fastapi · adaptateur HTTP alternatif** — un second choix (ex. ASGI nu / Starlette) pour prouver
-  la permutabilité HTTP comme pour la persistance.
-- **`kit-actix` · second adaptateur de persistance ORM** — l'adaptateur `sqlx` CQRS est fait ✅ ;
-  ajouter `sea-orm` comme second choix pour prouver la permutabilité, comme kit-php (CQRS↔Doctrine)
-  et kit-fastapi (CQRS↔ORM).
+  la permutabilité HTTP côté Python, comme kit-php côté PHP.
+- **kit-actix · adaptateur HTTP alternatif** — un second choix (ex. Axum) pour l'axe HTTP côté Rust.
 
 ## Choix du kit par le pilote (sans friction pour le PO)
 

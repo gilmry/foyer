@@ -44,11 +44,18 @@ Volumes de cache cargo → compilations rapides après la première.
 
 Un seul test : `bash harness/run-tests.sh` puis `cargo test toggle` en local.
 
-## Persistance — CQRS sqlx (ORM sea-orm en second choix, backlog)
+## Persistance — choix enfichable : CQRS sqlx ↔ ORM sea-orm
 
-`CqrsTodoRepository` implémente le port `TodoRepository` en SQL pur (sqlx), lecture (`query_*`) et
-écriture (`cmd_*`) séparées ; schéma par migrations up/down. Un second adaptateur ORM (`sea-orm`)
-est au backlog de `../KITS.md` pour démontrer la permutabilité comme dans kit-php/kit-fastapi.
+Deux adaptateurs du **même port** `TodoRepository`, prouvés interchangeables par le gate
+`integration` (rejoué sur les deux) :
+
+- `CqrsTodoRepository` (`src/adapter/mod.rs`) — SQL pur (sqlx), lecture (`query_*`) et écriture
+  (`cmd_*`) séparées ; schéma par migrations up/down.
+- `OrmTodoRepository` (`src/adapter/orm.rs`) — **sea-orm** : entité de persistance `todo_entity::Model`
+  mappée au domaine pur (sea-orm ne fuit pas hors de l'adaptateur).
+
+> Le serveur HTTP utilise CQRS par défaut ; la permutabilité est démontrée par `integration`
+> (dispatch statique en Rust → pas d'`async-trait` ni de `dyn` dans le domaine).
 
 ## Règles de l'agent
 - Respecter l'ordre des couches ; jamais d'infra dans domaine/application (gate H1).
