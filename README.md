@@ -48,6 +48,53 @@ Opérationnel : *Hot Reload*, et bien-sûr, *commits* & *push* 👍
 
 Le site est reconstruit et redéployé automatiquement à chaque push sur `main` (GitHub Actions → Pages). La galerie de supports se régénère seule depuis `notebooklm/` — voir `scripts/gen_supports.py` et `.github/workflows/docs.yml`.
 
+## Pour le vibe codeur : décris ton app, l'agent la construit
+
+Foyer sépare **trois choses** que rien ne t'oblige à savoir assembler toi-même :
+
+- un **cadre-harnais** (le *pilote* + les *gates* : des commandes à exit code qui objectivent le résultat),
+- un **modèle** (l'agent : Claude Code, ChatGPT, Qwen, OpenCode… peu importe),
+- un **kit** (un squelette d'app exécutable, en architecture hexagonale, prêt à piloter).
+
+### 1. Lancer le pilotage (aucune compétence de dev requise)
+
+Clone ce dépôt, puis **donne `pilote/BOOTSTRAP.md` à ton agent** et décris ton app en langage courant
+(« je veux une todo list avec une interface »). L'agent :
+
+1. lit le cœur (`pilote/parcours.md`, `pilote/defaults.md`), **sonde ton environnement** et choisit
+   le substrat (Docker si besoin) — **tu n'installes rien** ;
+2. déduit l'archétype et **choisit un kit** (cf. `KITS.md`) : ce sont des **défauts annoncés**, pas
+   des questions techniques ;
+3. construit, fait passer les **gates** couche par couche, **jusqu'à la preuve de valeur** (une vidéo
+   du parcours rejoué) — sans que tu aies à la réclamer.
+
+Tu ne réponds **qu'à des questions métier** en langage clair (« une seule liste, ou des comptes
+utilisateurs ? »). Jamais « ORM ou SQL ? » — ça, l'agent le tranche (voir `pilote/defaults.md`).
+
+### 2. Utiliser un kit directement
+
+Chaque kit **marche direct** après clone, sur images Docker **publiques** :
+
+```bash
+cd kit-fastapi          # ou kit-php
+bash docker/build.sh    # images depuis des bases publiques
+bash harness/ci.sh      # tous les gates verts, jusqu'à la preuve de valeur
+```
+
+Puis l'agent **remplace le domaine d'exemple** (`Todo`) par ton métier. Le cœur (Domaine +
+Application) est **pur** ; on ne touche qu'aux adaptateurs. → détails : **[`KITS.md`](KITS.md)**.
+
+### 3. Pourquoi c'est portable et agnostique
+
+- **Agnostique de l'agent** : le comportement est défini par des **fichiers Markdown** (`AGENTS.md`
+  pour OpenCode/Codex, `CLAUDE.md` pour Claude Code, champ `instructions` d'`opencode.json`). Dev et
+  PO travaillent sur des modèles différents mais **le même registre d'état commité**.
+- **Agnostique de la stack** : les kits partagent la **même loi hexagonale** ; seuls changent les
+  **adaptateurs, tous enfichables** — HTTP (FastAPI, vanilla, API Platform…) et persistance
+  (CQRS SQL pur ↔ ORM). On prouve l'interchangeabilité en rejouant les gates sur chaque choix.
+- **Agnostique de l'outillage** : les gates sont des **commandes à exit code** qui tournent à
+  l'identique en local et en CI, via conteneurs — pas d'installation imposée au PO.
+
 ## L'idée en une phrase
 
 Tout travail tourne sur un **même cycle** — Conception → Construction → Résultat → Évaluation → Amélioration — où un **outil externe objective** le résultat, et où l'humain garde la responsabilité (*« pourrai-je en répondre, et devant qui ? »*).
