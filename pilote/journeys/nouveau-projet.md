@@ -16,19 +16,39 @@
 - **Arbitrage** : choix d'archétype (fixe les gates conditionnels) — cf. `../arbitrage.md`.
 - **Sortie** : backlog priorisé « Agent IA Ready » + archétype engagé (inscrits au registre).
 
+## Phase B0 — Résoudre le kit (déterministe, jamais bloqué)
+
+Avant de « poser le kit », l'agent le **résout lui-même** (le PO ne fournit aucun indice) :
+
+1. **Kit fourni** dans le dépôt (`kit-*/`, chemin d'`AGENTS.md`) → l'utiliser.
+2. **Sinon, chercher un seed local** : repos frères du même archétype/pile — motifs
+   `*-retrofit-test`, `kit-*`, projets voisins exposant `src/{Domain,Application,Adapter,Http}`.
+   Un seed trouvé sert de **gabarit** (on copie le squelette, on retire ses périmètres, on garde
+   harnais/gates/codegen/îlots).
+3. **Sinon, scaffolder** un squelette minimal conforme à l'archétype (couches + harnais + un gate
+   plancher qui passe « à vide »).
+4. **Choisir le substrat** (cf. `../parcours.md` 0bis) : si le runtime du kit n'est pas installé,
+   exécuter les gates via conteneur. Inscrire kit + substrat au registre, **en une phrase au PO**
+   (défaut annoncé, cf. [`../defaults.md`](../defaults.md)), puis continuer sans attendre.
+
+> La pile concrète est un **défaut annoncé**, pas une question au PO (friction F1/F2 du dogfood n°1).
+
 ## Phase B — Bootstrap du kit (les 7 gestes)
 - **Rôle** : conception-bmad → puis extracteur-couche / frontend-ilots pour le 1er domaine.
 - **Gestes** (`../../skills/bootstrap-nouveau-projet.md`) :
-  1. Archétype retenu → poser le kit correspondant.
+  1. Kit résolu en B0 → poser le squelette correspondant.
   2. **Reproductibilité** en une commande (`../../skills/bootstrap-delivrabilite.md`).
   3. **Vérifier le kit** (gates verts « à vide ») — [`../gates/README.md`](../gates/README.md).
   4. **Premier domaine** : Domaine pur → cas d'usage → adaptateurs → contrat (ordre des couches).
-  5. **Frontend découplé + 2 harnais** : parcours de référence unique → E2E (gate) **et**
-     **doc vivante** (preuve de valeur) — [`../roles/frontend-ilots.md`](../roles/frontend-ilots.md).
+  5. **Frontend découplé + 3 harnais** : parcours de référence unique → E2E (gate) **+**
+     régression **visuelle** (goldens) **+** **doc vivante** (preuve de valeur, filmée) —
+     [`../roles/frontend-ilots.md`](../roles/frontend-ilots.md). Les trois angles vont **jusqu'au
+     bout automatiquement** (DoD de `../parcours.md`), sans que le PO les réclame.
   6. **AGENTS.md du projet** (le contrat agent) : dérivé du kit — architecture + sa loi,
-     commandes, harnais, gates, règles de l'agent (*ne jamais modifier `vendor/`*).
+     commandes de gates **dans le substrat retenu**, harnais, règles de l'agent.
   7. **Points irréversibles** posés (cf. `../arbitrage.md`).
-- **Sortie** : squelette exécutable, gates 🟢, 1re story livrée avec sa preuve de valeur.
+- **Sortie** : squelette exécutable, **tous les gates 🟢 jusqu'à la preuve de valeur** (E2E +
+  visuel + vitrine), 1re story livrée. La preuve de valeur (vitrine) est produite, pas différée.
 
 ## Phase C — Cycle-dev sur le backlog
 - **Rôle** : extracteur-couche + frontend-ilots, boucle `../../skills/cycle-dev.md` (rouge/vert/bleu).

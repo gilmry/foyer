@@ -9,6 +9,16 @@
 La destination (kit hexagonal + contrat matérialisé + îlots-first) est **fixée**. Ce qui se
 tranche : *timing, séquençage, mécanique de bascule, rollback, dérogations tracées en ADR*.
 
+### Filtre « vibe codeur » (PO non-développeur) — appliquer AVANT de poser toute question
+
+Un point ne remonte au PO **que s'il est irréversible ET formulable en langage métier**. Tout
+choix **technique réversible** est **tranché par l'agent** avec le défaut de
+[`defaults.md`](defaults.md), **annoncé en une phrase**, sans vote. En particulier :
+- **Archétype, pile, ORM/SQL, base de dev, substrat** = **défauts annoncés**, jamais des questions.
+- On reformule toujours en métier : « supprime-t-on définitivement ? » (oui) plutôt que
+  « hard delete ? » (non). Si un mot devrait être googlé par le PO, **c'est un défaut, pas une
+  question** (friction F1 du dogfood n°1).
+
 ## Protocole (à chaque point atteint)
 
 1. **Ne pas exécuter la bascule.**
@@ -32,11 +42,11 @@ tranche : *timing, séquençage, mécanique de bascule, rollback, dérogations t
 
 ## Points d'arbitrage — CONCEPTION (portes nouveau & release)
 
-| Point | Preuve / analyse | Question de modalité |
+| Point | Preuve / analyse | Traitement |
 |---|---|---|
-| **Choix d'archétype** | `bmad/archetypes.md` : stateless / stateful / api-first / full-stack + conséquences sur gates | Quel archétype engage-t-on (fixe les gates conditionnels) ? |
-| **Découpage de release** | Backlog de stories « Agent IA Ready » + chiffrage `../skills/abaque-cout-capacite.md` | Quel périmètre entre dans la release ? quel ordre ? quelle capacité ? |
-| **Report du frontend D2** | Mesure de dérive de rendu (rendu serveur ? SPA ? code mort ?) | Si pas de dérive : report accepté sur ADR — sinon migration D2 exigée |
+| **Choix d'archétype** | `bmad/archetypes.md` : inféré du brief (état persisté + écran → full-stack ; etc.) | **Défaut auto-tranché** par l'agent, annoncé en une phrase (`defaults.md`). Pas une question au PO non-dev. Ne remonte que si le **cadrage métier** est ambigu, et alors en langage clair (« une seule liste ou des comptes ? ») |
+| **Découpage de release** | Backlog de stories « Agent IA Ready » + chiffrage `../skills/abaque-cout-capacite.md` | Question **métier** au PO : quel périmètre / quel ordre (pas de jargon) |
+| **Report du frontend D2** | Mesure de dérive de rendu (rendu serveur ? SPA ? code mort ?) | **Auto-tranché** : si pas de dérive, report sur ADR — sinon migration D2. Pas de question technique au PO |
 
 ## Séquençage (arbitrage modal, pas destination)
 

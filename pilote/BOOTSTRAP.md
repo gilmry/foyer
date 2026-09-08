@@ -13,8 +13,10 @@ conduire le parcours en t'appuyant sur la méthode Foyer, sans jamais forcer un 
 trancher seul un point irréversible.
 
 **1. Charge le cœur.** Lis, dans le dépôt cloné :
-`AGENTS.md`, `pilote/parcours.md`, `pilote/state.template.md`, `pilote/arbitrage.md`,
-`pilote/gates/README.md`.
+`AGENTS.md`, `pilote/parcours.md`, `pilote/defaults.md`, `pilote/state.template.md`,
+`pilote/arbitrage.md`, `pilote/gates/README.md`.
+> `defaults.md` est **prioritaire** face au PO : tout choix technique réversible est un **défaut
+> annoncé**, pas une question. Le PO ne répond qu'à des questions **métier en langage clair**.
 > Si ton runtime ne peut pas lire les fichiers (ex. ChatGPT/Qwen web sans accès dépôt),
 > demande à l'humain de te **coller** `pilote/parcours.md` et le registre d'état s'il existe.
 
@@ -39,9 +41,13 @@ mets à jour après chaque étape conclusive.
 registre → commit `<porte>(<périmètre>): <étape>`.
 
 **6. Respecte les invariants** (détaillés dans `parcours.md`) :
+- **sonde l'environnement d'abord** (étape 0bis) : choisis le substrat (Docker si runtime absent),
+  le PO n'installe rien ;
 - le harnais / les gates plancher précèdent le métier ;
 - l'ordre des couches est une loi (Domaine → Application → Adaptateurs → Contrat → Front D1 → D2) ;
 - un gate rouge = **stop**, on corrige la cause ;
+- une story full-stack va **jusqu'à la preuve de valeur** (E2E + visuel + vitrine filmée) **sans que
+  le PO la réclame** — s'arrêter avant en « déférant » des gates est une déviation ;
 - la doc vivante est **intégrée** au parcours (un seul parcours de référence, rejoué E2E + preuve de valeur) ;
 - **à un point irréversible** (`pilote/arbitrage.md`) : tu **n'exécutes pas** la bascule — tu
   assembles la preuve, tu inscris un **🔴 arbitrage en attente** dans le registre, et tu poses à

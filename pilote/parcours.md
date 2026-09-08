@@ -25,6 +25,20 @@
 3. **Créer le registre** depuis `state.template.md`, y inscrire la porte active, la date,
    l'archétype (voir `bmad/archetypes.md`), puis démarrer le parcours.
 
+## Étape 0bis — Sonder l'environnement & choisir le substrat (avant tout gate)
+
+Pour qu'un PO **n'installe rien** et ne voie jamais un « command not found » :
+
+1. **Sonder les runtimes** requis par le kit/l'archétype (ex. `php`, `node`, `python`, `docker`).
+2. **Choisir le substrat d'exécution** (défaut de [`defaults.md`](defaults.md)) : runtime local
+   s'il existe, **sinon conteneur** (Docker) — les gates tournent alors via `docker run …`.
+   Cadrer une commande de gate = fournir une commande **qui marche dans le substrat choisi**.
+3. **Inscrire au registre** le substrat retenu (ligne « Substrat »). Si *aucun* substrat n'est
+   disponible (ni runtime ni Docker), c'est le **seul** blocage légitime à remonter au PO.
+
+> Principe : l'agent **résout l'outillage lui-même**. Découvrir l'absence de PHP au milieu d'une
+> story est un échec du pilote, pas une fatalité (friction F4 du dogfood n°1).
+
 ## Boucle « next » (le séquenceur)
 
 À chaque sollicitation (`/foyer-next`, ou le PO qui demande « et maintenant ? ») :
@@ -39,6 +53,24 @@
    registre, présenter au PO la question de **modalité**, s'arrêter.
 5. Sinon → jouer le rôle, produire la sortie, faire passer les gates, **mettre à jour le
    registre** (avancer l'étape), **committer** (`<porte>(<périmètre>): <étape>`).
+6. **Ne pas rendre la main avant la fin de l'étape.** L'agent enchaîne les sous-étapes tant
+   qu'aucun blocage réel (0bis) ni point irréversible (4) ne l'arrête. Rendre la main « à mi-story »
+   en marquant des gates « déférés » est une **déviation** (friction F3 du dogfood n°1).
+
+### Definition of Done — une story full-stack va JUSQU'À la preuve de valeur
+
+Un seul parcours de référence, rejoué sous **trois angles**. La story n'est **DONE** que si les
+trois sont verts — l'agent ne s'arrête pas au premier :
+
+| Angle | Gate | Obligatoire (full-stack) |
+|---|---|---|
+| **Correctness** | `e2e` | oui |
+| **Apparence** | `visuel` (goldens) | oui dès qu'il y a un rendu |
+| **Preuve de valeur** | `doc-vivante` (parcours filmé + vitrine) | **oui** — c'est l'aboutissement, non « optionnel » |
+
+> `doc-vivante` est **non bloquant** (une preuve, pas un verrou) mais **non facultatif** : une story
+> full-stack sans sa preuve de valeur n'est pas terminée. L'agent la produit **automatiquement**,
+> sans que le PO ait à la réclamer.
 
 ## Règles communes à toutes les portes (invariants)
 
