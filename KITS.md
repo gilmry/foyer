@@ -45,7 +45,7 @@ au vert quel que soit l'adaptateur sélectionné (ex. `integration` rejoué sur 
 |---|---|---|---|---|---|
 | **`kit-fastapi`** | Astro + Svelte | **FastAPI** (vanilla ASGI à venir) | **CQRS SQL** ↔ **ORM SQLAlchemy** | PostgreSQL | ✅ **disponible** |
 | **`kit-php`** | Astro + Svelte | **vanilla PHP** (API Platform à venir) | **CQRS SQL** ↔ **Doctrine** ✅ | MySQL | ✅ persistance au choix ; HTTP API Platform en cours |
-| `kit-actix` | Astro + Svelte | **Actix** (Rust) | **CQRS SQL** (`sqlx`) ↔ ORM (`sea-orm`) | PostgreSQL | 🔜 backlog |
+| **`kit-actix`** | Astro + Svelte | **Actix** (Rust) | **CQRS SQL** (`sqlx`) ✅ (ORM `sea-orm` backlog) | PostgreSQL | ✅ **disponible** · CI verte |
 
 > Chaque kit **réimplémente uniquement les adaptateurs** (HTTP + persistance) et le point d'entrée ;
 > le Domaine et l'Application restent structurés à l'identique. Un même parcours de référence
@@ -61,9 +61,9 @@ au vert quel que soit l'adaptateur sélectionné (ex. `integration` rejoué sur 
   API Platform via Composer), à côté du routeur vanilla. Persistance déjà au choix (CQRS ↔ Doctrine).
 - **kit-fastapi · adaptateur HTTP alternatif** — un second choix (ex. ASGI nu / Starlette) pour prouver
   la permutabilité HTTP comme pour la persistance.
-- **`kit-actix` (Rust)** — Domaine et Application en **Rust pur** ; adaptateur HTTP **Actix** ; persistance
-  **CQRS via `sqlx`** sur PostgreSQL (option ORM `sea-orm` en second choix) ; front Astro/Svelte + client
-  généré. Mêmes gates, mêmes invariants, sur images publiques.
+- **`kit-actix` · second adaptateur de persistance ORM** — l'adaptateur `sqlx` CQRS est fait ✅ ;
+  ajouter `sea-orm` comme second choix pour prouver la permutabilité, comme kit-php (CQRS↔Doctrine)
+  et kit-fastapi (CQRS↔ORM).
 
 ## Choix du kit par le pilote (sans friction pour le PO)
 

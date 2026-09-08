@@ -1,0 +1,14 @@
+# Build Rust (réinstallable via cargo build).
+/target/
+
+# Dépendances front / harnais (réinstallables).
+/frontend-todos/node_modules/
+/harness/visual/node_modules/
+/harness/demo/node_modules
+
+# Fichiers de vérification/temporaires du contrat.
+/frontend-todos/src/generated/.api.check.ts
+
+# Sorties du harnais visuel (les goldens sont versionnés).
+/harness/visual/test-results/
+/harness/demo/vitrine/videos/apercu.png

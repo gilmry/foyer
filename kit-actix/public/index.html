@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Todo — application de test</title>
+    <link rel="stylesheet" href="/todos-island/todos-island.css" />
+  </head>
+  <body>
+    <!-- Conteneur hydraté par l'îlot Svelte. -->
+    <section id="todoSection"></section>
+
+    <!-- Client généré depuis le contrat OpenAPI (anti-drift). -->
+    <!-- Îlot Svelte compilé (frontend-todos → vite build). Le client TYPÉ généré depuis OpenAPI
+         (src/generated/api.ts) est bundlé dans l'îlot — plus de client JS global. -->
+    <script src="/todos-island/index.js"></script>
+  </body>
+</html>

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Vitrine — Todo (preuve de valeur)</title>
+  <style>
+    body { font: 16px/1.5 system-ui, sans-serif; margin: 0; background: #f6f7f9; color: #111827; }
+    header { background: #111827; color: #fff; padding: 24px; }
+    header h1 { margin: 0 0 4px; font-size: 22px; }
+    header p { margin: 0; opacity: .8; font-size: 14px; }
+    main { max-width: 920px; margin: 24px auto; padding: 0 16px; display: grid; gap: 24px; }
+    .carte { background: #fff; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.08); padding: 16px; }
+    .carte h2 { margin: 0 0 12px; font-size: 18px; }
+    video { width: 100%; border-radius: 8px; background: #000; }
+    .chapitres { margin: 12px 0 0; padding-left: 0; list-style: none; font-size: 14px; color: #374151; }
+    .chapitres li { padding: 2px 0; }
+    .chapitres .t { display: inline-block; width: 3em; color: #6b7280; font-variant-numeric: tabular-nums; }
+    footer { text-align: center; color: #6b7280; font-size: 13px; padding: 24px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Vitrine — Todo (application de test)</h1>
+    <p>Preuve de valeur — parcours de référence rejoué en cadence. Même parcours que l'E2E (correctness) et le golden visuel (apparence).</p>
+  </header>
+  <main>
+      <article class="carte">
+        <h2>Parcours de référence — créer, terminer, supprimer</h2>
+        <video controls preload="metadata" src="videos/todo-parcours-de-reference.webm"></video>
+        <ol class="chapitres"><li><span class="t">00s</span> Todo — application de test. Preuve de valeur : le parcours de référence, rejoué en cadence.</li><li><span class="t">06s</span> 1) Ajouter une tâche : « acheter du pain ».</li><li><span class="t">12s</span> 2) Ajouter une deuxième tâche : « réviser Foyer ».</li><li><span class="t">19s</span> 3) Marquer « acheter du pain » comme faite (elle se barre).</li><li><span class="t">25s</span> 4) Supprimer la tâche faite.</li><li><span class="t">29s</span> La liste est persistée en base : elle survit au rechargement.</li><li><span class="t">36s</span> Parcours terminé — même parcours que l&#39;E2E (correctness) et le golden (apparence).</li></ol>
+      </article></main>
+  <footer>Documentation vivante générée par harness/demo — cadre Foyer.</footer>
+</body>
+</html>
