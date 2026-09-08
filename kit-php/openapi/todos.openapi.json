@@ -1,0 +1,97 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Todo — API",
+    "description": "Source de vérité : le client JS (public/generated/todos.client.js) est GÉNÉRÉ depuis cette spec par harness/codegen-todos-client.php. Ne pas éditer le client à la main (gate contrat anti-drift).",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/todos": {
+      "get": {
+        "operationId": "listTodos",
+        "summary": "Liste les tâches",
+        "responses": {
+          "200": {
+            "description": "Liste des tâches",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["items"],
+                  "properties": {
+                    "items": { "type": "array", "items": { "$ref": "#/components/schemas/TodoView" } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createTodo",
+        "summary": "Crée une tâche",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/TodoCreateInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Tâche créée", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TodoView" } } } },
+          "400": { "description": "Libellé invalide", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorList" } } } }
+        }
+      }
+    },
+    "/api/todos/{id}": {
+      "parameters": [
+        { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+      ],
+      "patch": {
+        "operationId": "toggleTodo",
+        "summary": "Bascule le statut d'une tâche",
+        "responses": {
+          "200": { "description": "Tâche mise à jour", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TodoView" } } } },
+          "404": { "description": "Tâche introuvable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      },
+      "delete": {
+        "operationId": "deleteTodo",
+        "summary": "Supprime une tâche",
+        "responses": {
+          "200": { "description": "Supprimée", "content": { "application/json": { "schema": { "type": "object", "properties": { "deleted": { "type": "boolean" } } } } } },
+          "404": { "description": "Tâche introuvable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "TodoView": {
+        "type": "object",
+        "required": ["id", "title", "done", "createdAt", "updatedAt"],
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "done": { "type": "boolean" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "TodoCreateInput": {
+        "type": "object",
+        "required": ["title"],
+        "properties": { "title": { "type": "string" } }
+      },
+      "Error": {
+        "type": "object",
+        "properties": { "error": { "type": "string" } }
+      },
+      "ErrorList": {
+        "type": "object",
+        "properties": { "errors": { "type": "array", "items": { "type": "string" } } }
+      }
+    }
+  }
+}

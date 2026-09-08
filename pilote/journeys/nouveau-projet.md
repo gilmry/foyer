@@ -20,7 +20,10 @@
 
 Avant de « poser le kit », l'agent le **résout lui-même** (le PO ne fournit aucun indice) :
 
-1. **Kit fourni** dans le dépôt (`kit-*/`, chemin d'`AGENTS.md`) → l'utiliser.
+1. **Kit fourni** dans le dépôt Foyer (`../../kit-php/` et, à terme, les autres de
+   [`../../KITS.md`](../../KITS.md)) → choisir celui qui colle à l'archétype/pile (défaut annoncé,
+   cf. [`../defaults.md`](../defaults.md)) et l'instancier : `bash docker/build.sh` puis
+   `bash harness/ci.sh` doivent passer **à vide/à froid** avant d'ajouter le domaine métier.
 2. **Sinon, chercher un seed local** : repos frères du même archétype/pile — motifs
    `*-retrofit-test`, `kit-*`, projets voisins exposant `src/{Domain,Application,Adapter,Http}`.
    Un seed trouvé sert de **gabarit** (on copie le squelette, on retire ses périmètres, on garde

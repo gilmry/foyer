@@ -1,0 +1,34 @@
+{
+  "slug": "todo-parcours-de-reference",
+  "title": "Parcours de référence — créer, terminer, supprimer",
+  "narration": [
+    {
+      "t": 0,
+      "texte": "Todo — application de test. Preuve de valeur : le parcours de référence, rejoué en cadence."
+    },
+    {
+      "t": 6,
+      "texte": "1) Ajouter une tâche : « acheter du pain »."
+    },
+    {
+      "t": 12,
+      "texte": "2) Ajouter une deuxième tâche : « réviser Foyer »."
+    },
+    {
+      "t": 19,
+      "texte": "3) Marquer « acheter du pain » comme faite (elle se barre)."
+    },
+    {
+      "t": 25,
+      "texte": "4) Supprimer la tâche faite."
+    },
+    {
+      "t": 29,
+      "texte": "La liste est persistée en base : elle survit au rechargement."
+    },
+    {
+      "t": 36,
+      "texte": "Parcours terminé — même parcours que l'E2E (correctness) et le golden (apparence)."
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "name": "todo-visual",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Harnais de preuve visuelle — rejoue le parcours de référence todo, capture le golden de #todoSection, compare avant/après (pixelmatch).",
+  "dependencies": {
+    "playwright": "1.49.0",
+    "pixelmatch": "^5.3.0",
+    "pngjs": "^7.0.0"
+  }
+}

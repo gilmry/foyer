@@ -1,0 +1,21 @@
+# Configuration réelle avec secrets — jamais versionnée (gate plancher G1).
+/src/config.php
+
+# Dépendances front (réinstallables via npm install).
+/frontend-todos/node_modules/
+/harness/visual/node_modules/
+
+# Sorties du harnais visuel (les goldens, eux, SONT versionnés).
+/harness/visual/test-results/
+
+# Doc vivante : node_modules partagé (symlink) et frame d'aperçu régénérable.
+# La vitrine (HTML + .webm) est le livrable de preuve de valeur → versionnée.
+/harness/demo/node_modules
+/harness/demo/vitrine/videos/apercu.png
+
+# Cache PHPUnit local.
+/harness/.phpunit.cache/
+
+# Le phar PHPUnit est BUNDLÉ dans le kit (marche direct offline, sans curl).
+# (Volontairement versionné — décommenter pour le regénérer à la demande à la place.)
+# /harness/.phpunit.phar

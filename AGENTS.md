@@ -60,6 +60,9 @@ The framework encourages AI agents to:
 ## Repository Structure
 
 This is a methodology repository for the Foyer framework. Key directories:
+- `kit-php/` - **Kit de référence exécutable** (PHP hexagonal + îlots, gates sur images Docker
+  publiques). « Clone → `bash docker/build.sh` → `bash harness/ci.sh` » passe au vert. Famille de
+  kits (autres stacks à venir) : voir `KITS.md`.
 - `bmad/` - Conception phase (TOGAF pipeline)
 - `skills/` - Objective evaluation tools (cycle-dev, gates, convergence-iac, adoption)
 - `tools/` - Executable counterpart to the skills. Currently `tools/gates/`:
