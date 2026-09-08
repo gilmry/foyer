@@ -43,20 +43,21 @@ for layer in ("domain", "application"):
                 if m.split(".")[0] in FORBIDDEN:
                     failures.append(f"H1: import infra '{m}' dans couche pure {py.relative_to(ROOT)}")
 
-# --- C1 : contrat OpenAPI + client générés à jour ---
-spec = ROOT / "openapi" / "todos.openapi.json"
-client = ROOT / "public" / "generated" / "todos.client.js"
-if not spec.exists():
+# --- C1 : contrat OpenAPI committé == contrat réel de l'app FastAPI (anti-drift) ---
+# (La fraîcheur du client TS api.ts vs OpenAPI est vérifiée par le gate `contrat`, harness/run-contract.sh.)
+import json  # noqa: E402
+
+spec_path = ROOT / "openapi" / "todos.openapi.json"
+if not spec_path.exists():
     failures.append("C1: openapi/todos.openapi.json absent (lancer harness/dump_openapi.py)")
-if not client.exists():
-    failures.append("C1: client généré absent (lancer harness/codegen_client.py)")
-elif spec.exists():
-    tmp = ROOT / "public" / "generated" / ".todos.client.check.js"
-    env = {**os.environ, "TODOS_CLIENT_OUT": str(tmp)}
-    subprocess.run([sys.executable, str(ROOT / "harness" / "codegen_client.py")], env=env, check=True)
-    if tmp.read_text(encoding="utf-8").strip() != client.read_text(encoding="utf-8").strip():
-        failures.append("C1: client généré désynchronisé du contrat (regénérer)")
-    tmp.unlink(missing_ok=True)
+else:
+    os.environ.setdefault("TODO_SERVE_STATIC", "0")
+    sys.path.insert(0, str(ROOT))
+    from app.http.api import app  # noqa: E402
+    live = json.dumps(app.openapi(), indent=2, ensure_ascii=False).strip()
+    committed = spec_path.read_text(encoding="utf-8").strip()
+    if live != committed:
+        failures.append("C1: openapi/todos.openapi.json désynchronisé de l'app (lancer harness/dump_openapi.py)")
 
 if failures:
     sys.stderr.write("verify: 🔴\n - " + "\n - ".join(failures) + "\n")

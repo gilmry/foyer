@@ -5,7 +5,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 run() { echo ""; echo "▶ $*"; "$@"; }
 
-run bash "$ROOT/harness/run-verify.sh"      # plancher + structurel + contrat (G1/G2/H1/C1)
+run bash "$ROOT/harness/run-verify.sh"      # plancher + structurel + contrat OpenAPI==app (G1/G2/H1/C1)
+run bash "$ROOT/harness/run-contract.sh"    # client TYPÉ api.ts à jour vs OpenAPI (anti-drift)
 run bash "$ROOT/harness/run-pytest.sh"      # domaine + application (sans DB)
 run bash "$ROOT/harness/run-integration.sh" # PostgreSQL réel — CQRS **et** ORM
 run bash "$ROOT/harness/e2e-smoke.sh"       # uvicorn réel (correctness HTTP)
