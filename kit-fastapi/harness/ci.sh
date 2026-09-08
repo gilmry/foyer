@@ -9,7 +9,8 @@ run bash "$ROOT/harness/run-verify.sh"      # plancher + structurel + contrat Op
 run bash "$ROOT/harness/run-contract.sh"    # client TYPÉ api.ts à jour vs OpenAPI (anti-drift)
 run bash "$ROOT/harness/run-pytest.sh"      # domaine + application (sans DB)
 run bash "$ROOT/harness/run-integration.sh" # PostgreSQL réel — CQRS **et** ORM
-run bash "$ROOT/harness/e2e-smoke.sh"       # uvicorn réel (correctness HTTP)
+run bash "$ROOT/harness/e2e-smoke.sh"                    # adaptateur HTTP FastAPI (défaut)
+run env TODO_HTTP=starlette bash "$ROOT/harness/e2e-smoke.sh"  # adaptateur HTTP Starlette (même contrat)
 run bash "$ROOT/harness/run-visual.sh"      # régression d'apparence (goldens Chromium)
 
 echo ""

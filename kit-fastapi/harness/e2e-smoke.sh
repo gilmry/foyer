@@ -20,8 +20,8 @@ with psycopg.connect(dsn()) as c, c.cursor() as cur:
 
 cid=$(docker run -d --rm --network host -v "$ROOT":/app -w /app -e PYTHONPATH=/app \
   -e DB_HOST=127.0.0.1 -e DB_PORT=15432 -e DB_NAME=todo -e DB_USER=todo -e DB_PASSWORD=todo \
-  -e TODO_PERSISTENCE="$PERSISTENCE" \
-  todo-kit-fastapi:local uvicorn app.http.api:app --host 127.0.0.1 --port 8080 --log-level warning)
+  -e TODO_PERSISTENCE="$PERSISTENCE" -e TODO_HTTP="${TODO_HTTP:-fastapi}" \
+  todo-kit-fastapi:local uvicorn app.http.app:app --host 127.0.0.1 --port 8080 --log-level warning)
 trap 'docker stop "$cid" >/dev/null 2>&1 || true' EXIT
 
 for i in $(seq 1 40); do curl -sf "$BASE/api/todos" >/dev/null 2>&1 && break; sleep 0.5; done
@@ -42,5 +42,5 @@ assert "DELETE /api/todos/{id} → 200" 200 "$(code -X DELETE "$BASE/api/todos/$
 assert "DELETE id inconnu → 404" 404 "$(code -X DELETE "$BASE/api/todos/inconnu")"
 
 echo ""
-if [ "$fail" = 0 ]; then echo "e2e (smoke HTTP, persistance=$PERSISTENCE): 🟢"; else echo "e2e: 🔴"; fi
+if [ "$fail" = 0 ]; then echo "e2e (smoke HTTP, http=${TODO_HTTP:-fastapi}, persistance=$PERSISTENCE): 🟢"; else echo "e2e: 🔴"; fi
 exit "$fail"

@@ -15,6 +15,6 @@ with psycopg.connect(dsn()) as c, c.cursor() as cur:
 ' >&2
 
 cid=$(docker run -d --rm --network host -v "$ROOT":/app -w /app "${ENVV[@]}" \
-  todo-kit-fastapi:local uvicorn app.http.api:app --host 127.0.0.1 --port 8080 --log-level warning)
+  todo-kit-fastapi:local uvicorn app.http.app:app --host 127.0.0.1 --port 8080 --log-level warning)
 for i in $(seq 1 40); do curl -sf http://127.0.0.1:8080/api/todos >/dev/null 2>&1 && break; sleep 0.5; done
 echo "$cid"

@@ -34,8 +34,10 @@ Domain (pur)  →  Application (use-cases + ports)  →  Adapter (HTTP / persist
     migrations.
   - Les deux implémentent le **même port** `TodoRepository` (`app/adapter/todo/factory.py`). Choix
     = point d'ADR (cf. `bmad/archetypes.md`), pas une question au PO (défaut annoncé, `pilote/defaults.md`).
-- **HTTP** — FastAPI ici ; le port étant les use-cases, un autre adaptateur (Flask, ASGI nu…)
-  se brancherait sans toucher domaine/application. Voir `../KITS.md` (principe d'agnosticité).
+- **HTTP** — choix via `TODO_HTTP` : `fastapi` (défaut, `app/http/api.py`) ou `starlette`
+  (ASGI nu, `app/http/starlette_app.py`). Les deux délèguent aux **mêmes use-cases** et émettent
+  le **même contrat** (le client `api.ts` marche à l'identique). Point d'entrée : `app.http.app:app`.
+  Tester : `TODO_HTTP=starlette bash harness/e2e-smoke.sh`.
 
 ## Commandes (gates — noms stables, exit 0 = 🟢)
 

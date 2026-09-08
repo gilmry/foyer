@@ -43,7 +43,7 @@ au vert quel que soit l'adaptateur sélectionné (ex. `integration` rejoué sur 
 
 | Kit | Front | Adaptateur HTTP (choix) | Persistance (choix) | DB | Statut |
 |---|---|---|---|---|---|
-| **`kit-fastapi`** | Astro + Svelte | **FastAPI** (vanilla ASGI à venir) | **CQRS SQL** ↔ **ORM SQLAlchemy** | PostgreSQL | ✅ **disponible** |
+| **`kit-fastapi`** | Astro + Svelte | **FastAPI ↔ Starlette** ✅ | **CQRS SQL** ↔ **ORM SQLAlchemy** ✅ | PostgreSQL | ✅ **HTTP et persistance au choix** · CI verte |
 | **`kit-php`** | Astro + Svelte | **vanilla PHP ↔ API Platform** ✅ | **CQRS SQL** ↔ **Doctrine** ✅ | MySQL | ✅ **HTTP et persistance au choix** · CI verte |
 | **`kit-actix`** | Astro + Svelte | **Actix** (Rust) | **CQRS SQL** (`sqlx`) ↔ **ORM** (`sea-orm`) ✅ | PostgreSQL | ✅ **persistance au choix** · CI verte |
 
@@ -59,8 +59,6 @@ au vert quel que soit l'adaptateur sélectionné (ex. `integration` rejoué sur 
   typé), bundlé dans l'îlot ; gate `contrat` (`run-contract.sh`) anti-drift.
 - ✅ **Adaptateurs enfichables prouvés** — kit-php : HTTP vanilla↔API Platform **et** persistance
   CQRS↔Doctrine ; kit-fastapi : persistance CQRS↔ORM ; kit-actix : persistance CQRS↔sea-orm.
-- **kit-fastapi · adaptateur HTTP alternatif** — un second choix (ex. ASGI nu / Starlette) pour prouver
-  la permutabilité HTTP côté Python, comme kit-php côté PHP.
 - **kit-actix · adaptateur HTTP alternatif** — un second choix (ex. Axum) pour l'axe HTTP côté Rust.
 
 ## Choix du kit par le pilote (sans friction pour le PO)
