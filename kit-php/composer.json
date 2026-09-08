@@ -1,0 +1,19 @@
+{
+    "name": "foyer/kit-php",
+    "description": "Kit Foyer PHP hexagonal — adaptateurs de persistance enfichables (CQRS SQL ↔ Doctrine).",
+    "type": "project",
+    "require": {
+        "php": ">=8.3",
+        "doctrine/orm": "^3.3",
+        "doctrine/dbal": "^4.2",
+        "symfony/cache": "^7.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "TodoApp\\": "src/"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    }
+}

@@ -1,6 +1,10 @@
 # Configuration réelle avec secrets — jamais versionnée (gate plancher G1).
 /src/config.php
 
+# Dépendances Composer (Doctrine…) — réinstallables via `composer install` (option persistance doctrine).
+/vendor/
+/composer.lock
+
 # Dépendances front (réinstallables via npm install).
 /frontend-todos/node_modules/
 /harness/visual/node_modules/

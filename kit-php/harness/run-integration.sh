@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # Image dev du kit : embarque pdo_mysql (le php:8.3-cli nu ne l'a pas).
 IMAGE="${TODO_PHP_IMAGE:-todo-kit-php:local}"
-source "$ROOT/harness/ensure-images.sh"; ensure_php_image; ensure_mysql
+source "$ROOT/harness/ensure-images.sh"; ensure_php_image; ensure_vendor; ensure_mysql
 
 # Le conteneur MySQL doit tourner (voir README). --network host → atteint 127.0.0.1:13306 publié.
 docker run --rm --network host \

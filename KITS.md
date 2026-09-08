@@ -44,13 +44,26 @@ au vert quel que soit l'adaptateur sélectionné (ex. `integration` rejoué sur 
 | Kit | Front | Adaptateur HTTP (choix) | Persistance (choix) | DB | Statut |
 |---|---|---|---|---|---|
 | **`kit-fastapi`** | Astro + Svelte | **FastAPI** (vanilla ASGI à venir) | **CQRS SQL** ↔ **ORM SQLAlchemy** | PostgreSQL | ✅ **disponible** |
-| **`kit-php`** | Astro + Svelte | **vanilla PHP** ↔ **API Platform** (en cours) | **CQRS SQL** ↔ **Doctrine** (en cours) | MySQL | ✅ base dispo, choix en cours |
-| `kit-actix` | Astro + Svelte | **Actix** (Rust) | **CQRS SQL** ↔ ORM (`sea-orm`) | PostgreSQL | 🔜 à venir |
+| **`kit-php`** | Astro + Svelte | **vanilla PHP** (API Platform à venir) | **CQRS SQL** ↔ **Doctrine** ✅ | MySQL | ✅ persistance au choix ; HTTP API Platform en cours |
+| `kit-actix` | Astro + Svelte | **Actix** (Rust) | **CQRS SQL** (`sqlx`) ↔ ORM (`sea-orm`) | PostgreSQL | 🔜 backlog |
 
 > Chaque kit **réimplémente uniquement les adaptateurs** (HTTP + persistance) et le point d'entrée ;
 > le Domaine et l'Application restent structurés à l'identique. Un même parcours de référence
 > (créer → lister → basculer → supprimer une entité) sert de test d'acceptation du kit, rejoué
 > **pour chaque combinaison d'adaptateurs**.
+
+## Backlog (à faire)
+
+- **Client `api.ts` typé** — aujourd'hui les kits génèrent un client JS (`public/generated/todos.client.js`)
+  depuis OpenAPI. À faire dans **tous les kits** : générer un client **TypeScript typé** (`api.ts`,
+  types issus des schémas OpenAPI) consommé par le front Astro/Svelte, en remplacement/complément du JS.
+- **kit-php · adaptateur HTTP API Platform** — second choix `TODO_HTTP=vanilla|apiplatform` (Symfony +
+  API Platform via Composer), à côté du routeur vanilla. Persistance déjà au choix (CQRS ↔ Doctrine).
+- **kit-fastapi · adaptateur HTTP alternatif** — un second choix (ex. ASGI nu / Starlette) pour prouver
+  la permutabilité HTTP comme pour la persistance.
+- **`kit-actix` (Rust)** — Domaine et Application en **Rust pur** ; adaptateur HTTP **Actix** ; persistance
+  **CQRS via `sqlx`** sur PostgreSQL (option ORM `sea-orm` en second choix) ; front Astro/Svelte + client
+  généré. Mêmes gates, mêmes invariants, sur images publiques.
 
 ## Choix du kit par le pilote (sans friction pour le PO)
 

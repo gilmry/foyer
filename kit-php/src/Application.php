@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace TodoApp;
 
 use PDO;
-use TodoApp\Adapter\Todo\PdoTodoRepository;
+use TodoApp\Adapter\Todo\RepositoryFactory;
 use TodoApp\Adapter\Todo\RealClock;
 use TodoApp\Adapter\Todo\UuidGenerator;
 use TodoApp\Application\Todo\CreateTodo;
@@ -105,7 +105,8 @@ final class Application
 
     private function repo(): TodoRepository
     {
-        return new PdoTodoRepository($this->db());
+        // Choix d'adaptateur (CQRS ou Doctrine) transparent pour le routeur, via TODO_PERSISTENCE.
+        return RepositoryFactory::make($this->config, $this->db());
     }
 
     private function db(): PDO

@@ -20,7 +20,23 @@ Domain (pur) → Application (use-cases, ports) → Adapter (PDO, horloge, uuid)
   `TodoRules`, ports (`TodoRepository`, `Clock`, `IdGenerator`), exceptions. **Aucun `PDO`, SQL,
   framework ici** (vérifié par le gate H1).
 - `src/Application/Todo/` — `CreateTodo`, `ListTodos`, `ToggleTodo`, `DeleteTodo`.
-- `src/Adapter/Todo/` — `PdoTodoRepository`, `RealClock`, `UuidGenerator`.
+- `src/Adapter/Todo/` — adaptateurs enfichables (voir ci-dessous), `RealClock`, `UuidGenerator`.
+
+### Persistance — choix enfichable (`TODO_PERSISTENCE`)
+
+Même port `TodoRepository`, deux implémentations permutables (`src/Adapter/Todo/RepositoryFactory.php`) :
+
+- `cqrs` (défaut) : `CqrsTodoRepository` — SQL pur (PDO), lecture/écriture séparées
+  (`TodoQueries`/`TodoCommands`), schéma par migrations up/down SQL. **Aucun Composer requis.**
+- `doctrine` : `DoctrineTodoRepository` — ORM Doctrine (entité de persistance `Doctrine/TodoRecord`
+  mappée au domaine pur). Nécessite `composer install` (fait à froid par `ensure_vendor`).
+
+Le gate `integration` rejoue le parcours sur **les deux** (12 assertions). Choix = point d'ADR
+(`bmad/archetypes.md`), pas une question au PO (défaut annoncé, `pilote/defaults.md`).
+Tester l'e2e sur Doctrine : `TODO_PERSISTENCE=doctrine bash harness/e2e-smoke.sh`.
+
+> Adaptateur HTTP : `vanilla` (routeur maison) aujourd'hui ; **API Platform** à venir comme second
+> choix (`TODO_HTTP=vanilla|apiplatform`), cf. `../KITS.md`.
 - `src/Http/` + `src/Application.php` — `Request`/`Response`, routeur REST. **Seule couche qui
   traduit les exceptions du domaine en codes HTTP** (400 validation, 404 introuvable).
 - `frontend-todos/` — îlot Svelte 5. **N'écrit jamais d'URL d'endpoint en dur** : passe par le

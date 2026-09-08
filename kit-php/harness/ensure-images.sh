@@ -30,6 +30,16 @@ ensure_mysql() {
   echo "[kit] MySQL n'a pas démarré à temps" >&2; return 1
 }
 
+# vendor/ Composer (Doctrine…) : installé dans le repo monté (cache, gitignoré). 1er run = réseau.
+# Requis uniquement pour l'option de persistance `doctrine` (l'option `cqrs` n'a aucun vendor).
+ensure_vendor() {
+  local root; root="$(_kit_root)"
+  [ -f "$root/vendor/autoload.php" ] && return 0
+  echo "[kit] composer install (Doctrine…)…" >&2
+  docker run --rm -v "$root":/app -w /app todo-kit-php:local \
+    composer install --no-interaction --no-progress >/dev/null 2>&1
+}
+
 # node_modules du harnais visuel : installés côté hôte (le montage du repo masque ceux de l'image).
 ensure_visual_modules() {
   local root; root="$(_kit_root)"
