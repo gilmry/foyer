@@ -60,7 +60,7 @@ Foyer n'est pas un cadre de conformité, c'est une **pratique d'ingénierie**. M
 |---|---|---|
 | Vol d'identifiants | PR.AA-03.2 ★B, PR.AA-01.4 E, PR.AA-02.2 E | MFA dans l'application, identifiant unique par utilisateur et par processus |
 | Abus de droits dans le produit | PR.AA-05.3 ★B, PR.AA-05.6 I | Moindre privilège dans le modèle d'autorisation, séparation des rôles métier |
-| Faille applicative | ID.RA-08.1 ★I, PR.PS-06.3 E, ID.IM-03.9 E | Plan de gestion des vulnérabilités (dépendances, divulgation coordonnée), secure-SDLC (`cycle-dev.md` + `gates.md`), tests spécialisés |
+| Faille applicative | ID.RA-08.1 ★I, PR.PS-06.3 E, ID.IM-03.9 E | Plan de gestion des vulnérabilités (dépendances, divulgation coordonnée : `../bmad/livrables/plan-vulnerabilites.template.md`), secure-SDLC (`cycle-dev.md` + `gates.md`), tests spécialisés |
 | Exfiltration | ID.AM-03.3 ★E, PR.DS-02.2 E | Flux de données cartographiés dans le livrable Architecture, chiffrement en transit |
 | Données au repos | PR.DS-01.x, GV.PO-01.2 I | Politique de chiffrement applicatif (secrets, champs sensibles) |
 
@@ -88,7 +88,7 @@ Le seuil de maturité 3/5 demande qu'une activité soit **appliquée et document
 2. **Conservé au-delà de la CI.** Les artefacts de CI expirent (90 jours dans les gabarits de `../tools/gates/`), et une gate review peut venir plus tard. À chaque gate review, et à chaque version publiée pour le SBOM, les rapports sont **archivés** avec la version (pièces jointes de la release, ou dossier de preuves versionné) sous un manifeste : commit, date, outil et version, identifiants CyFun couverts.
 3. **Un rapport rouge trié est aussi une preuve.** ID.RA-01 demande des vulnérabilités « identifiées, validées et enregistrées » : le finding plus sa décision de triage (issue, ADR, correctif) prouve davantage qu'un rapport vert, qui ne montre que l'absence de résultat d'un outil.
 
-**Ce que les rapports ne prouvent pas.** Le **plan** de gestion des vulnérabilités (ID.RA-08.1 ★I) est un document, pas un rapport : ses scans n'en sont que l'exécution (story 5 de gilmry/foyer#11). Ni l'identification des menaces sur l'architecture (ID.RA-01.1 couvre aussi l'architecture réseau et système, que les scans de code ne voient pas), ni les tests de sécurité spécialisés (ID.IM-03.9 E). Une preuve partielle se déclare partielle dans l'autoévaluation.
+**Ce que les rapports ne prouvent pas.** Le **plan** de gestion des vulnérabilités (ID.RA-08.1 ★I) est un document, pas un rapport : ses scans n'en sont que l'exécution (gabarit : `../bmad/livrables/plan-vulnerabilites.template.md`). Ni l'identification des menaces sur l'architecture (ID.RA-01.1 couvre aussi l'architecture réseau et système, que les scans de code ne voient pas), ni les tests de sécurité spécialisés (ID.IM-03.9 E). Une preuve partielle se déclare partielle dans l'autoévaluation.
 
 ## 3. Positionnement open-source (CRA)
 

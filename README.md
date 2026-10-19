@@ -128,7 +128,7 @@ bmad/                      PHASE 1 · Conception (vision → backlog)
   BMAD-Conception.md         orchestrateur (pipeline TOGAF A-F)
   archetypes.md              conditionnement : stateless/stateful × API-first/full-stack
   personas/                  Analyste → PM → Architecte → Scrum Master → Validateur
-  livrables/                 5 templates (Brief, PRD, Architecture, Stories, Validation)
+  livrables/                 6 templates (Brief, PRD, Architecture, Plan vulnérabilités, Stories, Validation)
 
 skills/                    Les 4 outils d'objectivation (enfants de la primitive)
   cycle-dev.md               tests pré-écrits (rouge/vert/bleu, 4 tags)
