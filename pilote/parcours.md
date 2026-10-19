@@ -18,9 +18,11 @@
    | **nouveau** | On part de zéro (greenfield) | [`journeys/nouveau-projet.md`](journeys/nouveau-projet.md) |
    | **rétrofit** | Un legacy en production à faire converger | [`journeys/retrofit.md`](journeys/retrofit.md) |
    | **release** | Produit existant, gros incrément à cadrer | [`journeys/planification-release.md`](journeys/planification-release.md) |
+   | **exploitation** | Produit en production : alertes, doléances, recalage | [`journeys/exploitation.md`](journeys/exploitation.md) *(v0)* |
 
    > En cas de doute : *legacy qui tourne et qu'on veut migrer* → **rétrofit** ;
-   > *rien encore* → **nouveau** ; *ça tourne et conforme, on ajoute gros* → **release**.
+   > *rien encore* → **nouveau** ; *ça tourne et conforme, on ajoute gros* → **release** ;
+   > *c'est en production et on le fait vivre* → **exploitation**, qui coexiste avec une autre porte.
 
 3. **Créer le registre** depuis `state.template.md`, y inscrire la porte active, la date,
    l'archétype (voir `bmad/archetypes.md`), puis démarrer le parcours.
@@ -78,7 +80,7 @@ trois sont verts — l'agent ne s'arrête pas au premier :
   Contrat (OpenAPI + client généré + désérialisation stricte) → Frontend D1 (consomme le
   client généré) → Frontend D2 (rendu îlots-first, **conditionnel** à une dérive de rendu).
   Sauter une couche casse un invariant.
-- **Gates avant métier** : le plancher (secrets, migrations réversibles) et — en rétrofit —
+- **Gates avant métier** : le plancher (celui de `../skills/gates.md`) et — en rétrofit —
   la caractérisation précèdent toute extraction. Détail : [`gates/README.md`](gates/README.md).
 - **Doc vivante intégrée** : un **seul** parcours de référence, rejoué par l'E2E (gate,
   bloquant) *et* la preuve de valeur cadencée. On ne double pas la doc.

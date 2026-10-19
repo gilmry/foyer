@@ -14,7 +14,7 @@ This is a framework for AI agents in software development, derived from Gilles M
 ## Pilote — driving the method with agents (start here)
 
 To run a project with agents: **clone this repo, then hand `pilote/BOOTSTRAP.md` to an AI agent.**
-It bootstraps, asks what you want to do — **Q0: new project / retrofit / release** — creates a
+It bootstraps, asks what you want to do — **Q0: new project / retrofit / release / operations** — creates a
 shared **state register**, and drives the journey. Portable *multiagent*: one open core (Markdown +
 scripts), thin per-tool adapters. Devs run it on Claude Code, POs on ChatGPT/Qwen, both on the
 **same committed state register**.

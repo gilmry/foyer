@@ -21,6 +21,10 @@ les **références** (kit Foyer + dogfood rétrofit stagesmed) à recopier/adapt
 | `caracterisation` | rétrofit, chaque bascule | **oui** | comportement externe inchangé |
 | `visuel` | bascule D2 | **oui à la bascule** | régression visuelle (goldens, tolérance) |
 | `doc-vivante` | avec la fonctionnalité | non | preuve de valeur (galerie + vidéo) |
+| `promotion` | avant toute promotion de branche (bascule, fusion vers la branche source de vérité, mise en production) | **oui** | la preuve est **complète** : plancher et tests verts sur le head ; quatre classes présentes **et exécutées** ; vitrine présente si la story touche un écran critique. Ne juge pas la valeur, vérifie qu'on peut la juger (`../roles/arbitre-de-promotion.md`) |
+
+> `doc-vivante` reste non bloquant au fil de l'eau ; mais une branche sans vitrine est **inarbitrable**,
+> et c'est le gate `promotion` qui le dit, au moment de promouvoir.
 
 > **Une seule définition du plancher**, celle du skill. Ce tableau la référence au lieu de la
 > recopier : la prochaine révision du skill ne doit pas rouvrir un écart ici.

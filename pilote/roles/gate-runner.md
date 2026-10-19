@@ -29,6 +29,8 @@ en local et en CI. L'agent n'interprète jamais un gate « à l'œil » : il lit
 7. **Régression visuelle** (si bascule D2) : goldens, tolérance définie.
 8. **Doc vivante** (preuve de valeur, **non bloquant**).
 9. **Exigence de jalon** (rapports, **non bloquant**) : consignés au registre pour la gate review.
+10. **Promotion** (avant de promouvoir) : la preuve est-elle complète ? Ce rôle **mesure** cette
+    complétude ; le jugement de valeur appartient à [`arbitre-de-promotion.md`](arbitre-de-promotion.md).
 
 ## Lecture des résultats → registre
 - Écrire pour chaque gate : 🟢/🔴 + horodatage + commande.

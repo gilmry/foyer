@@ -9,7 +9,7 @@
 2. Colle-le dans ChatGPT/Qwen, précédé de la ligne ci-dessous.
 3. Quand l'agent demande de « charger le cœur », colle-lui `pilote/parcours.md` et, s'il existe,
    le **registre d'état** du projet (`RETROFIT.md` / `RELEASE.md` / `PROJET.md`).
-4. Réponds à **Q0** (nouveau / rétrofit / release). Ensuite, demande quand tu veux : « statut »,
+4. Réponds à **Q0** (nouveau / rétrofit / release / exploitation). Ensuite, demande quand tu veux : « statut »,
    « prochaine étape », ou traite un **arbitrage 🔴** qu'on te présente.
 
 ## Ligne d'amorce à coller devant BOOTSTRAP.md
