@@ -68,6 +68,28 @@ Les identifiants sont cités **sans le texte du CCB**, qui diffuse ses documents
 
 **Ce que le niveau ne garantit pas.** Un mapping n'est pas une conformité (§4) : seule une autoévaluation documentée, avec une preuve par réponse, permet de dire « aligné », et seule une évaluation par un organisme accrédité permet de dire « conforme ». Pour un porteur seul, certaines exigences ne passent que par des mesures compensatoires ou des tiers : séparation des tâches (PR.AA-05.6), évaluation indépendante (ID.IM-03.7), audit des fournisseurs (GV.SC-07.3). Elles se **nomment**, elles ne se taisent pas.
 
+## 2ter. Les gates comme producteurs de preuves
+
+Le seuil de maturité 3/5 demande qu'une activité soit **appliquée et documentée**, avec une preuve par réponse de l'autoévaluation. Les gates de `gates.md` produisent déjà ces preuves à chaque build. Il manquait de dire à quelle exigence chacune répond.
+
+| Rapport produit | Gate · registre | Format | Preuve pour |
+|---|---|---|---|
+| Nomenclature des dépendances | SBOM · plancher | CycloneDX | ID.AM-02.1 B, ID.AM-02.2 I (inventaire logiciel tenu à jour) |
+| Scan de l'image | vulnérabilités conteneur · plancher | SARIF | ID.RA-01.1 B, ID.RA-01.2 I, ID.RA-01.6 I (vulnérabilités identifiées) |
+| Analyse des dépendances | SCA · jalon | JSON de l'outil | ID.RA-01.1 B, ID.RA-01.6 I |
+| Montées de version fusionnées après un avis | SCA · jalon (la PR, pas le rapport) | historique Git | ID.AM-08.2 ★B, PR.PS-02.1 I (correctifs installés, logiciel maintenu selon le risque) |
+| Détection de secrets | secrets · plancher | SARIF | PR.AA-01.1 ★B (moyens d'authentification des services gérés, jamais dans le code) |
+| Analyse statique | SAST · jalon | SARIF | PR.PS-06.1 I, PR.PS-06.3 E (sécurité intégrée au cycle de développement) |
+| Gates verts avant fusion | chaîne complète | journal de CI | PR.PS-06.2 I (changements testés avant la production) |
+
+**Trois règles pour qu'un rapport compte comme preuve.**
+
+1. **Rattaché.** Un rapport nomme le commit, la date et la version de l'outil qui l'a produit. Sans ces trois éléments, il prouve qu'un outil a tourné un jour, pas que *ce* logiciel a été vérifié.
+2. **Conservé au-delà de la CI.** Les artefacts de CI expirent (90 jours dans les gabarits de `../tools/gates/`), et une gate review peut venir plus tard. À chaque gate review, et à chaque version publiée pour le SBOM, les rapports sont **archivés** avec la version (pièces jointes de la release, ou dossier de preuves versionné) sous un manifeste : commit, date, outil et version, identifiants CyFun couverts.
+3. **Un rapport rouge trié est aussi une preuve.** ID.RA-01 demande des vulnérabilités « identifiées, validées et enregistrées » : le finding plus sa décision de triage (issue, ADR, correctif) prouve davantage qu'un rapport vert, qui ne montre que l'absence de résultat d'un outil.
+
+**Ce que les rapports ne prouvent pas.** Le **plan** de gestion des vulnérabilités (ID.RA-08.1 ★I) est un document, pas un rapport : ses scans n'en sont que l'exécution (story 5 de gilmry/foyer#11). Ni l'identification des menaces sur l'architecture (ID.RA-01.1 couvre aussi l'architecture réseau et système, que les scans de code ne voient pas), ni les tests de sécurité spécialisés (ID.IM-03.9 E). Une preuve partielle se déclare partielle dans l'autoévaluation.
+
 ## 3. Positionnement open-source (CRA)
 
 Foyer dérive du Manifeste Maury (**CC BY-SA 4.0**) et n'est pas monétisé. Sous le **Cyber Resilience Act**, un tel logiciel relève vraisemblablement de l'**exemption** (OSS non commercial) ou du régime allégé **« open-source software steward »** — sans amendes administratives. *À confirmer projet par projet* : dès qu'un dérivé est **mis sur le marché dans le cadre d'une activité commerciale**, il bascule dans le champ plein du CRA (obligations §5 incluses). C'est un **point de bascule** au sens du répondre-de : à tracer explicitement.

@@ -73,6 +73,8 @@ La security gate est le point où les standards **s'objectivent dans la fabricat
 - **NIS2 · CRA · NIST SSDF** — secure-SDLC, gestion des vulnérabilités, *security-by-design*. Le SBOM exigible sous CRA est désormais **couvert par le plancher**.
 - **ISO 42001 / EU AI Act** — la traçabilité (registre TRACE, ADR/RFC) et le répondre-de portent le volet IA, pas la gate code.
 
+Chaque rapport d'un gate est aussi une **preuve** pour l'autoévaluation CyFun ; la correspondance rapport → identifiant et les règles de conservation vivent dans `conformite.md` §2ter. Conséquence pour le plancher : le SBOM y est parce qu'il capte une information **irréversible**, or l'artefact de CI expire. Sans archivage avec chaque version publiée, l'irréversibilité qui justifie le gate revient par la porte de la rétention.
+
 Le mapping complet des trois cercles (mondial → européen → belge) et le **backlog des angles morts** vivent dans **`conformite.md`**. Voir aussi le mapping ISO 27001 → IaC du livrable Architecture.
 
 ## Mettre les gates en place — une story habilitante
