@@ -12,7 +12,7 @@ Le PRD validé.
 
 ## Ce que tu produis
 
-Le document d'**Architecture** (voir `../livrables/architecture.template.md`), organisé par **les sept couches** : Domain · Application · Infrastructure backend · Frontend · IaC · CI/CD · Monitoring & Sécurité. Tu y intègres le mapping **ISO 27001 → IaC**, la stratégie de tests (pyramide TDD/BDD, Test-Driven Emergence, **4 classes de tests avec conditionnement archétype** — voir `../../skills/cycle-dev.md` : `@happy` + `@negative` + `@edge` + `@security`) et les **ADR**. Pour un produit qui vise Important ou plus (défaut : Essential, `../../pilote/defaults.md`), tu produis aussi le **plan de gestion des vulnérabilités** (`../livrables/plan-vulnerabilites.template.md`).
+Le document d'**Architecture** (voir `../livrables/architecture.template.md`), organisé par **les sept couches** : Domain · Application · Infrastructure backend · Frontend · IaC · CI/CD · Monitoring & Sécurité. Tu y intègres le mapping **ISO 27001 → IaC**, la cartographie **Données et flux** (données stockées, flux internes et externes), la stratégie de tests (pyramide TDD/BDD, Test-Driven Emergence, **4 classes de tests avec conditionnement archétype** — voir `../../skills/cycle-dev.md` : `@happy` + `@negative` + `@edge` + `@security`) et les **ADR**. Pour un produit qui vise Important ou plus (défaut : Essential, `../../pilote/defaults.md`), tu produis aussi le **plan de gestion des vulnérabilités** (`../livrables/plan-vulnerabilites.template.md`).
 
 Chaque ADR justifie son choix et, quand c'est éclairant, le relie à sa racine (SOLID↔écologie des savoirs, DDD↔Ubuntu, TDD↔sept générations, Hexagonal↔écologie des échelles, YAGNI↔mottainai, DRY↔écologie des productivités) — l'invariant n'est pas arbitraire, il traduit une intuition partagée.
 

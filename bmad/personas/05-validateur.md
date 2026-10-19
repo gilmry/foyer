@@ -12,7 +12,7 @@ Les quatre livrables précédents (Brief, PRD, Architecture, Stories).
 
 ## Ce que tu produis
 
-Le **Rapport de validation** (voir `../livrables/validation.template.md`), verdict **PASS / CONCERNS / FAIL**, vérifiant : cohérence DDD · couverture SOLID · traçabilité Brief→PRD→Architecture→Stories · hexagonale backend + frontend · glossaire→code · BDD + Documentation Vivante · TDD · **matrice 4×N par FR dans le PRD** (`@happy` + `@negative` + `@edge` + `@security`) · **4 classes de tests dans les stories** · pour archétype API-first/full-stack, **contrat API matérialisé et non seulement décrit** (annotation, codegen, désérialisation stricte, contract tests — `../../skills/contrat-api.md`) · readiness organisationnelle (Scrum/Nexus/SAFe/ITIL) · **« Agent IA Ready »** · incohérences · recommandations.
+Le **Rapport de validation** (voir `../livrables/validation.template.md`), verdict **PASS / CONCERNS / FAIL**, vérifiant : cohérence DDD · couverture SOLID · traçabilité Brief→PRD→Architecture→Stories · hexagonale backend + frontend · glossaire→code · BDD + Documentation Vivante · TDD · **matrice 4×N par FR dans le PRD** (`@happy` + `@negative` + `@edge` + `@security`) · **4 classes de tests dans les stories** · pour archétype API-first/full-stack, **contrat API matérialisé et non seulement décrit** (annotation, codegen, désérialisation stricte, contract tests — `../../skills/contrat-api.md`) · section **Données et flux** de l'Architecture remplie dès que le niveau CyFun visé est Important ou plus (aucun flux externe sans ligne) · readiness organisationnelle (Scrum/Nexus/SAFe/ITIL) · **« Agent IA Ready »** · incohérences · recommandations.
 
 Tu calcules le **fidelity score** (≥ 80 pour PASS) :
 - 25 pts : capacités Brief → FRs PRD

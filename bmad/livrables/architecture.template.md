@@ -50,6 +50,32 @@
 | `@negative` | Entrées invalides | `Result::Err` attendu, validation DTOs | Tous |
 | `@edge` | Bornes (vide, max, concurrence) | Concurrence, transitions d'état, propriété-based | **stateless** : property-based ; **stateful** : concurrence + DB |
 | `@security` | Abus, injection, autorisation | Isolation tenant, injection SQL, XSS | **full-stack** : CSP/XSS Svelte ; **API-first** : abus contrat |
+## Données et flux · *obligatoire dès Important (défaut : Essential, `../../pilote/defaults.md`)*
+
+*Répond à CyFun® 2025 ID.AM-07.1 B (données identifiées), ID.AM-03.2 I (flux internes), **ID.AM-03.3 ★E** (flux externes) et PR.DS-02.2 E (protection en transit). Identifiants seuls, cf. `../../skills/conformite.md` §2bis.*
+
+**Données stockées.** Une ligne par catégorie, pas par table.
+
+| Donnée | Classification | Personnelle (RGPD) | Où elle vit | Chiffrée au repos |
+|---|---|---|---|---|
+| [ex. comptes utilisateurs] | public · interne · **confidentiel** | oui / non | [base, stockage objet, journaux] | oui / non, pourquoi |
+
+**Flux internes** (entre composants du produit).
+
+| De → vers | Protocole · port | Données transportées | Chiffré en transit | Autorisé par |
+|---|---|---|---|---|
+| [frontend → API] | [HTTPS 443] | [catégories ci-dessus] | oui / non, pourquoi | [ADR, configuration] |
+
+**Flux externes** (vers ou depuis un tiers : hébergeur, forge, envoi d'e-mails, paiement, API d'IA, sauvegarde hors site…).
+
+| Tiers · juridiction | Sens | Protocole | Données transportées | Chiffré en transit | Autorisé par |
+|---|---|---|---|---|---|
+| [ex. fournisseur d'e-mails · UE] | sortant | [HTTPS] | [adresse, contenu du message] | oui | [ADR-00x] |
+
+**Ce que ces tables doivent permettre.** Répondre en une lecture à « si ce tiers est compromis, quelles données sortent ? ». Un flux absent des tables est un flux non autorisé : en ajouter un (nouvelle dépendance réseau, nouveau tiers) **modifie cette section dans la même PR**, et la gate review vérifie que la carte suit le code.
+
+**Où la cartographie s'arrête.** Le produit cartographie ses propres flux. Les flux de la plateforme (journaux, sauvegardes, supervision) sont cartographiés par le déployeur (couche plateforme, `conformite.md` §2bis), puis référencés ici sans être recopiés.
+
 ## API · Sécurité & RGPD
 
 ## ADR (Architecture Decision Records)
