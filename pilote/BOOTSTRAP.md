@@ -25,10 +25,11 @@ trancher seul un point irréversible.
   (`RETROFIT.md` / `RELEASE.md` / `PROJET.md`) ?
 - Repère l'archétype probable (`bmad/archetypes.md` : stateless / stateful / api-first / full-stack).
 
-**3. Demande ce qu'on veut faire (Q0).** Pose **une** question, trois réponses possibles :
+**3. Demande ce qu'on veut faire (Q0).** Pose **une** question, quatre réponses possibles :
 - **nouveau** — on part de zéro (greenfield) ;
 - **rétrofit** — un legacy en production à faire converger ;
-- **release** — produit existant, gros incrément à cadrer.
+- **release** — produit existant, gros incrément à cadrer ;
+- **exploitation** — produit en production à faire vivre (porte v0, coexiste avec une autre).
 > Si un registre existe déjà avec une porte active, ne repose pas Q0 : reprends à l'étape courante.
 
 **4. Crée le registre.** Copie `pilote/state.template.md` à la racine du projet cible

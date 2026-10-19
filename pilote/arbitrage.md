@@ -49,6 +49,18 @@ choix **technique réversible** est **tranché par l'agent** avec le défaut de
 | **Choix ou rescaling du barreau** (Scrum → Nexus → SAFe) | Gantt en passes d'agent (`roles/pilotage.md`) : parallélisme réel, points de concours, nombre de flux | **Point irréversible**, protocole complet : le pilotage propose l'ADR, l'architecte solution le trace, l'humain valide |
 | **Report du frontend D2** | Mesure de dérive de rendu (rendu serveur ? SPA ? code mort ?) | **Auto-tranché** : si pas de dérive, report sur ADR — sinon migration D2. Pas de question technique au PO |
 
+## Points irréversibles — PROMOTION et EXPLOITATION *(v0, à recaler, cf. `journeys/exploitation.md`)*
+
+| Point | Persona | Preuve que l'IA assemble | Question de modalité (humain) |
+|---|---|---|---|
+| **Promotion d'une branche** | arbitre de promotion | gate `promotion` vert : vitrine, gates, quatre classes exécutées | Promue, ou renvoyée avec quelle preuve manquante ? |
+| **Durcissement** | platform engineer | écart observé, configuration proposée, impact sur les services | Quand l'appliquer ? fenêtre de maintenance ? retour arrière ? |
+| **Mapping branche → environnement** | platform engineer | carte actuelle et proposée, environnements protégés | Quelle branche alimente quel environnement ? qui approuve ? |
+| **Migration de schéma en production** | platform engineer | migration et son retour, analyse d'impact données (`../skills/gates.md`, archétype stateful) | Quand ? sauvegarde vérifiée avant ? |
+| **Rotation de secret** | platform engineer | portée du secret, consommateurs, procédure de bascule | Maintenant ou planifiée ? qui vérifie la reprise ? |
+| **Dépréciation d'une capacité adoptée** | support engineer | signaux d'adoption, utilisateurs touchés, alternative | Préavis ? migration des utilisateurs ? |
+| **Choix de tier / destination de stockage** | estimateur capacité-coût | impact mémoire et € sur 2-3 jalons (abaque) | Quel tier ? à quel seuil reconsidérer ? |
+
 ## Séquençage (arbitrage modal, pas destination)
 
 L'IA **produit l'ordre optimal** des périmètres (priorité par dérive mesurée, puis dépendances) ;

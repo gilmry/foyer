@@ -6,7 +6,7 @@
 -->
 # État Foyer — <NOM DU PROJET>
 
-- **Porte active** : `nouveau` | `rétrofit` | `release`  <!-- une seule -->
+- **Porte active** : `nouveau` | `rétrofit` | `release` | `exploitation`  <!-- une seule, sauf `exploitation` qui coexiste avec une autre tant que le produit tourne -->
 - **Parcours** : `pilote/journeys/<porte>.md`
 - **Archétype** : stateless | stateful | api-first | full-stack  <!-- défaut inféré, cf. defaults.md -->
 - **Niveau CyFun® visé** : Basic | Important | Essential  <!-- défaut inféré, cf. defaults.md ; abaissement sous Essential = ADR -->
@@ -57,9 +57,21 @@
 
 <!-- rétrofit : un périmètre par ligne ; nouveau/release : une story « Agent IA Ready » par ligne -->
 
-| Périmètre / story | État | Couches vertes | Bascule | Commit / ADR |
-|---|---|---|---|---|
-| <ex. periods> | migré | D/A/Ad/C/F1/F2 | n°2 ✅ | `retrofit(periods): …` |
+| Périmètre / story | État | Couches vertes | Bascule | Commit / ADR | Tours | Tokens | Wall-clock |
+|---|---|---|---|---|---|---|---|
+| <ex. periods> | migré | D/A/Ad/C/F1/F2 | n°2 ✅ | `retrofit(periods): …` | <n> | <k> | <h> |
+
+<!-- Télémétrie : relevée à la clôture de chaque story. Sans elle, le CSI n'a rien à recaler et les
+     priors [caler] de l'abaque ne se resserrent jamais (gilmry/foyer#10). -->
+
+## Promotions
+
+| Branche | Preuve complète (gate `promotion`) | Minutes d'arbitrage | Diff ouvert ? (pourquoi) | Décision | Le |
+|---|---|---|---|---|---|
+| <branche> | 🟢/🔴 | <min> | non / oui : <raison> | promue / renvoyée | AAAA-MM-JJ |
+
+<!-- Relevé de l'arbitre de promotion (pilote/roles/arbitre-de-promotion.md). Chaque « oui » dans
+     la colonne diff est un échec de la preuve, pas de l'arbitre (gilmry/foyer#7). -->
 
 ## Arbitrages
 

@@ -16,7 +16,7 @@ modèles savent lire, c'est **`AGENTS.md` + du Markdown + des scripts**. Donc :
 - **Les adaptateurs** (`adapters/claude/`, `adapters/opencode/`, `adapters/generic/`) sont
   **fins** : ils *pointent* vers le cœur, ils n'y logent aucune logique.
 
-## Trois portes d'entrée
+## Quatre portes d'entrée
 
 Le point d'entrée unique est **`parcours.md`** (le dispatcher). Il pose une seule question :
 quel est le contexte ? Puis il route :
@@ -26,6 +26,7 @@ quel est le contexte ? Puis il route :
 | **Nouveau projet** | greenfield, on part de 0 | [`journeys/nouveau-projet.md`](journeys/nouveau-projet.md) | conception BMAD → bootstrap kit |
 | **Rétrofit** | legacy en production à faire converger | [`journeys/retrofit.md`](journeys/retrofit.md) | diagnostic → harnais → extraction |
 | **Planification de release** | produit existant, gros incrément à cadrer | [`journeys/planification-release.md`](journeys/planification-release.md) | conception BMAD → cycle-dev |
+| **Exploitation** *(v0)* | produit en production | [`journeys/exploitation.md`](journeys/exploitation.md) | convergence → usage → recalage, rouvre une release |
 
 ## Deux portes d'usage (selon l'outil)
 
@@ -63,8 +64,8 @@ des gates. Tout agent commence par le lire, et le met à jour à chaque étape c
 
 ## Périmètre de cette version (walking skeleton)
 
-Livré : dispatcher, registre, arbitrage, les 3 parcours séquencés, les rôles
-`conception-bmad / pilotage / diagnostic / frontend-ilots / gate-runner` complets, les autres en briefs,
+Livré : dispatcher, registre, arbitrage, les 3 parcours séquencés plus la porte `exploitation` en v0, les rôles
+`conception-bmad / pilotage / diagnostic / frontend-ilots / gate-runner` complets, `arbitre-de-promotion` provisoire, les autres en briefs,
 le contrat de gates, les adaptateurs, deux exemples de registre (dont le dogfood stagesmed).
 
 **Reporté** (briefs posés, exécution à étoffer) : automatisation par fichier (Rector,
