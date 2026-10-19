@@ -16,7 +16,7 @@ BMAD traduit la vision stratégique (TOGAF) en backlog structuré : par où comm
 |---|---|---|
 | A — Vision | [Analyste](personas/01-analyste.md) | [Product Brief](livrables/product-brief.template.md) |
 | B-C — Business + SI | [Product Manager](personas/02-product-manager.md) | [PRD](livrables/prd.template.md) |
-| C-D — SI + Technique | [Architecte](personas/03-architecte.md) | [Architecture (7 couches, ADR)](livrables/architecture.template.md) |
+| C-D — SI + Technique | [Architecte](personas/03-architecte.md) | [Architecture (7 couches, ADR)](livrables/architecture.template.md) · [Plan de gestion des vulnérabilités](livrables/plan-vulnerabilites.template.md) |
 | E — Solutions | [Scrum Master](personas/04-scrum-master.md) | [Epics & Stories](livrables/epics-stories.template.md) |
 | F — Migration | [Validateur](personas/05-validateur.md) | [Rapport de validation](livrables/validation.template.md) |
 

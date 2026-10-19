@@ -34,6 +34,8 @@
 ## Couche 7 — Monitoring & Sécurité
 [Observabilité (Prometheus/Loki) · AlertManager comme trigger du platform engineer · détection.]
 
+**Plan de gestion des vulnérabilités** : livrable séparé, `plan-vulnerabilites.template.md` (CyFun ID.RA-08.1 ★I).
+
 ## Contrat API (OpenAPI) · *API-first : écrit avant le code, versionné*
 [Le contrat est la source de vérité ; rupture = point irréversible, validation humaine.]
 
