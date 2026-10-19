@@ -11,6 +11,7 @@
 | Décision | Défaut automatique | Pourquoi réversible |
 |---|---|---|
 | **Archétype** | Inféré du brief : état persisté + interface → `stateful full-stack` ; API sans écran → `api-first` ; transform pur → `stateless` | Fixe les gates, mais se change en re-cadrant le brief |
+| **Niveau CyFun® visé** | Inféré du brief : le produit **conserve des données de ses utilisateurs** (comptes, données personnelles, financières, décisions) → **Essential** ; sinon → **Basic**. Cf. [`../skills/conformite.md`](../skills/conformite.md) §2bis | Ne fixe que le seuil vérifié en gate review, pas le plancher. **Le relever** est un défaut ; **l'abaisser sous Essential** pour un produit qui conserve des données d'utilisateurs se trace en ADR |
 | **Pile / kit** | Le kit résolu par [`journeys`](journeys/nouveau-projet.md) B0 (seed local, sinon scaffold). Pas de techno imposée au PO | On peut re-seeder tant qu'aucune story n'est livrée |
 | **Persistance** | Le mécanisme du kit (souvent SQL simple + migrations réversibles). Pas d'ORM sauf besoin réel | Migrations `up/down` réversibles |
 | **Substrat d'exécution** | Runtime local s'il existe, **sinon conteneur** (Docker) — cf. `parcours.md` étape 0bis | N'affecte pas le produit |
@@ -23,6 +24,9 @@ Uniquement les points **irréversibles ET compréhensibles sans être dev**, en 
 
 - **Destination métier** : « Ton app doit-elle gérer *plusieurs utilisateurs avec comptes*, ou
   *une seule liste* ? » (≠ « mono-tenant ou multi-tenant ? »).
+- **Valeur des données** : « Ton app va-t-elle garder des *informations sur tes utilisateurs*
+  (noms, adresses, paiements, votes…) ? » (≠ « quel niveau CyFun ? »). La réponse fixe le
+  niveau CyFun visé ci-dessus.
 - **Points de non-retour métier** : « On **supprime définitivement** les tâches faites, ou on les
   **archive** ? » (≠ « hard delete ou soft delete ? »).
 - **Mise en ligne** : « On publie *maintenant* pour de vrais utilisateurs, ou ça reste un test ? »

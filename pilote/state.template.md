@@ -9,6 +9,7 @@
 - **Porte active** : `nouveau` | `rétrofit` | `release`  <!-- une seule -->
 - **Parcours** : `pilote/journeys/<porte>.md`
 - **Archétype** : stateless | stateful | api-first | full-stack  <!-- défaut inféré, cf. defaults.md -->
+- **Niveau CyFun® visé** : Basic | Important | Essential  <!-- défaut inféré, cf. defaults.md ; abaissement sous Essential = ADR -->
 - **Substrat d'exécution** : runtime local | conteneur (Docker) | …  <!-- sonde 0bis, cf. parcours.md -->
 - **Démarré le** : AAAA-MM-JJ
 - **Dernière mise à jour** : AAAA-MM-JJ (par : <agent/humain>)
