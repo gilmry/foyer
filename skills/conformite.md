@@ -66,7 +66,15 @@ Foyer n'est pas un cadre de conformité, c'est une **pratique d'ingénierie**. M
 
 Les identifiants sont cités **sans le texte du CCB**, qui diffuse ses documents sous TLP:GREEN. Le texte des exigences se lit dans les livrets officiels (`cyfun.eu`).
 
-**Ce que le niveau ne garantit pas.** Un mapping n'est pas une conformité (§4) : seule une autoévaluation documentée, avec une preuve par réponse, permet de dire « aligné », et seule une évaluation par un organisme accrédité permet de dire « conforme ». Pour un porteur seul, certaines exigences ne passent que par des mesures compensatoires ou des tiers : séparation des tâches (PR.AA-05.6), évaluation indépendante (ID.IM-03.7), audit des fournisseurs (GV.SC-07.3). Elles se **nomment**, elles ne se taisent pas.
+**Ce que le niveau ne garantit pas.** Un mapping n'est pas une conformité (§4) : seule une autoévaluation documentée, avec une preuve par réponse, permet de dire « aligné », et seule une évaluation par un organisme accrédité permet de dire « conforme ». Pour un porteur seul, certaines exigences ne passent que par des mesures compensatoires ou des tiers. Elles se **nomment**, elles ne se taisent pas :
+
+| Exigence | Pourquoi un porteur seul ne la tient pas | Mesure compensatoire documentée |
+|---|---|---|
+| Séparation des tâches (PR.AA-05.6 I) | La même personne écrit, valide et déploie | Les points irréversibles passent par l'anneau 3 (`enforcement.md`) : protection de branche, CI qui rejoue tout, journaux hors hôte que le porteur ne peut pas réécrire (couche plateforme). La machine tient le rôle du second, l'autoévaluation le dit |
+| Évaluation indépendante (ID.IM-03.7 E) | Personne d'autre n'évalue | Relecture des notes des *key measures* par un pair à chaque autoévaluation (§2quater) ; évaluation par un tiers dès qu'un produit est mis sur le marché dans le cadre d'une activité commerciale (§3) |
+| Audit des fournisseurs (GV.SC-07.3 E) | Un porteur seul n'audite pas un hébergeur ou une forge | Les attestations publiées par le fournisseur (certification, rapport d'audit), relues à chaque gate review, remplacent l'audit qu'on ne peut pas mener sans l'égaler ; un plan de sortie par fournisseur critique (test de réversibilité, `arbitrage-hybride.md` §3) borne le risque qui reste |
+
+Une mesure compensatoire n'efface pas l'écart : dans l'autoévaluation, la note reflète ce qui est réellement en place, et le commentaire nomme la compensation.
 
 ## 2ter. Les gates comme producteurs de preuves
 
@@ -89,6 +97,20 @@ Le seuil de maturité 3/5 demande qu'une activité soit **appliquée et document
 3. **Un rapport rouge trié est aussi une preuve.** ID.RA-01 demande des vulnérabilités « identifiées, validées et enregistrées » : le finding plus sa décision de triage (issue, ADR, correctif) prouve davantage qu'un rapport vert, qui ne montre que l'absence de résultat d'un outil.
 
 **Ce que les rapports ne prouvent pas.** Le **plan** de gestion des vulnérabilités (ID.RA-08.1 ★I) est un document, pas un rapport : ses scans n'en sont que l'exécution (gabarit : `../bmad/livrables/plan-vulnerabilites.template.md`). Ni l'identification des menaces sur l'architecture (ID.RA-01.1 couvre aussi l'architecture réseau et système, que les scans de code ne voient pas), ni les tests de sécurité spécialisés (ID.IM-03.9 E). Une preuve partielle se déclare partielle dans l'autoévaluation.
+
+## 2quater. L'autoévaluation en gate review
+
+Le mapping (§2bis) et les preuves (§2ter) ne disent pas où l'on en est. C'est le rôle de l'**outil d'autoévaluation du CCB**, celui du niveau visé, rempli en **gate review** (`../Methode-Foyer.md` §3).
+
+**Quand.** *Défaut annoncé :* complète à la première gate review qui suit le choix du niveau, puis à chaque version publiée et au moins une fois par an. Entre deux, chaque gate review ne revoit que les *key measures* et les catégories sous le seuil.
+
+**Comment noter.** L'outil note chaque exigence sur deux axes, la maturité de la **documentation** et celle de la **mise en œuvre**. Les livrables Foyer (Architecture, plan de gestion des vulnérabilités, ADR) nourrissent la première ; les rapports archivés (§2ter) nourrissent la seconde. Chaque réponse porte dans sa colonne de commentaire **le lien vers sa preuve** ; une note sans preuve se justifie dans le commentaire, ou elle baisse.
+
+**Le verdict** reprend les seuils de §2bis : chaque *key measure* et chaque catégorie à 3 au moins, le total à 2,5 au moins. Il entre dans le compte rendu de la gate review : seuils atteints ou non, et nombre d'écarts.
+
+**Chaque écart devient une story,** rattachée à sa couche : plateforme (backlog du déployeur), application (backlog du produit), organisation (documents du porteur). Les *key measures* passent en premier. Un écart accepté sans story se trace en ADR, avec une date de réexamen.
+
+**Où vit le fichier rempli : jamais dans un dépôt public.** L'outil reprend le texte du CCB (TLP:GREEN), et une autoévaluation remplie est une carte des faiblesses du produit. Elle reste dans l'espace privé du porteur. Le dépôt public ne reçoit que le verdict et les stories, rédigées comme des capacités à construire et non comme des failles à exploiter. Une vulnérabilité exploitable suit le plan de gestion des vulnérabilités, pas le backlog public.
 
 ## 3. Positionnement open-source (CRA)
 
