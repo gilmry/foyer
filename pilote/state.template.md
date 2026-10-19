@@ -24,7 +24,7 @@
 
 | Gate | Statut | Quand | Commande |
 |---|---|---|---|
-| plancher (secrets/migrations) | 🟢/🔴/⚪ | | cf. `pilote/gates/README.md` |
+| plancher (secrets · SBOM · conteneur · migrations si stateful) | 🟢/🔴/⚪ | | cf. `pilote/gates/README.md` |
 | caractérisation (rétrofit) | 🟢/🔴/⚪ | | |
 | verify structurel | 🟢/🔴/⚪ | | |
 | contrat (anti-drift) | 🟢/🔴/⚪ | | |
@@ -32,6 +32,9 @@
 | E2E (correctness) | 🟢/🔴/⚪ | | |
 | régression visuelle (si D2) | 🟢/🔴/⚪ | | |
 | doc vivante (preuve de valeur) | 🟢/🔴/⚪ | | non bloquant |
+| jalon (SAST · SCA · qualité) | n findings | | rapport, non bloquant, trié en gate review |
+
+**Dernière gate review** : AAAA-MM-JJ · autoévaluation CyFun : seuils atteints oui / non, n écarts (`skills/conformite.md` §2quater)
 
 ## Périmètres / backlog
 

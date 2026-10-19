@@ -11,7 +11,7 @@ les **références** (kit Foyer + dogfood rétrofit stagesmed) à recopier/adapt
 
 | Gate | Moment | Bloquant | Sens |
 |---|---|---|---|
-| `plancher` | phase 1 / avant tout code | **oui** | secrets hors dépôt+historique ; migrations réversibles (`down.sql`) |
+| `plancher` | phase 1 / avant tout code, puis à chaque build | **oui** | le plancher mécanique de [`../../skills/gates.md`](../../skills/gates.md) §Le plancher, **qui fait foi** : secrets · SBOM CycloneDX · vulnérabilités conteneur (si le projet livre une image) · migration réversible (archétype stateful) |
 | `verify` | à chaque étape | **oui** | invariants structurels (pureté des couches, artefacts) |
 | `contrat` | après couche Contrat | **oui** | spec OpenAPI ↔ client généré ↔ routes en phase (anti-drift) |
 | `unit` | couche Domaine | **oui** | domaine pur |
@@ -21,6 +21,27 @@ les **références** (kit Foyer + dogfood rétrofit stagesmed) à recopier/adapt
 | `caracterisation` | rétrofit, chaque bascule | **oui** | comportement externe inchangé |
 | `visuel` | bascule D2 | **oui à la bascule** | régression visuelle (goldens, tolérance) |
 | `doc-vivante` | avec la fonctionnalité | non | preuve de valeur (galerie + vidéo) |
+
+> **Une seule définition du plancher**, celle du skill. Ce tableau la référence au lieu de la
+> recopier : la prochaine révision du skill ne doit pas rouvrir un écart ici.
+
+## Exigence de jalon (rapport, pas gate)
+
+Le second registre de [`../../skills/gates.md`](../../skills/gates.md). **Pas d'exit code bloquant** :
+un rapport produit en CI, trié par l'humain en **gate review**, au seuil fixé par le niveau CyFun®
+visé du registre (`../state.template.md`).
+
+| Rapport | Format | Où il remonte |
+|---|---|---|
+| Qualité interne (lint, types, complexité, couverture) | sortie de l'outil | registre, section Gates, ligne `jalon` |
+| SAST | SARIF | idem, findings triés en gate review |
+| SCA (dépendances) | JSON de l'outil | idem, triage selon le plan de gestion des vulnérabilités |
+| Licences, DAST, injection de prompt (si le produit embarque un LLM) | SARIF ou JSON | idem |
+
+Les tests (`unit`, `bdd`, `integration`, `e2e`, `caracterisation`) **restent bloquants** : ce sont les
+preuves du cycle de craft (`../../skills/cycle-dev.md`), pas des analyseurs. Un finding de jalon ne
+bloque jamais un commit ; le bloquer le ferait contourner, pas corriger. Les rapports sont aussi des
+preuves pour l'autoévaluation CyFun (`../../skills/conformite.md` §2ter et §2quater).
 
 ## Référence KIT (`foyer/kit-php/`)
 
@@ -35,7 +56,10 @@ typecheck         (cd frontend && npm run typecheck)
 test-front        (cd frontend && npm run test)
 doc-vivante       (cd frontend && npm run docs:living)      # non bloquant
 migrations        php bin/console app:migrate                # up/down réversible
+sbom              composer CycloneDX:make-sbom --output-format=JSON --output-file=sbom.cdx.json --omit=dev
 ```
+
+Le scan conteneur et les rapports de jalon vivent en CI : gabarits dans [`../../tools/gates/`](../../tools/gates/).
 
 ## Référence DOGFOOD RÉTROFIT (`stagesmed-retrofit-test/harness/`)
 

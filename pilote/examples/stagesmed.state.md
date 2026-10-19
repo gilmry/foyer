@@ -19,6 +19,9 @@
 | Gate | Statut | Quand | Commande |
 |---|---|---|---|
 | plancher (secrets G1 / migrations G2) | 🟢 | 2026-09 | `php harness/verify.php` |
+| plancher : SBOM CycloneDX | ⚪ jamais joué | — | `composer CycloneDX:make-sbom` (à ajouter à `harness/ci.sh`) |
+| plancher : vulnérabilités conteneur | sans objet | — | destination webhosting, aucune image livrée (`RETROFIT-DIAGNOSTIC.md` §5) |
+| jalon (SAST · SCA · qualité) | ⚪ jamais produit | — | rapport non bloquant, à trier en gate review |
 | stock sécurité (S1-S6) | 🟢 | 2026-09 | `php harness/verify.php` |
 | contrat anti-drift (C/D/M) | 🟢 | 2026-09 | `php harness/verify.php` |
 | H1 hexagonal (Domain/Application purs) | 🟢 | 2026-09 | `php harness/verify.php` |
@@ -63,6 +66,7 @@
 | stack vanilla (miroir kit) | rester PHP/MySQL, gates miroités | humain | 2026-09 | `RETROFIT-DIAGNOSTIC.md` §5 |
 
 ## Journal
+- 2026-10-19 — plancher réaligné sur `skills/gates.md` (gilmry/foyer#9), rejoué **sur le registre** : la sandbox n'est pas sur l'hôte de cette révision, rien n'a été exécuté. Écarts : SBOM jamais produit (bloquant au plancher depuis la v0.3, donc **le plancher de stagesmed n'est pas vert** au sens du skill) ; scan conteneur sans objet ; aucun rapport de jalon. À rejouer dans la sandbox avant le point n°5.
 - 2026-09-07 — doc vivante : 12 stories (5 personas + 7 workflows), 20 vidéos, vitrine (`5771a05`).
 - 2026-09-04 — phase 4 : synthèse de convergence (`docs/RETROFIT-CONVERGENCE.md`) — **à valider**.
 - 2026-09 — phase 3 : CI + `harness/ci.sh` (la source de vérité quitte la prod).
