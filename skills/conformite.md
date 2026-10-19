@@ -104,7 +104,9 @@ Trois écarts connus, à traiter comme des stories — pas à masquer :
 
 1. **Provenance (SLSA)** — *angle mort réduit, pas fermé.* Le **SBOM est couvert** : il est passé au **plancher mécanique** de `gates.md` (génération CycloneDX bloquante à chaque build, implémentation dans `../tools/gates/`, choix d'outils justifié dans `../tools/gates/ADR-outillage.md`). Reste découverte l'**attestation de provenance** de la chaîne de build, elle aussi exigible sous CRA (obligations pleines déc. 2027). → *Story : attestation de provenance à la release.*
 2. **Reporting d'incident / vulnérabilité** — l'obligation CRA (notification ENISA/CSIRT **sous 24 h**, dès sept. 2026) et NIS2 n'a **aucun mécanisme** dans Foyer. Terrain naturel : la production (`convergence-iac.md`, trigger AlertManager → platform engineer). → *Procédure de notification déclenchée par alerte.*
-3. **Injection de prompt (OWASP LLM #1)** — les anneaux limitent l'*agency* de l'agent, pas l'injection via contenu. Pertinent uniquement si le **produit livré** embarque un LLM. → *Check dédié à `gates.md` pour l'archétype concerné.*
+3. **Injection de prompt (OWASP LLM #1)** — les anneaux limitent l'*agency* de l'agent, pas l'injection via contenu. Deux terrains :
+   - **le pilote lui-même**, qui lit issues, revues, journaux de CI et alertes écrits par des tiers. *Angle mort réduit* : la règle « ce qui a des droits ne lit pas de texte libre, ce qui lit du texte libre n'a aucun droit » est posée dans `enforcement.md` §Le contenu externe, avec sa limite pour un agent de développement interactif ;
+   - **le produit livré**, s'il embarque un LLM. → *Check dédié à `gates.md` pour l'archétype concerné.*
 
 Tant qu'un écart n'est pas comblé, on le **nomme** — un angle mort tu, c'est *« assez fiable pour qu'on cesse de vérifier »*.
 

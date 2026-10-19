@@ -67,6 +67,26 @@ Hors de portée de l'agent et de ses sous-agents :
 
 Les permissions font le confort et la défense en profondeur ; **la protection de branche et la CI font la garantie**. *« La parade est l'architecture, pas le contrat. »*
 
+## Le contenu externe — séparer les droits de la lecture
+
+Les trois anneaux bornent ce que l'agent **peut** faire, pas ce qu'on lui **dit** de faire. Or le pilote lit du texte qu'il n'a pas écrit : issues et commentaires, revues de PR, journaux de CI, charges d'alerte, pages web, README de dépendances. Sur un dépôt public, n'importe qui écrit dans ces champs. Un agent qui a le droit de pousser et qui lit un commentaire piégé fait ce que dit le commentaire, **dans la limite de ses droits** (injection de prompt indirecte, OWASP LLM #1).
+
+**La règle : ce qui a des droits ne lit pas de texte libre, ce qui lit du texte libre n'a aucun droit.**
+
+| Étape | Qui | Droits | Lit |
+|---|---|---|---|
+| 1. Collecter | un script déterministe | lecture seule | les sources brutes, sans les interpréter |
+| 2. Analyser | un modèle | **aucun** : ni outil, ni jeton, ni réseau | le texte libre collecté |
+| 3. Agir | l'humain, ou un agent outillé | les droits de l'action | la **proposition** de l'étape 2 et les preuves brutes jointes, jamais le texte libre seul |
+
+Le modèle de l'étape 2 peut être manipulé : le pire qu'il produise est une **mauvaise proposition**, que l'étape 3 lit avec les preuves brutes à côté. Il ne peut rien exécuter.
+
+**Placement.** L'absence de droits de l'étape 2 relève de l'**anneau 3** : pas de jeton dans son environnement, pas d'egress réseau. Un `deny` d'anneau 1 ne suffit pas, puisqu'il se contourne par délégation à un sous-agent (limite de l'anneau 2).
+
+**Ce qui compte comme texte libre.** Tout ce que le superviseur n'a pas écrit lui-même. Le corps d'une story rédigée par le superviseur est une consigne ; un commentaire de tiers sur la même issue est une **donnée**.
+
+**Limite assumée.** Un agent de développement interactif lit des retours de revue et agit dans la même session : la séparation complète n'y est pas tenable. Ce qui reste vrai : un texte externe est traité comme une donnée, toute action qu'il suggère au-delà d'un correctif local repasse par l'humain, et les points irréversibles restent en anneau 3, hors de portée quoi que l'agent ait lu. C'est aussi le moindre privilège que demande CyFun® 2025 (PR.AA-05.3 ★B), appliqué au pilote lui-même.
+
 ---
 
 *Dérivé du Manifeste Maury (CC BY-SA 4.0).*
