@@ -46,6 +46,7 @@ choix **technique réversible** est **tranché par l'agent** avec le défaut de
 |---|---|---|
 | **Choix d'archétype** | `bmad/archetypes.md` : inféré du brief (état persisté + écran → full-stack ; etc.) | **Défaut auto-tranché** par l'agent, annoncé en une phrase (`defaults.md`). Pas une question au PO non-dev. Ne remonte que si le **cadrage métier** est ambigu, et alors en langage clair (« une seule liste ou des comptes ? ») |
 | **Découpage de release** | Backlog de stories « Agent IA Ready » + chiffrage `../skills/abaque-cout-capacite.md` | Question **métier** au PO : quel périmètre / quel ordre (pas de jargon) |
+| **Choix ou rescaling du barreau** (Scrum → Nexus → SAFe) | Gantt en passes d'agent (`roles/pilotage.md`) : parallélisme réel, points de concours, nombre de flux | **Point irréversible**, protocole complet : le pilotage propose l'ADR, l'architecte solution le trace, l'humain valide |
 | **Report du frontend D2** | Mesure de dérive de rendu (rendu serveur ? SPA ? code mort ?) | **Auto-tranché** : si pas de dérive, report sur ADR — sinon migration D2. Pas de question technique au PO |
 
 ## Séquençage (arbitrage modal, pas destination)

@@ -64,7 +64,7 @@ des gates. Tout agent commence par le lire, et le met à jour à chaque étape c
 ## Périmètre de cette version (walking skeleton)
 
 Livré : dispatcher, registre, arbitrage, les 3 parcours séquencés, les rôles
-`conception-bmad / diagnostic / frontend-ilots / gate-runner` complets, les autres en briefs,
+`conception-bmad / pilotage / diagnostic / frontend-ilots / gate-runner` complets, les autres en briefs,
 le contrat de gates, les adaptateurs, deux exemples de registre (dont le dogfood stagesmed).
 
 **Reporté** (briefs posés, exécution à étoffer) : automatisation par fichier (Rector,

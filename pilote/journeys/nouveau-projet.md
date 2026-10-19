@@ -16,6 +16,13 @@
 - **Arbitrage** : choix d'archétype (fixe les gates conditionnels) — cf. `../arbitrage.md`.
 - **Sortie** : backlog priorisé « Agent IA Ready » + archétype engagé (inscrits au registre).
 
+## Phase A bis — Pilotage (entre le PASS et le code)
+- **Rôle** : [`../roles/pilotage.md`](../roles/pilotage.md) (persona `../../personas/chef-de-projet.md`)
+- **Faire** : WBS → dépendances déclarées → Gantt en passes d'agent → vagues et barrières → coût
+  comparé à la target de challenge → proposition de barreau.
+- **Arbitrage** : **choix du barreau** (irréversible) et validation du Gantt — cf. `../arbitrage.md`.
+- **Sortie** : Gantt validé par l'humain, vagues et répartition des rôles inscrites au registre.
+
 ## Phase B0 — Résoudre le kit (déterministe, jamais bloqué)
 
 Avant de « poser le kit », l'agent le **résout lui-même** (le PO ne fournit aucun indice) :

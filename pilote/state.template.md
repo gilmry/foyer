@@ -14,6 +14,23 @@
 - **Démarré le** : AAAA-MM-JJ
 - **Dernière mise à jour** : AAAA-MM-JJ (par : <agent/humain>)
 
+## Répartition des rôles
+
+| Rôle | Qui | Depuis |
+|---|---|---|
+| **PO** (tranche les modalités, valide sur preuve, signe) | <nom> | AAAA-MM-JJ |
+| **Dev** (exécute, assemble la preuve, ne tranche jamais) | <nom> + agent | AAAA-MM-JJ |
+
+<!-- Deux chapeaux sur une même personne : la séparation reste ÉCRITE. Un arbitrage se pose en 🔴
+     avec sa preuve AVANT d'être tranché, même quand celui qui pose et celui qui tranche sont le même. -->
+
+## Gantt / vagues
+
+- **Gantt** : <chemin du document signé> (signé le AAAA-MM-JJ par <nom>)
+- **Vague courante** : <n> · **barrière** : <story habilitante qui doit fermer avant la suivante>
+- **Branches ouvertes** : <liste, une par story en cours>
+- **Barreau** : Scrum | Nexus | SAFe (ADR <n>)
+
 ## Position courante
 
 - **Phase / étape** : <ex. Phase 2 · étape 3 (adaptateurs) · périmètre `X`>

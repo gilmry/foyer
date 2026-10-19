@@ -31,5 +31,5 @@ Transformer une intention (nouveau produit ou grosse release) en **backlog de st
 - **Découpage de release** (périmètre, ordre, capacité) → l'IA propose, le PO tranche.
 
 ## Ne pas faire
-- Écrire du code (c'est la phase suivante : bootstrap kit ou cycle-dev).
+- Écrire du code. La suite est le **pilotage** ([`pilotage.md`](pilotage.md)), puis le bootstrap du kit ou le cycle-dev.
 - Sauter la validation « Agent IA Ready » : une story non validée n'entre pas en fabrication.

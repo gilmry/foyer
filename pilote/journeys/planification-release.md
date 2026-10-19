@@ -18,6 +18,13 @@
   `../arbitrage.md`. L'IA propose l'ordre optimal, l'humain tranche la modalité.
 - **Sortie** : plan de release chiffré + backlog priorisé (inscrits au registre).
 
+## Phase A bis — Pilotage (entre le PASS et le code)
+- **Rôle** : [`../roles/pilotage.md`](../roles/pilotage.md) (persona `../../personas/chef-de-projet.md`)
+- **Faire** : WBS → dépendances déclarées → Gantt en passes d'agent → vagues et barrières → coût
+  comparé à la target de challenge → proposition de barreau.
+- **Arbitrage** : **choix du barreau** (irréversible) et validation du Gantt — cf. `../arbitrage.md`.
+- **Sortie** : Gantt validé par l'humain, vagues et répartition des rôles inscrites au registre.
+
 ## Phase B — Vérifier le socle avant d'ajouter
 - **Rôle** : [`../roles/gate-runner.md`](../roles/gate-runner.md)
 - **Faire** : passer les gates existants (verify structurel, contrat, tests 4 couches, E2E) pour
