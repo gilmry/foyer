@@ -28,7 +28,7 @@ Tu ajoutes la dépendance, le module ou le serveur seulement quand un besoin ré
 
 Tu avances par **jalons de capacité** : on ne franchit le palier suivant que si le palier actuel tient vraiment. Une fonctionnalité codée n'est pas une capacité disponible — une capacité englobe aussi les tests, la conformité, la doc et l'usage réel.
 
-À chaque jalon, une **gate review** : on vérifie que les fondations tiennent, que les ADR restent cohérents avec les drivers, et que les RFC ouvertes ont reçu une réponse ou sont explicitement reportées. La fréquence se calibre sur l'étape, ce n'est ni une formalité ni un frein.
+À chaque jalon, une **gate review** : on vérifie que les fondations tiennent, que les ADR restent cohérents avec les drivers, et que les RFC ouvertes ont reçu une réponse ou sont explicitement reportées. Pour un produit qui vise un niveau CyFun®, elle porte aussi l'autoévaluation (`skills/conformite.md` §2quater). La fréquence se calibre sur l'étape, ce n'est ni une formalité ni un frein.
 
 > Une date arbitraire pousse à la dette technique ; un jalon de capacité pousse à la qualité.
 
