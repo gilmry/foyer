@@ -33,6 +33,7 @@
     "./bmad/livrables/product-brief.template.md",
     "./bmad/livrables/prd.template.md",
     "./bmad/livrables/architecture.template.md",
+    "./bmad/livrables/plan-vulnerabilites.template.md",
     "./bmad/livrables/epics-stories.template.md",
     "./bmad/livrables/validation.template.md",
     "Simulateur-Synthese.md"
