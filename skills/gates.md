@@ -38,7 +38,7 @@ S'y ajoute, pour l'archétype **stateful**, le **fichier de retour de migration*
 
 ## L'exigence de jalon — ce qui remonte au jugement
 
-Produit un rapport, jamais un build cassé. Le **seuil** se fixe sur le niveau **CyFun®** visé (Small / Basic / Important / Essential) ; il est vérifié en **gate review**, pas à chaque commit.
+Produit un rapport, jamais un build cassé. Le **seuil** se fixe sur le niveau **CyFun®** visé (Small / Basic / Important / Essential), **Essential par défaut** pour un produit qui conserve des données de ses utilisateurs (`../pilote/defaults.md`, `conformite.md` §2bis) ; il est vérifié en **gate review**, pas à chaque commit.
 
 - **Qualité interne** — format · lint · types (`mypy --strict`, `tsc --noEmit`, `svelte-check`) · complexité cyclomatique · code mort · couverture par couche, la plus haute sur le Domain.
 - **Sécurité** — SAST · SCA (vulnérabilités connues des dépendances) · licences (cohérence AGPL / permissives) · DAST sur l'environnement E2E · injection de prompt (OWASP LLM #1) si le produit livré embarque un LLM.

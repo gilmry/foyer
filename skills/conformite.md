@@ -37,8 +37,36 @@ Foyer n'est pas un cadre de conformité, c'est une **pratique d'ingénierie**. M
 | Référentiel | Mécanisme Foyer |
 |---|---|
 | **Loi NIS2 du 26 avril 2024** + AR · autorité **CCB** / CSIRT | Mesures de gestion des risques objectivées par la security gate ; **reporting d'incident** ⚠️ §5 |
-| **CyberFundamentals (CyFun®)** — niveaux Small/Basic/Important/Essential ; **ISO 27001 reconnu** | L'ancrage ISO 27001 de `gates.md` couvre l'ossature ; le niveau CyFun visé fixe le **seuil des gates** |
+| **CyberFundamentals (CyFun®) 2025** — construit sur le **NIST CSF 2.0**, niveaux cumulatifs Small/Basic/Important/Essential ; coexiste avec CyFun 2023 jusqu'au 18 avril 2027 | L'ancrage ISO 27001 de `gates.md` couvre l'ossature ; le niveau CyFun visé (défaut : §2bis) fixe le **seuil de l'exigence de jalon** |
 | **APD / GBA** (RGPD) | cf. RGPD ci-dessus |
+
+## 2bis. Niveau CyFun visé — partir de la menace
+
+**Défaut : Essential** pour tout produit qui conserve des données de ses utilisateurs (`../pilote/defaults.md`). Ce n'est pas une obligation réglementaire : un porteur seul n'est en général pas soumis à NIS2. C'est un choix **par la menace**. Les attaques réalistes contre un produit riche en données (vol d'identifiants, abus de privilèges, rançongiciel, exfiltration, faille applicative) appellent des mesures qui n'existent qu'aux niveaux Important et Essential. S'arrêter à Basic, c'est se protéger de l'attaque opportuniste, pas de celle qui vise les données.
+
+**Volume.** Le modèle est cumulatif : pour Essential, il faut satisfaire environ 230 exigences, dont 29 *key measures* (13 Basic, 9 Important, 7 Essential). Le seuil de maturité est de 3/5 pour chaque *key measure* et chaque catégorie, et de 2,5/5 au global.
+
+**Trois couches, chacune portée une fois et héritée par chaque projet :**
+
+| Couche | Porteur | Contenu |
+|---|---|---|
+| **Plateforme** | le déployeur (Sluis) | Sauvegardes immuables et testées, journaux hors hôte, séparation production / test, pare-feu, accès à privilèges |
+| **Application** | **Foyer** (ce skill, `gates.md`, livrables BMAD) | Voir la table ci-dessous |
+| **Organisation** | documents du porteur | Politiques, analyse de risque, plan de réponse aux incidents, fournisseurs, formation |
+
+**Couche application — ce que Foyer doit garantir dans le produit.** ★ = *key measure*, B / I / E = niveau.
+
+| Menace | Exigences CyFun 2025 | Mécanisme Foyer attendu |
+|---|---|---|
+| Vol d'identifiants | PR.AA-03.2 ★B, PR.AA-01.4 E, PR.AA-02.2 E | MFA dans l'application, identifiant unique par utilisateur et par processus |
+| Abus de droits dans le produit | PR.AA-05.3 ★B, PR.AA-05.6 I | Moindre privilège dans le modèle d'autorisation, séparation des rôles métier |
+| Faille applicative | ID.RA-08.1 ★I, PR.PS-06.3 E, ID.IM-03.9 E | Plan de gestion des vulnérabilités (dépendances, divulgation coordonnée), secure-SDLC (`cycle-dev.md` + `gates.md`), tests spécialisés |
+| Exfiltration | ID.AM-03.3 ★E, PR.DS-02.2 E | Flux de données cartographiés dans le livrable Architecture, chiffrement en transit |
+| Données au repos | PR.DS-01.x, GV.PO-01.2 I | Politique de chiffrement applicatif (secrets, champs sensibles) |
+
+Les identifiants sont cités **sans le texte du CCB**, qui diffuse ses documents sous TLP:GREEN. Le texte des exigences se lit dans les livrets officiels (`cyfun.eu`).
+
+**Ce que le niveau ne garantit pas.** Un mapping n'est pas une conformité (§4) : seule une autoévaluation documentée, avec une preuve par réponse, permet de dire « aligné », et seule une évaluation par un organisme accrédité permet de dire « conforme ». Pour un porteur seul, certaines exigences ne passent que par des mesures compensatoires ou des tiers : séparation des tâches (PR.AA-05.6), évaluation indépendante (ID.IM-03.7), audit des fournisseurs (GV.SC-07.3). Elles se **nomment**, elles ne se taisent pas.
 
 ## 3. Positionnement open-source (CRA)
 
