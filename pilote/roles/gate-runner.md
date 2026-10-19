@@ -7,12 +7,20 @@
 Faire passer les gates de l'étape courante, lire leur **exit code**, et mettre à jour le registre.
 **Un gate rouge = stop** : on remonte la cause, on ne force pas, on ne passe pas à l'étape suivante.
 
+## Deux registres, deux conduites
+- **Rouge plancher ou test = stop.** Exit code non nul : la boucle s'arrête, la cause remonte au
+  rôle propriétaire de l'étape.
+- **Rapport de jalon = matière à arbitrage.** SAST, SCA, qualité interne : le rôle **consigne** le
+  rapport au registre (nombre de findings, lien vers le rapport) et **continue**. Il ne trie pas,
+  il ne bloque pas : le tri appartient à l'humain, en gate review, au seuil du niveau CyFun visé
+  (`../../skills/gates.md`, deux registres).
+
 ## Principe (portable, DRY)
 Chaque gate a une **CLI stable** et un **exit code** (0 = 🟢, ≠0 = 🔴). Les mêmes commandes tournent
 en local et en CI. L'agent n'interprète jamais un gate « à l'œil » : il lit le code de sortie.
 
 ## Ordre d'exécution (du plancher vers le sommet)
-1. **Plancher** (bloquant, toujours) : secrets, migrations réversibles.
+1. **Plancher** (bloquant, toujours) : celui de `../../skills/gates.md`, référencé par `../gates/README.md`.
 2. **Structurel** : `verify` (pureté des couches, artefacts, invariants).
 3. **Contrat** (anti-drift) : spec OpenAPI ↔ client généré ↔ routes.
 4. **Pyramide** : Unit (domaine) → BDD (cas d'usage) → Intégration (contrat HTTP).
@@ -20,6 +28,7 @@ en local et en CI. L'agent n'interprète jamais un gate « à l'œil » : il lit
 6. **Caractérisation** (rétrofit) : comportement externe inchangé.
 7. **Régression visuelle** (si bascule D2) : goldens, tolérance définie.
 8. **Doc vivante** (preuve de valeur, **non bloquant**).
+9. **Exigence de jalon** (rapports, **non bloquant**) : consignés au registre pour la gate review.
 
 ## Lecture des résultats → registre
 - Écrire pour chaque gate : 🟢/🔴 + horodatage + commande.
