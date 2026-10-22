@@ -175,3 +175,10 @@ La **méta-boucle ADR/ADM** (tenue par l'architecte solution = l'agent du Manife
 ## Registre
 
 Tous ces fichiers **orientent** (guidance). Le **blocage déterministe** est l'**enforcement** — formalisé en trois anneaux (`skills/enforcement.md`) : permissions agent, plugin, et **substrat** (hooks git, CI, protection de branche, sandbox) — ce dernier étant le seul dont on répond vraiment. Un beau cadre ne dispense pas de vérifier : *« assez fiable pour qu'on cesse de vérifier »* est le danger surveillé.
+
+## Licences
+
+Deux licences, selon la nature du fichier (détail dans [`LICENSE`](LICENSE)) :
+
+- **le code est sous [MIT](LICENSES/MIT.txt)** : les kits (`kit-*/`), l'outillage (`go`, `go.ps1`, `scripts/`, `tools/`) et tout fichier de code ou de configuration exécutable ;
+- **les documents sont sous [CC BY-SA 4.0](LICENSES/CC-BY-SA-4.0.txt)** : la méthode, le manifeste, les skills, les personas, le pilote, les gabarits et la documentation. Réutilisables, y compris commercialement, en citant la source et en gardant la même licence pour les adaptations.
