@@ -1,0 +1,38 @@
+Foyer est publié sous deux licences, selon la nature de chaque fichier.
+
+Copyright (c) 2026 Gilles Maury et les contributeurs du dépôt Foyer
+
+
+1. LE CODE : licence MIT (texte complet : LICENSES/MIT.txt)
+
+- les kits : kit-actix/, kit-fastapi/, kit-php/ (chacun porte aussi son
+  propre fichier LICENSE, pour rester sous MIT une fois copié dans un projet) ;
+- l'outillage : go, go.ps1, scripts/, tools/ ;
+- tout fichier de code source ou de configuration exécutable, où qu'il se
+  trouve dans le dépôt (.py, .sh, .ps1, .rs, .ts, .js, .toml, .yml, .yaml,
+  .json, workflows CI).
+
+Un projet construit à partir d'un kit peut adopter la licence de son choix,
+à condition de conserver la notice MIT du kit.
+
+
+2. LES DOCUMENTS : licence Creative Commons Attribution - Partage dans les
+   mêmes conditions 4.0 International, CC BY-SA 4.0
+   (texte complet : LICENSES/CC-BY-SA-4.0.txt,
+   résumé : https://creativecommons.org/licenses/by-sa/4.0/deed.fr)
+
+Tout le reste : la méthode, le manifeste, les skills, les personas, le
+pilote, les gabarits BMAD, la documentation, les schémas et le simulateur.
+
+Vous pouvez les copier, les adapter et les utiliser, y compris
+commercialement, à deux conditions :
+- citer la source : « Méthode Foyer, Gilles Maury,
+  https://github.com/gilmry/foyer, CC BY-SA 4.0 », en indiquant si vous
+  avez fait des modifications ;
+- diffuser vos adaptations sous la même licence CC BY-SA 4.0.
+
+
+3. LES NOMS
+
+Les licences ci-dessus portent sur les fichiers. Elles ne donnent aucun droit
+sur les noms « Méthode Foyer » et « Méthode Maury ».
