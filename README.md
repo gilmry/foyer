@@ -134,6 +134,7 @@ skills/                    Les 4 outils d'objectivation (enfants de la primitive
   cycle-dev.md               tests pré-écrits (rouge/vert/bleu, 4 tags)
   gates.md                   analyseurs (quality + security) — transversal
   convergence-iac.md         état observé (salt-ssh, GitOps, distroless, rollback)
+  depot-cible-sluis.md       générer un dépôt cible et le faire juger par sluis_verifier_depot
   adoption.md                usage réel (RACE → Adoption, RICE/WSJF)
   abaque-cout-capacite.md    estimation prospective TCO + ROI + empreinte mémoire
   arbitrage-hybride.md       grille de souveraineté pour tout choix hybride (cloud/on-prem, proprio/OSS, support, IA)
