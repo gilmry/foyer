@@ -43,7 +43,7 @@ Tout hérite d'une **primitive unique**, la boucle de rétroaction (`Boucle-de-r
 Le cadre se lit selon trois axes, matérialisés par trois familles de fichiers :
 
 - **`Manifeste-Foyer.md`** — qui est l'agent (valeurs, identité « Architecte Solution »).
-- **`skills/`** — les 4 outils d'objectivation (enfants de la primitive) : `cycle-dev` (tests rouge/vert/bleu), `gates` (analyseurs qualité+sécurité), `convergence-iac` (état observé), `adoption` (usage réel), plus estimation, arbitrage hybride, conformité, enforcement.
+- **`skills/`** — les 4 outils d'objectivation (enfants de la primitive) : `cycle-dev` (tests rouge/vert/bleu), `gates` (analyseurs qualité+sécurité), `convergence-iac` (état observé), `adoption` (usage réel), plus `depot-cible-sluis` (générer un dépôt cible jugé par Sluis), estimation, arbitrage hybride, conformité, enforcement.
 - **`personas/`** et **`bmad/personas/`** — qui tient le cercle et à quel grain (chef-de-projet, lead-developer, scrum-master, etc.).
 
 Flux de bout en bout : **`bmad/`** (Conception, pipeline TOGAF A–F → backlog validé « Agent IA Ready ») → Pilotage → Fabrication (`cycle-dev` + `gates`) → Production (`convergence-iac`) → Pilotage continu (`adoption`).
