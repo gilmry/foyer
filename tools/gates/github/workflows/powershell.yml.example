@@ -12,6 +12,7 @@ on:
 
 jobs:
   gate-secrets:
+    name: sluis/secrets  # contrat du dépôt cible de Sluis (ADR-034)
     uses: ./.github/workflows/gate-secrets.yml
 
   build:
@@ -42,6 +43,7 @@ jobs:
           echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
 
   gate-container:
+    name: sluis/scan-conteneur  # contrat du dépôt cible de Sluis (ADR-034)
     needs: build
     if: needs.build.outputs.has-dockerfile == 'true'
     uses: ./.github/workflows/gate-container.yml

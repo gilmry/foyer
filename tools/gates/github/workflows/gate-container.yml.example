@@ -42,25 +42,3 @@ jobs:
           name: trivy-sbom
           path: trivy-sbom.cdx.json
           retention-days: 90
-
-  # Second avis, non bloquant. Nécessite les secrets DOCKER_HUB_USER /
-  # DOCKER_HUB_TOKEN. Déclenché manuellement (workflow_dispatch) tant que
-  # la question de l'altérité n'est pas tranchée pour ce dépôt — cf.
-  # TOOLS.md. Ne pas activer par défaut sur workflow_call.
-  docker-scout:
-    name: Docker Scout (informatif, manuel)
-    if: github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Docker Scout CVEs
-        uses: docker/scout-action@2688993af7bafd6ba8c6a74ec652442be91dd82b  # v1.23.1
-        with:
-          command: cves
-          image: ${{ inputs.image-ref }}
-          sarif-file: scout.sarif
-        continue-on-error: true
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
-        if: always()
-        with:
-          name: docker-scout-report
-          path: scout.sarif
