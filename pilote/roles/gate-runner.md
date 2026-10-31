@@ -40,7 +40,7 @@ en local et en CI. L'agent n'interprète jamais un gate « à l'œil » : il lit
 
 ## Où trouver les commandes exactes
 Elles dépendent du projet et sont listées dans **l'`AGENTS.md` du projet** et
-[`../gates/README.md`](../gates/README.md). Exemples de référence (kit & dogfood stagesmed) :
+[`../gates/README.md`](../gates/README.md). Exemples de référence (kit & harnais de rétrofit) :
 `php scripts/verify.php`, `php bin/console app:gate:contract`,
 `php bin/phpunit --testsuite Unit|Integration`, `php bin/behat`, `npm run e2e`,
 et côté harnais rétrofit `bash harness/ci.sh`, `bash harness/run-*.sh`, `bash harness/run-demo.sh`.

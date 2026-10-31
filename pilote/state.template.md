@@ -78,7 +78,7 @@
 ### 🔴 En attente (l'humain doit trancher une MODALITÉ)
 
 <!-- Une entrée par point irréversible atteint. L'agent NE tranche PAS. -->
-- **Point** : <ex. bascule n°2 — frontend D2 périmètre `medecins`>
+- **Point** : <ex. bascule n°2 — frontend D2 périmètre `reservations`>
   - **Preuve jointe** : <E2E vert + régression visuelle verte 3 rôles + …>
   - **Question de modalité** : <ex. lance-t-on l'écran îlots maintenant ? quels parcours critiques ? rollback ?>
   - **Options présentées** : <A / B / C>

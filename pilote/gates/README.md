@@ -5,7 +5,7 @@
 > les invoque dans l'ordre et lit l'exit code — jamais « à l'œil ».
 
 Les commandes exactes vivent dans **l'`AGENTS.md` du projet cible**. Les tableaux ci-dessous sont
-les **références** (kit Foyer + dogfood rétrofit stagesmed) à recopier/adapter.
+les **références** (kit Foyer + harnais de rétrofit, cf. [`../examples/retrofit-legacy.state.md`](../examples/retrofit-legacy.state.md)) à recopier/adapter.
 
 ## Registre générique (nom → moment → bloquant)
 
@@ -65,13 +65,13 @@ sbom              composer CycloneDX:make-sbom --output-format=JSON --output-fil
 
 Le scan conteneur et les rapports de jalon vivent en CI : gabarits dans [`../../tools/gates/`](../../tools/gates/).
 
-## Référence DOGFOOD RÉTROFIT (`stagesmed-retrofit-test/harness/`)
+## Référence RÉTROFIT (`<projet>-retrofit/harness/`)
 
 ```
 verify (plancher+stock)   docker run … php harness/verify.php      # G1/G2 + S1-S6 (+ H1 info)
 ci (tous les gates)       bash harness/ci.sh
 caractérisation           bash harness/run.sh                      # periods
-                          bash harness/run-<périmètre>.sh          # students/medecins/auth/admin/doctor
+                          bash harness/run-<périmètre>.sh          # catalogue/reservations/comptes/admin
 régression visuelle       harness/visual/ (VISUAL_MODE=capture|compare, tolérance 0,5 %)
 doc-vivante               bash harness/run-demo.sh [filtre]        # non bloquant → harness/demo/vitrine/
 ```

@@ -66,7 +66,7 @@ des gates. Tout agent commence par le lire, et le met à jour à chaque étape c
 
 Livré : dispatcher, registre, arbitrage, les 3 parcours séquencés plus la porte `exploitation` en v0, les rôles
 `conception-bmad / pilotage / diagnostic / frontend-ilots / gate-runner` complets, `arbitre-de-promotion` provisoire, les autres en briefs,
-le contrat de gates, les adaptateurs, deux exemples de registre (dont le dogfood stagesmed).
+le contrat de gates, les adaptateurs, deux exemples de registre (`examples/` : un nouveau projet, un rétrofit).
 
 **Reporté** (briefs posés, exécution à étoffer) : automatisation par fichier (Rector,
 réécriture de couche) ; serveur MCP (`adapters/mcp/`) ; escalades temporisées d'arbitrage ;

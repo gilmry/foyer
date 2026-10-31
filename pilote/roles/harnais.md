@@ -12,7 +12,7 @@ suite de caractérisation qui fige le comportement **actuel** (bugs compris).
 2. **Gates plancher** (bloquants) : secrets hors dépôt/historique ; migrations avec `down.sql`
    réversibles — [`../gates/README.md`](../gates/README.md).
 3. **Caractérisation** : par périmètre, un script HTTP qui fige statut + schéma + erreurs métier
-   (patron éprouvé : `stagesmed-retrofit-test/harness/characterization-*.php`, orchestré par
+   (patron : `harness/characterization-<périmètre>.php`, orchestré par
    `harness/run-*.sh` / `harness/ci.sh`).
 
 ## Condition de sortie (bloquante)

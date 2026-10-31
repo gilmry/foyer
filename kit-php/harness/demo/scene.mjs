@@ -1,5 +1,5 @@
 // scene.mjs — cœur de la documentation vidéo vivante (transposé du pattern « klaar »
-// du kit stagesmed). Pilote une page Playwright en cadence (~1 action/s) avec une
+// d'un harnais de rétrofit). Pilote une page Playwright en cadence (~1 action/s) avec une
 // narration incrustée dans le DOM (visible dans la vidéo). Pas d'auth ici (todo mono-utilisateur).
 
 export const RHYTHM_MS = Number(process.env.DEMO_RHYTHM_MS ?? 1000);

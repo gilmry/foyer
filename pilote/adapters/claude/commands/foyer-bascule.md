@@ -1,6 +1,6 @@
 ---
 description: Prépare un point irréversible et demande l'arbitrage de modalité au PO
-argument-hint: "[nom du point, ex. bascule-n2-medecins]"
+argument-hint: "[nom du point, ex. bascule-n2-reservations]"
 ---
 
 Un **point irréversible** est atteint. Applique le protocole de `pilote/arbitrage.md` — **sans
