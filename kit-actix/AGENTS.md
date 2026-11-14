@@ -40,7 +40,8 @@ Volumes de cache cargo → compilations rapides après la première.
 | `e2e` (serveur Actix réel) | `bash harness/e2e-smoke.sh` | PostgreSQL (auto) |
 | `visuel` (goldens Chromium) | `bash harness/run-visual.sh` (`VISUAL_MODE=capture` pour régénérer) | PostgreSQL (auto) |
 | `doc-vivante` (preuve de valeur) | `bash harness/run-demo.sh` → `harness/demo/vitrine/` | PostgreSQL (auto) |
-| **tous** | `bash harness/ci.sh` | PostgreSQL (auto) |
+| `chiffrement` (port `Chiffreur`, foyer#28) | `bash harness/e2e-chiffrement.sh` | PostgreSQL + OpenBao dev (auto) |
+| **tous** | `bash harness/ci.sh` | PostgreSQL + OpenBao dev (auto) |
 
 Un seul test : `bash harness/run-tests.sh` puis `cargo test toggle` en local.
 
@@ -56,6 +57,24 @@ Deux adaptateurs du **même port** `TodoRepository`, prouvés interchangeables p
 
 > Le serveur HTTP utilise CQRS par défaut ; la permutabilité est démontrée par `integration`
 > (dispatch statique en Rust → pas d'`async-trait` ni de `dyn` dans le domaine).
+
+## Chiffrement par personne — port `Chiffreur` et module de mesure (foyer#28)
+
+- **Port `Chiffreur`** (`src/domain/chiffrement.rs`), chiffrement par enveloppe : une clé de
+  données par enregistrement, conservée seulement **enveloppée** ; les champs sont chiffrés en
+  AES-256-GCM avec, comme données associées, l'identifiant et le nom du champ. Il **reste dans le
+  kit** (mesure conservatoire d'ADR-044 de Sluis, point 4.5).
+- **Adaptateurs** (`src/adapter/chiffrement.rs`) : `SansEffet` (`clair`), `Local` (clé maîtresse
+  en mémoire, perdue au redémarrage), `OpenBao` (moteur `transit` : `datakey` pour engendrer,
+  `decrypt` pour désenvelopper ; cache des clés désenveloppées, TTL réglable). Service de clés
+  injoignable → `503`, **jamais** de champ servi en clair.
+- **Module de mesure, désactivé par défaut** : fiche de personne (`/api/personnes`,
+  `/api/mesure/compteurs`), montée seulement si `CHIFFREMENT=clair|local|openbao|openbao-cache`
+  est posé. Table dans `database/mesure/`, hors du gabarit `migrations/pending/`. Hors du contrat
+  OpenAPI. Variables : `OPENBAO_ADDR`, `OPENBAO_JETON`, `OPENBAO_CLE`, `CHIFFREMENT_CACHE_TTL_S`.
+- **Limite du spike** : le harnais démarre OpenBao en **mode dev avec le jeton racine**. C'est
+  réservé à la mesure ; la cible est un jeton court délivré à l'application (ADR-042 de Sluis,
+  point 6). Hors périmètre : index aveugles, rotation, effacement par destruction de clé.
 
 ## Règles de l'agent
 - Respecter l'ordre des couches ; jamais d'infra dans domaine/application (gate H1).

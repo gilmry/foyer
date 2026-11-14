@@ -10,6 +10,7 @@ run bash "$ROOT/harness/run-contract.sh"    # client TYPÉ api.ts à jour vs Ope
 run bash "$ROOT/harness/run-tests.sh"       # domaine + application (cargo test, sans DB)
 run bash "$ROOT/harness/run-integration.sh" # PostgreSQL réel — sqlx CQRS
 run bash "$ROOT/harness/e2e-smoke.sh"       # serveur actix réel (correctness HTTP)
+run bash "$ROOT/harness/e2e-chiffrement.sh" # port Chiffreur, quatre variantes, OpenBao dev (foyer#28)
 run bash "$ROOT/harness/run-visual.sh"      # régression d'apparence (goldens Chromium)
 
 echo ""
