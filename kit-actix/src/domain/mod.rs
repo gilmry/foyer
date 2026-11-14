@@ -1,6 +1,11 @@
 //! Domaine Todo — **Rust pur** (std uniquement). Aucune dépendance à actix, sqlx, serde…
 //! (gate H1). Les invariants sont garantis par le constructeur `Todo::new`.
 
+/// Port de chiffrement par enveloppe (foyer#28) — reste dans le kit.
+pub mod chiffrement;
+/// Fiche de personne de mesure (foyer#28) — module désactivé par défaut.
+pub mod personne;
+
 pub const TITLE_MAX: usize = 255;
 
 /// Erreurs métier — traduites en codes HTTP par l'adaptateur.

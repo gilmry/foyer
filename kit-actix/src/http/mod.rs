@@ -5,6 +5,9 @@ use actix_web::{web, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 use sqlx::postgres::PgPool;
 
+/// Routes du module de mesure du chiffrement (foyer#28), montées si `CHIFFREMENT` est posé.
+pub mod mesure;
+
 use crate::adapter::{CqrsTodoRepository, RealClock, UuidGenerator};
 use crate::application::{CreateTodo, DeleteTodo, Error, ListTodos, ToggleTodo};
 use crate::domain::Todo;
@@ -12,6 +15,8 @@ use crate::domain::Todo;
 #[derive(Clone)]
 pub struct AppState {
     pub pool: PgPool,
+    /// Module de mesure du chiffrement ; `None` par défaut.
+    pub mesure: Option<std::sync::Arc<mesure::Mesure>>,
 }
 
 #[derive(Serialize)]
@@ -43,12 +48,15 @@ struct CreateInput {
     title: String,
 }
 
-fn err_response(e: Error) -> HttpResponse {
+pub(crate) fn err_response(e: Error) -> HttpResponse {
     match e {
         Error::Validation(errors) => HttpResponse::BadRequest().json(serde_json::json!({ "errors": errors })),
         Error::NotFound(id) => {
             HttpResponse::NotFound().json(serde_json::json!({ "error": format!("Tâche introuvable : {id}.") }))
         }
+        // Le service de clés ne répond pas : on refuse, sans aucun champ (foyer#28, @negative).
+        Error::Indisponible(_) => HttpResponse::ServiceUnavailable()
+            .json(serde_json::json!({ "error": "Service de clés indisponible." })),
         Error::Repo(_) => HttpResponse::InternalServerError().json(serde_json::json!({ "error": "Erreur interne." })),
     }
 }

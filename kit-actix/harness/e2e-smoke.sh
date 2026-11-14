@@ -10,7 +10,7 @@ docker run --rm -v "$ROOT":/app -w /app "${CARGO_VOLS[@]}" todo-kit-rust:local c
 reset_schema
 
 cid=$(docker run -d --rm --network host -v "$ROOT":/app -w /app "${CARGO_VOLS[@]}" \
-  -e DB_HOST=127.0.0.1 -e DB_PORT=15432 -e DB_NAME=todo -e DB_USER=todo -e DB_PASSWORD=todo \
+  -e DB_HOST=127.0.0.1 -e DB_PORT="$KIT_PG_PORT" -e DB_NAME=todo -e DB_USER=todo -e DB_PASSWORD=todo \
   -e HTTP_HOST=127.0.0.1 -e HTTP_PORT=8080 \
   todo-kit-rust:local ./target/debug/server)
 trap 'docker stop "$cid" >/dev/null 2>&1 || true' EXIT
