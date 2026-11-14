@@ -3,6 +3,9 @@
 # Volumes de cache cargo → compilations rapides après la première.
 _kit_root() { cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd; }
 
+# Port hôte de PostgreSQL ; à déplacer si un autre projet occupe 15432 (KIT_PG_PORT=25432).
+KIT_PG_PORT="${KIT_PG_PORT:-15432}"
+
 CARGO_VOLS=(-v todo_actix_cargo:/usr/local/cargo/registry -v todo_actix_target:/app/target)
 
 ensure_rust_image() {
@@ -15,7 +18,7 @@ ensure_rust_image() {
 ensure_postgres() {
   docker ps --filter name=todo-postgres --format '{{.Names}}' | grep -qx todo-postgres || \
     docker run -d --name todo-postgres -e POSTGRES_DB=todo -e POSTGRES_USER=todo \
-      -e POSTGRES_PASSWORD=todo -p 15432:5432 postgres:16 >/dev/null
+      -e POSTGRES_PASSWORD=todo -p "$KIT_PG_PORT:5432" postgres:16 >/dev/null
   local i
   for i in $(seq 1 60); do
     docker exec todo-postgres pg_isready -U todo -d todo >/dev/null 2>&1 && return 0
