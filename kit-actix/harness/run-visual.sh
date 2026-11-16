@@ -15,6 +15,7 @@ for t in "acheter du pain" "réviser Foyer" "préparer la démo"; do
   sleep 1.1
 done
 
-exec docker run --rm --network host -v "$ROOT":/app -w /app/harness/visual \
+# Sans exec : le trap doit arrêter le serveur une fois la comparaison finie.
+docker run --rm --network host -v "$ROOT":/app -w /app/harness/visual \
   -e VISUAL_MODE="$MODE" -e VISUAL_BASE_URL=http://127.0.0.1:8080 \
   todo-kit-visual:local node visual.mjs
