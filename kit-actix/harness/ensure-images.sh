@@ -26,10 +26,11 @@ ensure_rust_image() {
   docker build -q -t todo-kit-rust:local -f "$root/docker/rust.Dockerfile" "$root/docker" >/dev/null
 }
 
+# Ports publiés sur 127.0.0.1 seulement : mot de passe et jeton de dev ne sortent pas de la machine.
 ensure_postgres() {
   docker ps --filter name=todo-postgres --format '{{.Names}}' | grep -qx todo-postgres || \
     docker run -d --name todo-postgres -e POSTGRES_DB=todo -e POSTGRES_USER=todo \
-      -e POSTGRES_PASSWORD=todo -p "$KIT_PG_PORT:5432" postgres:16 >/dev/null
+      -e POSTGRES_PASSWORD=todo -p "127.0.0.1:$KIT_PG_PORT:5432" postgres:16 >/dev/null
   local i
   for i in $(seq 1 60); do
     docker exec todo-postgres pg_isready -U todo -d todo >/dev/null 2>&1 && return 0
@@ -42,7 +43,7 @@ ensure_postgres() {
 ensure_openbao() {
   local base="http://127.0.0.1:$OPENBAO_PORT" i
   if ! docker ps --filter name=todo-openbao --format '{{.Names}}' | grep -qx todo-openbao; then
-    docker run -d --rm --name todo-openbao --cap-add IPC_LOCK -p "$OPENBAO_PORT:8200" "$OPENBAO_IMAGE" \
+    docker run -d --rm --name todo-openbao --cap-add IPC_LOCK -p "127.0.0.1:$OPENBAO_PORT:8200" "$OPENBAO_IMAGE" \
       server -dev -dev-root-token-id="$OPENBAO_JETON_DEV" -dev-listen-address=0.0.0.0:8200 >/dev/null
   fi
   for i in $(seq 1 60); do

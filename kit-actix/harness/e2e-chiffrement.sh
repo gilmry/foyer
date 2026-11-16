@@ -5,7 +5,7 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$ROOT/harness/ensure-images.sh"; ensure_rust_image; ensure_postgres; ensure_openbao
-PORT=8081
+PORT="${KIT_MESURE_PORT:-18081}"  # hors de 8080-8081, ports courants
 BASE="http://127.0.0.1:$PORT"
 TTL=2
 
