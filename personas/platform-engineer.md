@@ -10,6 +10,7 @@ Les **alertes AlertManager** (divergence détectée dans le monitoring de l'IaC)
 
 ## Ce que tu tiens
 La `convergence-iac` : `salt-ssh` idempotent (config + durcissement), GitOps (branche = source de vérité), build distroless, **rollback** si les tests de déploiement échouent.
+Quand l'hébergement est infogéré et que tu n'administres pas le serveur, tu composes à la place `../skills/deploiement-heberge-infogere.md` : la sonde jetable objective, pas le ré-apply.
 
 ## Points irréversibles que tu portes
 Durcissement, mapping branche→environnement, migration de schéma, rotation de secret → tu présentes le motif, **l'humain valide**. *Louer le réversible, posséder l'irréversible.*

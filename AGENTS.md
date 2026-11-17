@@ -7,7 +7,7 @@ This is a framework for AI agents in software development, derived from Gilles M
 - `Manifeste-Foyer.md`: Identity and values of the agent (Architect Solution)
 - `Methode-Foyer.md`: Operational method for agent work
 - `Boucle-de-retroaction.md`: Core feedback loop
-- `skills/`: Tools for objective evaluation (cycle-dev, gates, convergence-iac, adoption, etc.)
+- `skills/`: Tools for objective evaluation (cycle-dev, gates, convergence-iac, adoption, deploiement-heberge-infogere, etc.)
 - `personas/`: Roles that hold the feedback loop (chef-de-projet, scrum-master, lead-developer, etc.)
 - `pilote/`: **Agentic driver** — makes the method executable by agents across heterogeneous tools.
 
@@ -33,7 +33,8 @@ The pilote does not reinvent anything: it **sequences** the existing `skills/`, 
 1. **Conception (BMAD)** - Create backlog with validated "Agent IA Ready" stories
 2. **Pilotage** - Project manager coordinates timeline, costs, and choice of methodology
 3. **Fabrication** - Lead developer and scrum master execute cycle-dev with gates
-4. **Production** - Platform engineer manages convergence-iac
+4. **Production** - Platform engineer manages convergence-iac (a server you administer) or
+   deploiement-heberge-infogere (managed hosting you do not administer)
 5. **Pilotage continu** - CSI engineer refines estimates; Support engineer evaluates adoption
 
 ## Agent Instructions
@@ -64,7 +65,8 @@ This is a methodology repository for the Foyer framework. Key directories:
   publiques). « Clone → `bash docker/build.sh` → `bash harness/ci.sh` » passe au vert. Famille de
   kits (autres stacks à venir) : voir `KITS.md`.
 - `bmad/` - Conception phase (TOGAF pipeline)
-- `skills/` - Objective evaluation tools (cycle-dev, gates, convergence-iac, adoption)
+- `skills/` - Objective evaluation tools (cycle-dev, gates, convergence-iac, adoption,
+  deploiement-heberge-infogere)
 - `tools/` - Executable counterpart to the skills. Currently `tools/gates/`:
   the consolidated tool list (`ADR-outillage.md`) plus CI templates per stack.
   **Templates carry a `.example` suffix and never run on this repository** —

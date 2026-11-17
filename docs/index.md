@@ -19,6 +19,7 @@ Les skills sont les outils qui **objectivent** chaque terrain — code, infra, c
 - **[Cycle de développement](skills/cycle-dev.md)** — tests pré-écrits (rouge/vert/bleu).
 - **[Gates qualité & sécurité](skills/gates.md)** — analyseurs transversaux.
 - **[Convergence IaC](skills/convergence-iac.md)** — état observé, idempotence, GitOps.
+- **[Déploiement sur hébergement infogéré](skills/deploiement-heberge-infogere.md)** — sonde jetable, login sans privilège, reprise prouvée contre la source.
 - **[Conformité réglementaire](skills/conformite.md)** — mapping mondial → européen → national.
 - **[Enforcement](skills/enforcement.md)** — les trois anneaux : ce qui contraint vraiment.
 - **[Abaque coût-capacité](skills/abaque-cout-capacite.md)** · **[Arbitrage hybride](skills/arbitrage-hybride.md)** · **[Adoption](skills/adoption.md)** · **[Bootstrap délivrabilité](skills/bootstrap-delivrabilite.md)**.

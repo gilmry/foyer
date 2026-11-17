@@ -58,6 +58,7 @@ choix **technique réversible** est **tranché par l'agent** avec le défaut de
 | **Mapping branche → environnement** | platform engineer | carte actuelle et proposée, environnements protégés | Quelle branche alimente quel environnement ? qui approuve ? |
 | **Migration de schéma en production** | platform engineer | migration et son retour, analyse d'impact données (`../skills/gates.md`, archétype stateful) | Quand ? sauvegarde vérifiée avant ? |
 | **Rotation de secret** | platform engineer | portée du secret, consommateurs, procédure de bascule | Maintenant ou planifiée ? qui vérifie la reprise ? |
+| **Bascule de domaine vers un nouvel hébergement** (DNS) | platform engineer, rôle `roles/deployeur-heberge.md` | reprise prouvée contre la source (`../skills/deploiement-heberge-infogere.md`), connexion réelle faite ou « connexion non prouvée », bascule testée en forçant la résolution, certificats repris, retour arrière écrit | Quand bascule-t-on ? qui change le DNS (toujours l'humain) ? combien de temps garde-t-on l'ancien site ? |
 | **Dépréciation d'une capacité adoptée** | support engineer | signaux d'adoption, utilisateurs touchés, alternative | Préavis ? migration des utilisateurs ? |
 | **Choix de tier / destination de stockage** | estimateur capacité-coût | impact mémoire et € sur 2-3 jalons (abaque) | Quel tier ? à quel seuil reconsidérer ? |
 
