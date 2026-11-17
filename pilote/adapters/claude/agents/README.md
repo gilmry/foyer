@@ -26,6 +26,7 @@ respecte l'ordre des couches et les gates, et **ne tranche jamais un point irré
 | `foyer-frontend-ilots` | `roles/frontend-ilots.md` | D1/D2 + doc vivante |
 | `foyer-gate-runner` | `roles/gate-runner.md` | invoquer/lire les gates |
 | `foyer-verrouillage` | `roles/verrouillage-convergence.md` | phases 3-4 |
+| `foyer-deployeur-heberge` | `roles/deployeur-heberge.md` | déployer ou reprendre sur un hébergement infogéré (sonder, prouver, préparer la bascule) |
 
 > Créer ces fichiers = recopier le patron en remplaçant `<rôle>`. Ils restent volontairement
 > minimalistes : toute l'intelligence est dans `pilote/roles/` + les skills.
