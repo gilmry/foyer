@@ -32,6 +32,8 @@ Les deux, pas l'un des deux. C'est exigeant à dessein : le plancher tire sa for
 | **SBOM** | nomenclature produite à chaque build (CycloneDX) | l'arbre de dépendances d'un build passé ne se reconstitue pas après coup |
 | **Vulnérabilités conteneur** | image scannée avant push registre | même logique, à l'échelle de l'artefact déployé |
 
+> **Quand le projet ne livre pas d'image** (déploiement d'un binaire ou d'un dossier sur un hébergement infogéré, cf. `deploiement-heberge-infogere.md`), le gate « vulnérabilités conteneur » est **sans objet** : l'artefact déployé n'est pas un conteneur, et le système est à la charge de l'hébergeur. Le SBOM et l'analyse des dépendances restent dus : ils portent sur ce que l'on livre vraiment.
+
 S'y ajoute, pour l'archétype **stateful**, le **fichier de retour de migration** (`*.down.sql`) : seul gate qui protège un état de base plutôt qu'un artefact logiciel, mais qui satisfait exactement le même double critère — le fichier existe ou non, et une migration sans retour jouée en production ne se défait pas.
 
 **La provenance IA n'est pas au plancher**, malgré une irréversibilité réelle (une inférence passée ne se journalise pas rétroactivement). Elle échoue sur l'objectivabilité : vérifier une dérogation art. 6§3 est un jugement sur la finalité, pas un fait détectable dans un diff. Un gate qui prétendrait la contrôler ne vérifierait qu'un substitut — présence d'un fichier, d'un label — et passerait au vert pendant que l'exigence resterait non tenue. Une assurance fausse est pire qu'une absence de gate.

@@ -49,6 +49,8 @@ premières étapes servent à la prendre.
    - jouer les migrations **une fois, sur décision du déploiement** (sur la base vide, ou sur la
      base restaurée), jamais à chaque démarrage ni par un processus lancé en session SSH quand
      l'hébergeur l'interdit ; puis vérifier la sonde de santé ;
+   - **répéter d'abord tout ce déploiement en local**, sur une cible jetable, avec le vrai script,
+     deux fois (gate `deploiement` des kits) ; n'aller chez l'hébergeur que répétition verte ;
    - régler le site : inactivité à 0, tâche planifiée qui appelle la sonde de santé chaque minute
      (alerte et relance).
 6. **Reprendre l'instance existante**, si elle existe. D'abord en entier **en local** (même version
@@ -105,6 +107,7 @@ dans des **transactions annulées**. Colonne de droite : cas mesuré du 2026-11-
 | Que permet le serveur SSH ? | Lire la bannière et les règles d'usage | Pas de charge CPU, mémoire ou disque, pas d'application en arrière-plan, pas de processus longs. Le périodique passe par les tâches planifiées, le permanent par les services |
 | Que supporte l'offre ? | **Jamais chez l'hébergeur** : conteneurs bridés aux limites de l'offre, générateur sur d'autres cœurs | Limites reproduites : 1 CPU, 1 Go. Ressources du serveur de bases non publiées : hypothèse écrite. Pour l'application du cas mesuré : environ 480 requêtes par seconde en lecture et 600 sur les routes publiques, sans erreur |
 | Un site construit et un back-office peuvent-ils partager un hôte ? | Demander un fichier de chacun à l'adresse provisoire | Non : noms hachés différents. Corrigé par une redirection, annoncé comme écart |
+| Quelles versions d'interpréteur, et mes dépendances binaires s'y chargent-elles ? (second relevé, 2026-11-18, en lecture seule) | Lister les versions fournies ; demander à l'interpréteur les étiquettes de paquets binaires qu'il accepte, sans rien installer | Python 3.3 à 3.14 fournis (3.12.15 retenu), paquets `manylinux` jusqu'à la glibc 2.36 acceptés : les dépendances binaires se préparent sur le poste. PHP 8.3 et 8.4 avec `pdo_mysql`, `intl`, `sodium`, OPcache. Un serveur uWSGI 2.0 est fourni : il parle WSGI, pas ASGI `[caler]` pour un pont |
 | Une bascule de version statique se voit-elle aussitôt ? | Changer le lien de la version courante, relire la page | Le lien est suivi (constaté). La bascule elle-même n'a pas été essayée `[caler]` |
 
 ## Conformité de l'hébergeur (à relever avant toute donnée réelle)
