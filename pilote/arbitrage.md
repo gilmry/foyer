@@ -56,11 +56,33 @@ choix **technique réversible** est **tranché par l'agent** avec le défaut de
 | **Promotion d'une branche** | arbitre de promotion | gate `promotion` vert : vitrine, gates, quatre classes exécutées | Promue, ou renvoyée avec quelle preuve manquante ? |
 | **Durcissement** | platform engineer | écart observé, configuration proposée, impact sur les services | Quand l'appliquer ? fenêtre de maintenance ? retour arrière ? |
 | **Mapping branche → environnement** | platform engineer | carte actuelle et proposée, environnements protégés | Quelle branche alimente quel environnement ? qui approuve ? |
-| **Migration de schéma en production** | platform engineer | migration et son retour, analyse d'impact données (`../skills/gates.md`, archétype stateful) | Quand ? sauvegarde vérifiée avant ? |
+| **Migration de schéma en production** | platform engineer, rôle `roles/deployeur-heberge.md` (étape B2) | la différence du dossier des migrations entre le commit en service et le head, la migration et son retour, analyse d'impact données (`../skills/gates.md`, archétype stateful) | Quand ? sauvegarde vérifiée (restauration essayée) avant ? que fait-on si le smoke est rouge après la migration ? |
 | **Rotation de secret** | platform engineer | portée du secret, consommateurs, procédure de bascule | Maintenant ou planifiée ? qui vérifie la reprise ? |
 | **Bascule de domaine vers un nouvel hébergement** (DNS) | platform engineer, rôle `roles/deployeur-heberge.md` | reprise prouvée contre la source (`../skills/deploiement-heberge-infogere.md`), connexion réelle faite ou « connexion non prouvée », bascule testée en forçant la résolution, certificats repris, retour arrière écrit | Quand bascule-t-on ? qui change le DNS (toujours l'humain) ? combien de temps garde-t-on l'ancien site ? |
+| **Passage à des données réelles** sur un hébergement infogéré | platform engineer, rôle `roles/deployeur-heberge.md` | conditions générales de l'hébergeur relevées (`../skills/conformite.md`), nature des données, mentions légales et registre des traitements à jour | Ouvre-t-on à de vrais utilisateurs maintenant ? quelles données n'iront jamais chez cet hébergeur ? |
+| **Instance dégradée après retour arrière** | platform engineer, rôle `roles/deployeur-heberge.md` (étape B7) | les deux smokes rouges (étape, code de sortie), la version livrée et la version restaurée, le journal du site | Répare-t-on en avant ou restaure-t-on une sauvegarde ? qui prévient les utilisateurs ? |
 | **Dépréciation d'une capacité adoptée** | support engineer | signaux d'adoption, utilisateurs touchés, alternative | Préavis ? migration des utilisateurs ? |
 | **Choix de tier / destination de stockage** | estimateur capacité-coût | impact mémoire et € sur 2-3 jalons (abaque) | Quel tier ? à quel seuil reconsidérer ? |
+
+### Livraison de routine : ce qui arrête, ce qui n'arrête pas
+
+Un **redéploiement** (instance déjà en service, phase L des parcours, séquence B du rôle
+`roles/deployeur-heberge.md`) est livré par l'agent **sans question** quand tous les gates
+bloquants sont verts.
+
+- **Le seul arrêt d'un redéploiement est la migration de schéma** (décision du superviseur,
+  2026-11-18, gilmry/foyer#41). L'agent s'arrête **avant tout envoi**.
+- **La bascule de domaine et le passage à des données réelles restent des arrêts.** Ils ne sont
+  pas levés : ils ne se présentent simplement jamais dans un redéploiement, qui ne touche ni au
+  DNS ni à la nature des données. Ils appartiennent au premier déploiement ou à la reprise
+  (séquence A). *Recommandation de gilmry/foyer#43, retenue par défaut le 2026-11-18 : à
+  confirmer par le superviseur ; l'infirmer se trace en ADR.*
+- **Livrer n'est pas promouvoir** : on livre le head d'une branche dont la promotion est déjà
+  jugée (ligne « Promotion d'une branche »). La livraison ne rouvre pas cette question.
+- **Le retour arrière automatique n'est pas un arbitrage** : remettre la version précédente après
+  un smoke public rouge est réversible et prévu ; l'agent le fait, puis l'annonce et l'écrit au
+  registre. Il ne vaut que sans migration de schéma : avec une migration, la conduite en cas
+  d'échec fait partie de la question posée ci-dessus.
 
 ## Séquençage (arbitrage modal, pas destination)
 

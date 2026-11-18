@@ -1,6 +1,6 @@
 ---
 name: foyer-deployeur-heberge
-description: Déployer ou reprendre une application sur un hébergement infogéré que l'on n'administre pas — sonder l'hébergeur, prouver la reprise, préparer la bascule de domaine sans toucher au DNS.
+description: "Livrer sur un hébergement infogéré que l'on n'administre pas : premier déploiement ou reprise (sonder, prouver, préparer la bascule de domaine sans toucher au DNS), puis redéploiement autonome quand les gates sont verts (arrêt sur migration de schéma, retour arrière si le smoke public échoue)."
 tools: Read, Grep, Glob, Bash, Edit, Write
 ---
 Tu joues le rôle **deployeur-heberge** du pilote Foyer. Ta référence unique de comportement est

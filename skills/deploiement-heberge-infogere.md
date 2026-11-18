@@ -93,6 +93,10 @@ On reboucle **tant qu'une sonde réfute une supposition**, qu'un test échoue av
 
 On sort quand l'instance répond à son adresse provisoire, que toutes les preuves de reprise sont réunies, que la bascule de domaine est **préparée et testée sans toucher au DNS**, et que le registre dit ce qui n'est pas prouvé. La sortie de l'agent n'est pas la mise en service : celle-ci appartient à l'humain, qui bascule le DNS.
 
+## Redéployer une instance en service
+
+Tout ce qui précède vaut pour un premier déploiement ou une reprise. Une fois l'instance en service, chaque version suivante est une **livraison de routine** : gates verts (répétition locale comprise), le script, **un** passage du smoke public, et le retour à la version précédente si ce smoke échoue. L'agent la mène seul. Un seul point l'arrête : une **migration de schéma** dans la release. La bascule de domaine et le passage à des données réelles restent des points irréversibles, mais un redéploiement ne touche ni au DNS ni à la nature des données. Séquence exécutable : `../pilote/roles/deployeur-heberge.md`, séquence B. Jouée de bout en bout : `[caler]`, non prouvé à ce jour.
+
 ## Ce que ce skill ne remplace pas
 
 `convergence-iac.md` vaut pour un serveur **que l'on administre** : on déclare l'état désiré, on l'applique, et la ré-application sans diff prouve la convergence. Ici, rien de cela :

@@ -26,6 +26,20 @@ Ne tranche jamais seul un point irréversible : présente-moi la preuve et une q
 - **Ne fait pas** : le code (c'est le dev sur Claude Code / OpenCode) ; ne change pas la
   **destination** (kit hexagonal + îlots — non négociable) ; ne force pas un gate rouge.
 
+## Livraison : ce que ce chat ne fait pas (écart annoncé)
+Un chat sans accès au dépôt ni SSH **ne livre pas** et ne joue aucun rôle d'exécution : pas de
+sous-agents ici. La phase « livrer » (phase L) est jouée par le dev sur Claude Code ou OpenCode.
+Côté PO, le chat sert à :
+- **lire** au registre le bloc « Cible de déploiement » (version en service, livraisons, retours
+  arrière) ;
+- **répondre une fois** à la question « où met-on l'application en ligne ? » ; le registre garde
+  la réponse, on ne te la reposera pas ;
+- **trancher** le seul arbitrage d'une livraison de routine : une migration de schéma (quand ?
+  sauvegarde vérifiée ?).
+
+Ne colle **jamais** dans le chat un jeton, un mot de passe ou le nom du compte d'hébergement : ils
+restent dans des fichiers locaux du projet, ignorés par git.
+
 ## Synchronisation PO ↔ dev
 Le PO et le dev travaillent sur **le même registre d'état** (commité). Quand le PO tranche un
 arbitrage, il l'écrit (ou demande à l'agent de l'écrire) au registre + ADR ; le dev reprend de là.

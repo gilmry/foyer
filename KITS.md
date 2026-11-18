@@ -64,6 +64,15 @@ pas confondre** : la *répétition locale* (gate `deploiement` : le vrai script,
 une cible jetable qui ressemble à l'hébergeur, puis le smoke e2e contre son adresse) et le
 *déploiement réel* (le même smoke contre l'adresse publique).
 
+Avec le jeton d'API de l'hébergeur, `deployer.sh` crée lui-même ce qui manque avant tout envoi —
+l'utilisateur de base, la base, le site — après l'avoir annoncé, sans jamais modifier ni supprimer
+l'existant ; `revenir.sh` remet la version précédente en service. Ces deux gestes ne sont prouvés
+qu'en **répétition locale**, contre un faux serveur d'API (`harness/faux-hebergeur.py`) : non
+prouvé chez l'hébergeur. Pour les seules créations, les mêmes appels d'API y ont été faits à la
+main le 2026-11-18, pas par le script. Les preuves « chez l'hébergeur » du tableau ci-dessous
+ont été obtenues avec le script d'alors, avant ces deux ajouts. Les fichiers
+communs `hebergeur.sh`, `hebergeur.py` et `faux-hebergeur.py` sont identiques dans les trois kits.
+
 | Kit | Montage chez l'hébergeur | Répétition locale (2026-11-18) | Chez l'hébergeur |
 |---|---|---|---|
 | **`kit-actix`** | programme utilisateur : binaire construit sur le poste (Debian 12), PostgreSQL géré | 🟢 `cqrs` et `orm`, écoute IPv6 | 🟢 **2026-11-18** : `cqrs` et `orm`, smoke public, script joué deux fois |

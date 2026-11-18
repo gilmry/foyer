@@ -64,7 +64,25 @@ Avant de « poser le kit », l'agent le **résout lui-même** (le PO ne fournit 
 - **Rôle** : extracteur-couche + frontend-ilots, boucle `../../skills/cycle-dev.md` (rouge/vert/bleu).
 - **Faire** : dérouler les stories « Agent IA Ready », un commit par étape conclusive, la doc
   vivante s'enrichit du même parcours de référence.
-- **Sortie** : incréments livrés, gates verts, preuve de valeur à jour.
+- **Sortie** : incréments prêts, gates verts, preuve de valeur à jour.
+
+## Phase L — Livrer (quand tout est vert, sans qu'on le demande)
+- **Déclencheur** : **tous les gates bloquants verts sur le head**, gate `deploiement` compris
+  ([`../gates/README.md`](../gates/README.md)). Le pilote n'attend pas qu'on lui demande de livrer.
+- **Rôle** : [`../roles/deployeur-heberge.md`](../roles/deployeur-heberge.md) (persona
+  `../../personas/platform-engineer.md`, skill `../../skills/deploiement-heberge-infogere.md`).
+  Le rôle choisit lui-même sa séquence : premier déploiement, ou redéploiement.
+- **Cible** : lue au bloc « Cible de déploiement » du registre. Remplie : on entre dans la phase
+  **sans poser de question**. Absente : le pilote la demande **une fois**
+  ([`../parcours.md`](../parcours.md), § Cible de déploiement).
+- **Seul arrêt d'un redéploiement** : une **migration de schéma** dans la release (`../arbitrage.md`).
+  Un smoke public rouge n'est pas un arrêt : le rôle remet la version précédente et l'écrit.
+- **Sortie** : smoke e2e vert contre l'adresse publique, **version en service inscrite au
+  registre**. À la première livraison réussie, la porte `exploitation` s'ouvre
+  ([`exploitation.md`](exploitation.md), E0) et coexiste avec celle-ci.
+- **Hors de cette phase** : un projet livré par un serveur que l'on administre ou par une
+  plateforme (`../../skills/convergence-iac.md`) ne passe pas par ce rôle : la phase est alors
+  sans objet, et le registre le dit (cible « aucune »).
 
 > La différence avec la porte **release** : ici on part d'un dépôt vide (bootstrap du kit) ;
 > là-bas on applique la conception BMAD à un produit **existant** puis on enchaîne le cycle-dev.

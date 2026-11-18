@@ -1,4 +1,4 @@
-# Rôle : déployeur sur hébergement infogéré (sonder, déployer, reprendre, prouver)
+# Rôle : déployeur sur hébergement infogéré (sonder, déployer, reprendre, prouver, redéployer)
 
 > Fait autorité : [`../../skills/deploiement-heberge-infogere.md`](../../skills/deploiement-heberge-infogere.md)
 > (le pourquoi), avec [`../../skills/gates.md`](../../skills/gates.md) et
@@ -11,16 +11,32 @@
 > chaque sonde se rejoue. Durée et nombre de tours : `[caler]`.
 
 ## Mission
-Amener une application sur un hébergement que l'on n'administre pas, et y reprendre au besoin une
-instance existante, **sans rien affirmer qui n'ait été sondé ou prouvé**. Le rôle s'arrête avant la
-mise en service : il prépare la bascule de domaine, l'humain bascule le DNS.
+Amener une application sur un hébergement que l'on n'administre pas, y reprendre au besoin une
+instance existante, puis **y livrer seul chaque version suivante**, **sans rien affirmer qui n'ait
+été sondé ou prouvé**. Le rôle ne bascule jamais un domaine : il prépare la bascule, l'humain
+bascule le DNS.
 
 ## Déclencheur
-Un hébergeur infogéré est envisagé ou choisi pour un produit (porte `exploitation`, ou fin d'une
-porte `nouveau projet` / `release`). Le rôle se joue **avant** que la décision soit définitive : ses
-premières étapes servent à la prendre.
+- **Phase « livrer »** d'un parcours `nouveau projet` ou `release` (phase L) : tous les gates
+  bloquants sont verts sur le head, gate `deploiement` compris.
+- **Phase E1** de la porte `exploitation`, cas infogéré : la sonde de santé échoue. Le rôle suit
+  alors ce que dit [`../journeys/exploitation.md`](../journeys/exploitation.md) (lire l'état, puis
+  redéployer par la séquence B).
+- Un hébergeur infogéré est **envisagé** pour un produit : le rôle se joue alors **avant** que la
+  décision soit définitive, ses premières étapes servent à la prendre.
 
-## Séquence
+## Deux séquences, un aiguillage
+Lire le bloc « Cible de déploiement » du registre ([`../state.template.md`](../state.template.md)) :
+
+| « Version en service » au registre | Séquence |
+|---|---|
+| vide (jamais livré à cette cible, ou instance à reprendre) | **A — premier déploiement ou reprise** |
+| remplie, avec son commit | **B — redéploiement** |
+
+Si la cible elle-même manque au registre, c'est le pilote qui la demande, une seule fois
+([`../parcours.md`](../parcours.md), § Cible de déploiement) : le rôle ne devine pas une cible.
+
+## Séquence A — premier déploiement ou reprise
 
 1. **Sonder.** Écrire au registre chaque supposition sur l'hébergeur comme une question, puis poser
    les sondes du tableau ci-dessous : documentation **et** essai réel, jetable. Consigner chaque
@@ -52,7 +68,9 @@ premières étapes servent à la prendre.
    - **répéter d'abord tout ce déploiement en local**, sur une cible jetable, avec le vrai script,
      deux fois (gate `deploiement` des kits) ; n'aller chez l'hébergeur que répétition verte ;
    - régler le site : inactivité à 0, tâche planifiée qui appelle la sonde de santé chaque minute
-     (alerte et relance).
+     (alerte et relance) ;
+   - prouver par **un** passage du smoke public (étape B5). La version en service ne s'inscrit
+     qu'à l'étape 9 : jusque-là, une séquence A interrompue reprend en séquence A.
 6. **Reprendre l'instance existante**, si elle existe. D'abord en entier **en local** (même version
    de base, login sans privilège), puis chez l'hébergeur, **avant les migrations de l'étape 5** :
    - exporter la source **sans propriétaire ni droits** ;
@@ -84,7 +102,82 @@ premières étapes servent à la prendre.
    - écrire la procédure de la dernière synchronisation, **source arrêtée**, et le retour arrière.
 9. **Rendre la main.** Mettre à jour le registre (sondes, ADR, gates, preuves, ce qui **n'est pas
    prouvé**, écarts annoncés), poser l'arbitrage 🔴 « bascule de domaine » et s'arrêter. La
-   dernière synchronisation se rejoue quand l'humain a choisi le moment.
+   dernière synchronisation se rejoue quand l'humain a choisi le moment. Sans instance à reprendre
+   ni domaine à basculer, les étapes 6 à 8 sont sans objet et aucun arbitrage n'est à poser.
+   **Dans les deux cas, smoke public vert : inscrire au registre la version en service et son
+   commit.** L'instance est en service **à l'adresse inscrite au registre**, la porte
+   `exploitation` s'ouvre ([`../journeys/exploitation.md`](../journeys/exploitation.md), E0), et
+   les livraisons suivantes passent par la séquence B. Bascule de domaine et données réelles
+   restent des arrêts.
+
+## Séquence B — redéploiement d'une instance en service
+
+Livraison de routine : **aucune question n'est posée**, sauf l'arrêt de l'étape B2. Elle ne touche
+ni au DNS ni à la nature des données. Ses étapes sont notées B1 à B7. Les commandes exactes vivent dans l'`AGENTS.md` du projet
+(contrat : [`../gates/README.md`](../gates/README.md)) ; celles citées ici sont l'interface des
+kits, à titre de référence.
+
+1. **Vérifier le déclencheur.** Tous les gates bloquants verts **sur le head**, lus par
+   [`gate-runner.md`](gate-runner.md), gate `deploiement` compris (répétition locale ; dans les
+   kits : `bash harness/repeter-deploiement.sh`). Un rouge : stop, rien n'est envoyé. L'arbre de
+   travail doit être **propre** (`git status --porcelain` vide) : le script envoie l'arbre, pas le
+   commit, et un fichier non commité échapperait aux gates comme à l'étape B2. Sinon : stop.
+2. **Chercher une migration de schéma, sans réseau.** Comparer le dossier des migrations (son
+   chemin est dans l'`AGENTS.md` du projet ; `database/migrations/` dans les kits) entre le
+   **commit de la version en service**, lu au registre, et le head :
+   `git diff --quiet <commit en service> HEAD -- <dossier des migrations>`.
+   - Aucune différence : continuer.
+   - **Une différence** (fichier ajouté, modifié ou retiré) : **arrêt avant tout envoi**, arbitrage
+     🔴 « migration de schéma en production » (`../arbitrage.md`), preuve jointe : la liste des
+     fichiers, la migration et son retour.
+   - Commit absent du registre ou introuvable dans le dépôt : l'absence de migration est
+     **non prouvée**, donc arrêt, même arbitrage.
+3. **Lire la cible.** Alias SSH, instance et adresse au registre ; ce qui identifie le compte dans
+   le fichier local ignoré par git (`.foyer/cible.env`). Le jeton d'API n'est **jamais lu par le
+   rôle** : le script le lit lui-même dans le `.env` du projet.
+4. **Livrer** par le script du projet, rejouable (dans les kits :
+   `bash deploiement/<hébergeur>/deployer.sh <hôte ssh> <compte> <instance> https://<adresse>`).
+   Avec le jeton, il crée ce qui manque chez l'hébergeur, redémarre le site et contrôle la santé ;
+   sans jeton sur une instance jamais préparée, il s'arrête avant tout envoi et dit quoi créer.
+   **Sans jeton sur une instance déjà préparée**, le script envoie et bascule, mais ne peut pas
+   redémarrer le site quand la pile en demande un (il l'écrit dans sa sortie) : la livraison
+   n'est **pas faite**. Le rôle s'arrête, ne lance pas le smoke, n'inscrit pas de version en
+   service et demande à l'humain de poser le jeton ou de redémarrer le site. Une livraison
+   autonome, retour arrière compris, suppose donc le jeton.
+   Un script qui sort en erreur : stop, étape et code de sortie au registre.
+5. **Prouver** par le smoke public : **un seul passage**, profil public (dans les kits :
+   `E2E_PROFIL=public E2E_BASE_URL=https://<adresse> bash harness/e2e-smoke.sh`). Pourquoi un seul
+   passage, pourquoi ce profil, et pourquoi une adresse neuve fait attendre son certificat : puces
+   « cas mesuré » du skill, § *Déployer sans compiler ni exposer un secret*. On ne les contourne pas.
+   Les comptes d'essai que le smoke demande (variables propres à chaque kit, voir son guide
+   `deploiement/<hébergeur>/README.md`) se **chargent depuis un fichier local ignoré par git**,
+   jamais tapés sur la ligne de commande ni affichés.
+6. **Smoke vert : inscrire.** Au registre : la version en service et son commit, l'ancienne version
+   en « version précédente », une ligne au tableau *Livraisons*. Rendre la main en une ligne.
+7. **Smoke rouge : revenir en arrière, sans demander.** Rejouer le script de retour avec les mêmes
+   arguments (dans les kits : `bash deploiement/<hébergeur>/revenir.sh …`, qui remet la version
+   précédente et redémarre), attendre, puis **un** passage du smoke public sur la version restaurée.
+   - Vert : écrire au registre l'échec et sa sortie (étape du smoke, code de sortie, ligne d'échec
+     relue, sans valeur de variable) et la version restaurée, et laisser « version en service »
+     sur celle-ci. Le head n'est pas livré : la cause retourne au
+     rôle propriétaire de la story, comme tout gate rouge.
+   - **Rouge encore** : arrêt, arbitrage 🔴 « instance dégradée après retour arrière ». Pas de
+     troisième passage : l'humain décide.
+   - **Le script de retour sort en erreur** : arrêt, même arbitrage. **Ne pas le rejouer** : il
+     échange les deux versions, et s'il a échoué après son échange, un second passage remettrait
+     en service la version que l'on quittait.
+
+**Retour arrière et migration.** Le retour automatique remet le **code**, pas le schéma : il ne vaut
+que pour une release sans migration. Quand l'humain a tranché l'arbitrage de l'étape B2, la
+livraison reprend à l'étape B3 avec la modalité choisie, et la conduite en cas de smoke rouge fait
+partie de cette modalité (le rôle ne revient pas seul en arrière sur un schéma migré).
+
+> **Non prouvé à ce jour (2026-11-18).** Dans les kits, la création de la base et du site par
+> l'API et le script de retour (`revenir.sh`) sont prouvés par la **répétition locale** seulement,
+> contre un faux serveur d'API ; aucun n'a été joué chez un hébergeur, et la séquence B n'a été
+> jouée de bout en bout sur aucun projet. Le script de retour des kits échange la version en
+> service et la précédente : après un retour arrière, la « version précédente » du registre est
+> la version quittée (le head qui a échoué). Nombre de tours et durée : `[caler]`.
 
 ## Sondes
 
@@ -135,13 +228,18 @@ l'humain**, qui peut décider une exception datée ; le rôle ne l'accorde pas l
 ## Ce que ce rôle ne fait jamais
 - **Mettre de la charge sur l'hébergeur** : ni test de charge, ni mesure de performance.
 - **Enchaîner les smokes contre l'hébergeur**, ou y jouer le parcours complet : un seul passage du
-  smoke public, allégé et espacé. Une rafale de refus fait bloquer l'adresse du poste par le
-  frontal, pour tous les sites du compte (cas mesuré dans le skill).
+  smoke public par version mise en service, allégé et espacé (une livraison suivie d'un retour
+  arrière en compte donc deux, pas plus). Une rafale de refus fait bloquer l'adresse du poste par
+  le frontal, pour tous les sites du compte (cas mesuré dans le skill).
+- **Envoyer une release qui porte une migration de schéma** sans arbitrage tranché (étape B2).
 - **Compiler, installer des dépendances lourdes ou lancer un build par SSH.** Un constructeur de
   site passe en tâche planifiée « une passe puis s'arrête » ; un processus permanent, en service.
 - **Basculer le DNS**, ou arrêter la source sans décision de l'humain.
 - **Toucher aux migrations existantes** : ni réécriture, ni changement de somme de contrôle.
 - **Afficher un secret** : ni en argument de commande, ni dans une sortie d'outil, ni au registre.
+  Le rôle ne lit pas le jeton d'API et ne recopie jamais la sortie brute d'un script ou d'un smoke
+  au registre (le smoke reçoit des mots de passe de comptes en variables) : étape, code de sortie,
+  ligne d'échec relue.
 - **Affirmer une connexion non prouvée**, ou conclure qu'une isolation tient sans l'avoir rejouée
   avec le login sans privilège.
 - **Restaurer dans une base qui n'est pas vide**, ou remettre à zéro une base qui porte des données.
@@ -151,10 +249,17 @@ l'humain**, qui peut décider une exception datée ; le rôle ne l'accorde pas l
 ## Points irréversibles
 Garder ou changer de framework, remplacer la plateforme d'origine, changer le mode d'isolation,
 choisir le modèle d'exploitation, reprendre la clé de chiffrement, restaurer, basculer le domaine,
-passer à des données réelles, accorder une exception sur un gate. Pour chacun : preuve au registre,
-question de modalité, arrêt, puis ADR quand l'humain a tranché.
+passer à des données réelles, accorder une exception sur un gate, **jouer une migration de schéma
+sur une instance en service**. Pour chacun : preuve au registre, question de modalité, arrêt, puis
+ADR quand l'humain a tranché.
+
+Dans un **redéploiement** (séquence B), un seul de ces points peut se présenter : la migration de
+schéma. La bascule de domaine et le passage à des données réelles restent des arrêts, mais ils
+appartiennent à la séquence A (`../arbitrage.md`, § Livraison de routine).
 
 ## Condition de sortie
+
+**Séquence A :**
 - Chaque sonde a sa réponse **datée** au registre ; aucune supposition ne reste sans sonde.
 - La preuve minimale et l'application répondent depuis Internet à l'adresse provisoire.
 - Les tests d'intégration passent avec le login sans privilège, sur la version de base de la cible.
@@ -163,9 +268,21 @@ question de modalité, arrêt, puis ADR quand l'humain a tranché.
 - Les preuves de reprise sont jointes ; la connexion réelle est faite, ou le registre porte
   « connexion non prouvée ».
 - La bascule de domaine est testée en forçant la résolution ; le retour arrière est écrit.
-- L'arbitrage 🔴 « bascule de domaine » est posé. Le rôle s'arrête là.
+- Le smoke public est vert en un passage ; la version en service et son commit sont au registre.
+- S'il y a un domaine à basculer : l'arbitrage 🔴 « bascule de domaine » est posé. Le rôle s'arrête là.
+
+**Séquence B**, l'une des trois :
+- le smoke public est vert, la version livrée et son commit sont « en service » au registre, la
+  précédente est gardée sur le serveur et inscrite ;
+- le smoke public était rouge, la version précédente est remise en service et son smoke est vert,
+  le registre porte l'échec, sa sortie (étape, code de sortie, ligne d'échec) et la version
+  restaurée ;
+- un arbitrage 🔴 est posé (migration de schéma, ou instance dégradée après retour arrière) et rien
+  d'autre n'a été envoyé.
 
 ## Lecture des résultats → registre
 Pour chaque étape : la date, la commande ou la sonde, le résultat, et le lien vers la preuve. Les
 écarts annoncés (ce qui ne marche pas comme sur la plateforme d'origine) ont leur propre liste.
-Aucun nom de compte, adresse ou secret dans un registre commité sur un dépôt public.
+Ni jeton, ni mot de passe, ni nom de compte dans un registre commité : ce qui identifie le compte
+(son nom, un chemin `/home/<compte>/…`, une adresse qui le contient) va dans le fichier local
+ignoré par git, et le registre y renvoie (`../state.template.md`, bloc « Cible de déploiement »).
