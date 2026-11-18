@@ -24,7 +24,7 @@ CIBLE=kit-fastapi-cible
 IMAGE_CIBLE=todo-kit-fastapi-cible:local
 COMPTE=repet; INSTANCE=kitfastapi; BASE_DB="${COMPTE}_${INSTANCE}"
 DOSSIER="/home/$COMPTE/$INSTANCE"
-PORT_SSH=12223; PORT_SITE=18091; PORT_SONDE=18092
+PORT_SSH=12223; PORT_SITE=18091; PORT_SONDE=18092; PORT_API=18093
 ADRESSE="http://[::1]:$PORT_SITE"
 UWSGI=/usr/alwaysdata/uwsgi/bin/uwsgi
 JOURNAL="/home/$COMPTE/site.log"
@@ -41,6 +41,7 @@ admin() { docker exec -i todo-postgres psql -U todo -d todo -q -v ON_ERROR_STOP=
 alea() { head -c "${1:-18}" /dev/urandom | od -An -tx1 | tr -d ' \n'; }
 
 nettoyer() {
+  [ -z "${PID_API:-}" ] || kill "$PID_API" 2>/dev/null || true
   docker rm -f "$CIBLE" >/dev/null 2>&1 || true
   printf 'DROP DATABASE IF EXISTS %s WITH (FORCE);\nDROP ROLE IF EXISTS %s;\n' "$BASE_DB" "$BASE_DB" | admin || true
   rm -rf "$TMP"
@@ -75,16 +76,18 @@ verifier "aucune dépendance du kit sur la cible avant le déploiement (elles ar
 verifier "ni compilateur ni en-têtes de développement sur la cible (le serveur ne compile rien)" \
   "! sur_cible 'command -v gcc cc make' >/dev/null"
 
-echo "▶ base gérée : login « $BASE_DB » sans privilège, base vide ; mot de passe tiré sur la cible"
-# Ce que le porteur fait dans l'administration de l'hébergeur. Le mot de passe naît sur la cible
-# et n'est jamais affiché : il passe d'un conteneur à l'autre par un tube.
-sur_cible "umask 077; mkdir -p $DOSSIER; openssl rand -hex 24 > $DOSSIER/.pgpass.gen"
-{
-  printf 'DROP DATABASE IF EXISTS %s WITH (FORCE);\nDROP ROLE IF EXISTS %s;\n' "$BASE_DB" "$BASE_DB"
-  printf "CREATE ROLE %s LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS PASSWORD '%s';\n" "$BASE_DB" "$(sur_cible "cat $DOSSIER/.pgpass.gen")"
-  printf 'CREATE DATABASE %s OWNER %s;\n' "$BASE_DB" "$BASE_DB"
-} | admin
-mdp_base="$(sur_cible "cat $DOSSIER/.pgpass.gen")"  # gardé en mémoire pour vérifier qu'il ne fuit pas
+# Ce que fait l'hébergeur quand son API crée un login et une base. Le mot de passe arrive par
+# l'entrée standard et n'est jamais affiché.
+creer_utilisateur() {
+  local mdp; mdp="$(cat)"
+  case "$1$mdp" in *[!A-Za-z0-9_]*) return 1 ;; esac
+  printf "CREATE ROLE %s LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS PASSWORD '%s';\n" "$1" "$mdp" | admin
+}
+creer_base() {
+  case "$1" in *[!A-Za-z0-9_]*) return 1 ;; esac
+  printf 'CREATE DATABASE %s OWNER %s;\n' "$1" "$1" | admin
+}
+printf 'DROP DATABASE IF EXISTS %s WITH (FORCE);\nDROP ROLE IF EXISTS %s;\n' "$BASE_DB" "$BASE_DB" | admin
 
 # --- La plateforme : elle arrête le programme par SIGTERM et le relance, avec IP et PORT (montage
 # A), ou sert wsgi.py par uWSGI (montage B). Les options de uWSGI sont celles de la répétition :
@@ -122,15 +125,32 @@ redemarrer_site() {
   fi
   demarrer_site
 }
-export -f redemarrer_site arreter_site demarrer_site piege
+export -f redemarrer_site arreter_site demarrer_site piege creer_utilisateur creer_base admin
 UWSGI_PLUS=""
 export CIBLE COMPTE PORT_SITE DOSSIER MONTAGE UWSGI JOURNAL UWSGI_PLUS
 
-deployer() {
+echo "▶ faux serveur de l'API de l'hébergeur (aucun appel ne part vers l'hébergeur réel)"
+# Lancé ici, montage A : c'est dans ce montage que le script redémarre le site par l'API.
+jeton_api="jeton-de-repetition-$(alea 12)"
+printf 'ALWAYSDATA_TOKEN=%s\n' "$jeton_api" > "$TMP/env-avec-jeton"; : > "$TMP/env-sans-jeton"
+FAUX_JETON="$jeton_api" FAUX_COMPTE="$COMPTE" FAUX_PORT="$PORT_API" FAUX_JOURNAL="$TMP/api.log" \
+FAUX_CREER_UTILISATEUR=creer_utilisateur FAUX_CREER_BASE=creer_base FAUX_REDEMARRER=redemarrer_site \
+  python3 -I "$ROOT/harness/faux-hebergeur.py" & PID_API=$!
+for _ in $(seq 1 30); do curl -s -o /dev/null "http://127.0.0.1:$PORT_API/" && break; sleep 0.2; done
+: > "$TMP/api.log"   # l'attente ci-dessus n'est pas un appel du script
+
+# Le script ne voit QUE le faux serveur et le jeton de répétition : le jeton réel du projet, s'il
+# existe (variable d'environnement ou fichier .env), n'est jamais lu ici.
+script() {  # script <deployer|revenir> <fichier d'environnement> [adresse]
+  env -u ALWAYSDATA_TOKEN -u ALWAYSDATA_SITE -u KIT_REDEMARRAGE -u KIT_MONTAGE \
+  ALWAYSDATA_API="http://127.0.0.1:$PORT_API/v1" KIT_ENV_FICHIER="$2" KIT_ATTENTE_CERTIFICAT=0 KIT_ATTENTE_PAS=1 \
   KIT_SSH="ssh -F $TMP/ssh_config -o BatchMode=yes" KIT_SCP="scp -q -F $TMP/ssh_config -o BatchMode=yes" \
-  KIT_DB_HOTE=127.0.0.1 KIT_DB_PORT="$KIT_PG_PORT" KIT_REDEMARRAGE=redemarrer_site \
-    bash "$ROOT/deploiement/alwaysdata/deployer.sh" cible "$COMPTE" "$INSTANCE" "$ADRESSE"
+  KIT_DB_HOTE=127.0.0.1 KIT_DB_PORT="$KIT_PG_PORT" \
+    bash "$ROOT/deploiement/alwaysdata/$1.sh" cible "$COMPTE" "$INSTANCE" "${3:-$ADRESSE}"
 }
+deployer() { script deployer "$TMP/env-avec-jeton"; }
+revenir() { script revenir "$TMP/env-avec-jeton"; }
+creations() { grep -cE '^POST /v1/(site|database|database/user)/ ' "$TMP/api.log" || true; }
 EMAIL_A="a-$(alea 4)@exemple.test"; MDP_A="$(alea)"; EMAIL_B="b-$(alea 4)@exemple.test"; MDP_B="$(alea)"
 smoke() {
   E2E_BASE_URL="$ADRESSE" E2E_EMAIL_A="$EMAIL_A" E2E_PASSWORD_A="$MDP_A" \
@@ -141,9 +161,20 @@ poser_temoin() { sur_cible "basename \"\$(readlink $DOSSIER/courant)\" > $DOSSIE
 sans_temoin() { sur_cible "[ -z \"\$(ls -A $DOSSIER | grep migrer)\" ]"; }
 migrations() { sql 'SELECT version, checksum, applied_at FROM schema_migrations ORDER BY version'; }
 
+echo ""; echo "▶ sans jeton d'API, sur une instance jamais préparée : arrêt avant tout envoi"
+script deployer "$TMP/env-sans-jeton" > "$TMP/deploiement-0.log" 2>&1 && code0=0 || code0=$?
+verifier "le script s'arrête (code $code0)" "[ $code0 -ne 0 ]"
+verifier "il dit quoi créer à la main (base, mot de passe, site)" "grep -q 'créer à la main' '$TMP/deploiement-0.log' && grep -q '.pgpass.gen' '$TMP/deploiement-0.log' && grep -q 'un site pour' '$TMP/deploiement-0.log'"
+verifier "rien n'a été envoyé sur la cible, aucun appel à l'API" "sur_cible '[ ! -e $DOSSIER ]' && [ ! -s '$TMP/api.log' ]"
+
 echo ""; echo "▶ premier déploiement (montage A : programme utilisateur, uvicorn)"
 deployer > "$TMP/deploiement-1.log" 2>&1 || { cat "$TMP/deploiement-1.log"; ko "le premier déploiement échoue"; exit 1; }
-grep -E '^[1-4]/4|\.env|version |site redémarré|livraison' "$TMP/deploiement-1.log" | sed 's/^/    /' || true
+grep -E '^[0-4]/4|création|\.env|version |site redémarré|livraison' "$TMP/deploiement-1.log" | sed 's/^/    /' || true
+mdp_base="$(sur_cible "grep '^DB_PASSWORD=' $DOSSIER/.env | cut -d\"'\" -f2")"  # gardé en mémoire pour vérifier qu'il ne fuit pas
+verifier "la base, son utilisateur et le site ont été créés par l'API (3 créations, annoncées avant)" "[ \"\$(creations)\" = 3 ] && [ \"\$(grep -c 'création d' '$TMP/deploiement-1.log')\" = 3 ]"
+verifier "le site créé est un « programme utilisateur » (montage A par défaut)" "grep -q '\"type\":\"user_program\"' '$TMP/deploiement-1.log'"
+verifier "le site a été redémarré par l'API, non par une commande locale" "grep -qE '^POST /v1/site/[0-9]+/restart/ 204' '$TMP/api.log'"
+verifier "retour arrière sans version précédente : refusé, rien n'est changé" "! revenir > '$TMP/revenir-0.log' 2>&1 && grep -q 'aucune version précédente' '$TMP/revenir-0.log' && attendre_sante"
 verifier "le site répond en IPv6 sur l'adresse et le port fournis par la plateforme" "attendre_sante"
 verifier "le lanceur a été remplacé par uvicorn (exec) : aucun processus lancer.sh ne reste" \
   "! docker exec '$CIBLE' pgrep -u '$COMPTE' -f lancer.sh >/dev/null && docker exec '$CIBLE' pgrep -u '$COMPTE' -f 'python -m uvicorn' >/dev/null"
@@ -232,6 +263,19 @@ verifier "la version courante a changé, deux versions gardées en tout" \
   "[ \"\$(sur_cible 'readlink $DOSSIER/courant')\" != \"\$version_avant\" ] && [ \"\$(sur_cible 'ls $DOSSIER/versions | wc -l')\" = 2 ]"
 verifier "le témoin .migrer a été consommé" "sur_cible '[ ! -e $DOSSIER/.migrer ]'"
 verifier "aucun fichier provisoire ne reste (.nouveau)" "! sur_cible 'ls -A $DOSSIER $DOSSIER/versions' | grep -q nouveau"
+verifier "rien n'est recréé chez l'hébergeur : toujours 3 créations, aucune de plus" "[ \"\$(creations)\" = 3 ] && ! grep -q 'création d' '$TMP/deploiement-2.log'"
+
+echo ""; echo "▶ retour arrière (revenir.sh), puis retour à la version quittée"
+version_apres="$(sur_cible "readlink $DOSSIER/courant")"
+revenir > "$TMP/revenir-1.log" 2>&1 || { cat "$TMP/revenir-1.log"; ko "le retour arrière échoue"; }
+verifier "la version précédente est en service, la version quittée est gardée" \
+  "[ \"\$(sur_cible 'readlink $DOSSIER/courant')\" = \"\$version_avant\" ] && [ \"\$(sur_cible 'readlink $DOSSIER/precedent')\" = \"\$version_apres\" ] && attendre_sante"
+verifier "le site a redémarré sur elle : données intactes, aucune migration jouée ni défaite, aucun témoin" \
+  "temoin_la && [ \"\$(migrations)\" = \"\$migrations_avant\" ] && sans_temoin"
+revenir > "$TMP/revenir-2.log" 2>&1 || { cat "$TMP/revenir-2.log"; ko "le second retour échoue"; }
+verifier "rejoué, le script remet la version quittée" \
+  "[ \"\$(sur_cible 'readlink $DOSSIER/courant')\" = \"\$version_apres\" ] && [ \"\$(sur_cible 'readlink $DOSSIER/precedent')\" = \"\$version_avant\" ] && attendre_sante && temoin_la"
+verifier "les retours n'ont rien créé chez l'hébergeur" "[ \"\$(creations)\" = 3 ]"
 
 echo ""; echo "▶ garde-fous du script de déploiement"
 set +e; trap - ERR
@@ -242,10 +286,11 @@ verifier "un hôte ssh qui commence par un tiret est refusé avant toute command
 # Troisième passage, avec une AUTRE adresse publique et sans redémarrage : .env n'est pas réécrit,
 # le script prévient. Un témoin adressé à la nouvelle version est posé ; l'ancienne ne tourne plus.
 arreter_site
-KIT_SSH="ssh -F $TMP/ssh_config -o BatchMode=yes" KIT_SCP="scp -q -F $TMP/ssh_config -o BatchMode=yes" \
-KIT_DB_HOTE=127.0.0.1 KIT_DB_PORT="$KIT_PG_PORT" \
-  bash "$ROOT/deploiement/alwaysdata/deployer.sh" cible "$COMPTE" "$INSTANCE" "http://[::1]:18099" > "$TMP/deploiement-3.log" 2>&1 \
+# Sans jeton d'API, sur une instance déjà préparée : le script livre, ne crée rien, ne redémarre rien.
+script deployer "$TMP/env-sans-jeton" "http://[::1]:18099" > "$TMP/deploiement-3.log" 2>&1 \
   || { cat "$TMP/deploiement-3.log"; ko "le troisième déploiement échoue"; }
+verifier "sans jeton, instance déjà préparée : le script livre sans rien créer ni redémarrer" \
+  "grep -q 'supposés créés à la main' '$TMP/deploiement-3.log' && [ \"\$(creations)\" = 3 ]"
 verifier "adresse différente de celle de .env : le script prévient, .env reste inchangé" \
   "grep -q 'ATTENTION' '$TMP/deploiement-3.log' && [ \"\$(sur_cible 'sha256sum $DOSSIER/.env')\" = \"\$env_avant\" ]"
 verifier "le témoin est posé avec l'identifiant de la nouvelle version" \
@@ -367,12 +412,22 @@ verifier "naif-lazy-apps : le pont naïf répond si uWSGI charge l'application d
   "pont naif-lazy-apps repond true"
 
 echo ""; echo "▶ aucun secret dans les journaux ni dans les sorties du script"
-{ sur_cible "cat $JOURNAL"; cat "$TMP/deploiement-1.log" "$TMP/deploiement-2.log" "$TMP/deploiement-3.log"; printf '%s\n' "$sortie_sans" "$sortie_644" "$sortie_wsgi" "$sortie_url" "$sortie_cle"; } > "$TMP/sorties"
-printf '%s\n' "$mdp_base" "$cle_instance" "$MDP_A" "$MDP_B" "$MDP_C" "$jeton" > "$TMP/secrets"
+{ sur_cible "cat $JOURNAL"; cat "$TMP"/deploiement-[0123].log "$TMP"/revenir-[012].log "$TMP/api.log"; printf '%s\n' "$sortie_sans" "$sortie_644" "$sortie_wsgi" "$sortie_url" "$sortie_cle"; } > "$TMP/sorties"
+printf '%s\n' "$mdp_base" "$cle_instance" "$MDP_A" "$MDP_B" "$MDP_C" "$jeton" "$jeton_api" > "$TMP/secrets"
 verifier "les sorties et le journal ne sont pas vides, les secrets à chercher non plus" \
-  "[ -s '$TMP/sorties' ] && [ \"\$(grep -c . '$TMP/secrets')\" = 6 ]"
-verifier "ni mot de passe de la base, ni clé d'instance, ni mot de passe de compte, ni jeton dans le journal du site ou les sorties du déploiement" \
+  "[ -s '$TMP/sorties' ] && [ \"\$(grep -c . '$TMP/secrets')\" = 7 ] && [ \${#mdp_base} = 48 ]"
+verifier "ni mot de passe de la base, ni clé d'instance, ni mot de passe de compte, ni jeton (de compte ou d'API) dans le journal du site, les sorties des scripts ou le journal de l'API" \
   "! grep -qFf '$TMP/secrets' '$TMP/sorties'"
+memes_gestes() {
+  local k f
+  for k in kit-actix kit-php; do
+    [ -d "$ROOT/../$k/deploiement/alwaysdata" ] || continue   # un projet dérivé n'a qu'un kit
+    for f in deploiement/alwaysdata/hebergeur.sh deploiement/alwaysdata/hebergeur.py harness/faux-hebergeur.py; do
+      cmp -s "$ROOT/$f" "$ROOT/../$k/$f" || return 1
+    done
+  done
+}
+verifier "les gestes communs sont les mêmes fichiers dans les trois kits" "memes_gestes"
 
 echo ""; echo "▶ le guide publie le tableau des combinaisons et les limites essayées"
 GUIDE="$ROOT/deploiement/alwaysdata/README.md"

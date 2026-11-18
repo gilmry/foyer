@@ -153,10 +153,25 @@ reste au porteur, ce qui n'est pas prouvé). En bref :
 - `deploiement/alwaysdata/deployer.sh <hôte ssh> <compte> <instance> <adresse publique>` —
   rejouable : envoi sous un autre nom, bascule atomique d'un seul lien (`lancer.sh` et `wsgi.py`
   vivent dans la version et basculent avec elle), version précédente gardée, `.env` créé
-  sur le serveur au premier passage (secrets tirés là-bas) et jamais réécrit, redémarrage par
-  l'API si `ALWAYSDATA_SITE` et le jeton `ALWAYSDATA_TOKEN` (fichier `.env` du kit, ignoré par
-  git) sont fournis. Variables : `KIT_SSH`, `KIT_SCP`, `KIT_DB_HOTE`, `KIT_DB_PORT`,
-  `KIT_DOSSIER`, `KIT_PYTHON`, `KIT_REDEMARRAGE`.
+  sur le serveur au premier passage (secrets tirés là-bas) et jamais réécrit. Avec le jeton
+  `ALWAYSDATA_TOKEN` (fichier `.env` du kit, ignoré par git, ou environnement), il crée d'abord
+  ce qui manque chez l'hébergeur, après l'avoir annoncé : l'utilisateur de base
+  `<compte>_<instance>`, la base du même nom, le site (retrouvé par son adresse ; `KIT_MONTAGE=A|B`
+  choisit le type du site créé), sans jamais modifier ni supprimer l'existant ; puis il redémarre
+  par l'API le site retrouvé par son adresse (`ALWAYSDATA_SITE` n'est plus nécessaire). Sans
+  jeton, il s'arrête avant tout envoi si l'instance n'a jamais été préparée, et ne redémarre
+  rien. Variables : `KIT_MONTAGE`, `KIT_SSH`, `KIT_SCP`, `KIT_DB_HOTE`, `KIT_DB_PORT`,
+  `KIT_DOSSIER`, `KIT_PYTHON`, `KIT_REDEMARRAGE`, `KIT_ATTENTE_CERTIFICAT`.
+- `deploiement/alwaysdata/revenir.sh <hôte ssh> <compte> <instance> <adresse publique>` — retour
+  arrière : rebascule le lien `courant` sur la version précédente et redémarre ; rejoué, il
+  annule le retour ; il ne joue ni ne défait aucune migration.
+- `deploiement/alwaysdata/hebergeur.sh`, `hebergeur.py` — les gestes auprès de l'API de
+  l'hébergeur (lire l'état, créer ce qui manque, redémarrer) ; `harness/faux-hebergeur.py` — le
+  faux serveur d'API de la répétition. **Ces trois fichiers sont identiques dans `kit-actix`,
+  `kit-fastapi` et `kit-php` : toute modification se reporte dans les trois** (le gate
+  `deploiement` le vérifie).
+- Niveau de preuve : les créations par l'API et `revenir.sh` ne sont prouvés qu'en répétition
+  locale, contre le faux serveur d'API ; non prouvé chez l'hébergeur (voir le guide).
 - **Montage A** (recommandé) — `deploiement/alwaysdata/lancer.sh` : programme utilisateur, uvicorn.
   **Montage B** — `wsgi.py` : site Python de l'hébergeur, uWSGI et pont `a2wsgi` ; pas de
   `lifespan` ni de WebSocket (limites essayées par `harness/pont/essayer.sh`).

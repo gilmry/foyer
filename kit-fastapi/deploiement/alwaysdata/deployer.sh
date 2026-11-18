@@ -6,23 +6,25 @@
 # Rejouable : un second passage livre une nouvelle version, garde la précédente, ne réécrit pas
 # la configuration et ne rejoue aucune migration déjà passée.
 #
-# Avant le premier passage (une fois, dans l'administration de l'hébergeur) : une base PostgreSQL
-# <compte>_<instance> et son utilisateur du même nom, tous droits sur elle ; sur le serveur, le
-# fichier <dossier>/.pgpass.gen qui contient le seul mot de passe de cet utilisateur (droits 600).
+# Avec le jeton d'API de l'hébergeur (ALWAYSDATA_TOKEN dans le fichier .env du kit, ignoré par
+# git), le script crée lui-même ce qui manque, après l'avoir annoncé : la base PostgreSQL
+# <compte>_<instance>, son utilisateur du même nom (mot de passe tiré sur le serveur) et le site.
+# Il ne modifie ni ne supprime jamais une base ou un site existants. Sans jeton, ces trois choses
+# se créent à la main (voir le guide) et le script s'arrête avant tout envoi si elles manquent.
 #
 # Usage : bash deploiement/alwaysdata/deployer.sh <hôte ssh> <compte> <instance> <adresse publique>
-#   ALWAYSDATA_SITE  numéro du site à redémarrer par l'API (jeton ALWAYSDATA_TOKEN dans le fichier
-#                    .env du kit, ignoré par git). Sans lui, le script dit de redémarrer à la main.
+#   KIT_MONTAGE      A (défaut) ou B : le type du site que le script crée s'il manque.
+#   ALWAYSDATA_SITE  numéro du site à redémarrer, s'il n'est pas celui qui sert l'adresse publique.
+#   ALWAYSDATA_API   adresse de l'API de l'hébergeur (la répétition locale y met un faux serveur).
 #   KIT_SSH, KIT_SCP commandes ssh et scp (défaut : mode non interactif).
 #   KIT_DB_HOTE, KIT_DB_PORT  serveur de bases (défaut : postgresql-<compte>.alwaysdata.net, 5432).
 #   KIT_DOSSIER      dossier de l'instance sur le serveur (défaut : /home/<compte>/<instance>).
 #   KIT_PYTHON       Python 3.12 du serveur (défaut : /usr/alwaysdata/python/3.12/bin/python).
 #   KIT_REDEMARRAGE  commande locale qui redémarre le site (répétition locale, autre hébergeur).
-# Le script ne crée ni ne modifie le site : il affiche les réglages à y mettre.
 # Le serveur n'installe ni ne compile rien ; rien ne tourne dans la session SSH au-delà de copies
 # et de commandes courtes. Aucun secret ne passe en argument ni n'est affiché.
 set -euo pipefail
-[ $# -eq 4 ] || { sed -n '2,24p' "$0"; exit 2; }
+[ $# -eq 4 ] || { sed -n '2,26p' "$0"; exit 2; }
 HOTE="$1"; COMPTE="$2"; INSTANCE="$3"; ADRESSE="${4%/}"
 ICI="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 RACINE="$(cd "$ICI/../.." && pwd)"
@@ -43,6 +45,19 @@ read -r -a SCP <<<"${KIT_SCP:-scp -q -o BatchMode=yes}"
   || { echo "adresse publique : https://hôte[:port], sans chemin"; exit 2; }
 [[ "$DOSSIER$DB_HOTE$DB_PORT$PY_SERVEUR" =~ ^[][A-Za-z0-9./:_-]+$ ]] \
   || { echo "dossier, serveur de bases ou Python : caractère inattendu"; exit 2; }
+
+KIT_BASE_MOTEUR=POSTGRESQL; KIT_FICHIER_MDP=.pgpass.gen; KIT_FICHIER_CONFIG=.env
+# Les chemins d'un site se donnent relatifs au dossier du compte.
+RELATIF="${DOSSIER#/home/$COMPTE/}"
+case "${KIT_MONTAGE:-A}" in
+  A) KIT_SITE_REGLAGES="{\"type\":\"user_program\",\"command\":\"$DOSSIER/lancer.sh\",\"working_directory\":\"$RELATIF\"}" ;;
+  B) KIT_SITE_REGLAGES="{\"type\":\"wsgi\",\"path\":\"$RELATIF/wsgi.py\",\"working_directory\":\"$RELATIF\",\"python_version\":\"3.12\",\"uwsgi_additional_settings\":\"enable-threads = true\"}" ;;
+  *) echo "KIT_MONTAGE : A (programme utilisateur) ou B (Python, uWSGI)"; exit 2 ;;
+esac
+source "$ICI/hebergeur.sh"
+
+echo "0/4 Hébergeur : la base, son utilisateur et le site (créés s'ils manquent, jamais modifiés)"
+hebergeur_preparer
 
 echo "1/4 Préparation sur le poste (le serveur n'installe ni ne compile rien)"
 bash "$ICI/construire.sh"
@@ -156,43 +171,15 @@ echo "  version $id en place ; précédente : $(readlink precedent 2>/dev/null |
 DISTANT
 
 echo "4/4 Redémarrage du site : les migrations se jouent à ce démarrage (témoin .migrer)"
-redemarre=0
-if [ -n "${KIT_REDEMARRAGE:-}" ]; then
-  eval "$KIT_REDEMARRAGE"
-  redemarre=1
-elif [ -n "${ALWAYSDATA_SITE:-}" ] && grep -q '^ALWAYSDATA_TOKEN=' "$RACINE/.env" 2>/dev/null; then
-  # Par l'API de l'hébergeur, jamais par un processus lancé en SSH. Le jeton est lu dans le
-  # fichier .env du kit (ignoré par git) : il n'est ni passé en argument, ni affiché.
-  code="$(python3 -I - "$RACINE/.env" "$COMPTE" "$ALWAYSDATA_SITE" <<'PY'
-import base64, sys, urllib.error, urllib.request
-env, compte, site = sys.argv[1:4]
-jeton = next(l.split("=", 1)[1].strip().strip("\"'") for l in open(env) if l.startswith("ALWAYSDATA_TOKEN="))
-auth = base64.b64encode(f"{jeton} account={compte}:".encode()).decode()
-req = urllib.request.Request(f"https://api.alwaysdata.com/v1/site/{int(site)}/restart/", method="POST",
-                             headers={"Authorization": "Basic " + auth})
-try:
-    print(urllib.request.urlopen(req, timeout=60).status)
-except urllib.error.HTTPError as e:
-    print(e.code)
-except Exception as e:
-    print(type(e).__name__)
-PY
-)"
-  [ "$code" = 204 ] || { echo "échec du redémarrage par l'API : $code"; exit 1; }
-  redemarre=1
-fi
+if hebergeur_redemarrer; then redemarre=1; else redemarre=0; fi
 if [ "$redemarre" = 1 ]; then
-  ok=0
-  for _ in $(seq 1 60); do
-    curl -sf --max-time 10 "$ADRESSE/api/health" >/dev/null 2>&1 && { ok=1; break; }
-    sleep 2
-  done
-  [ "$ok" = 1 ] || { echo "échec : $ADRESSE/api/health ne répond pas après le redémarrage (lire le journal du site)"; exit 1; }
+  hebergeur_attendre "$ADRESSE/api/health" \
+    || { echo "échec : $ADRESSE/api/health ne répond pas après le redémarrage (lire le journal du site)"; exit 1; }
   "${SSH[@]}" -- "$HOTE" "[ -z \"\$(ls -A '$DOSSIER' | grep '^\.migrer')\" ]" \
     || { echo "échec : un témoin .migrer est encore là — le site n'a pas redémarré sur la nouvelle version, ou ses migrations ont échoué (lire le journal du site)"; exit 1; }
   echo "  site redémarré, migrations à jour, $ADRESSE/api/health répond"
 else
-  echo "  ni KIT_REDEMARRAGE, ni ALWAYSDATA_SITE avec son jeton : redémarrer le site depuis l'administration de l'hébergeur"
+  echo "  ni KIT_REDEMARRAGE, ni jeton d'API : redémarrer le site depuis l'administration de l'hébergeur"
 fi
 
 cat <<FIN
@@ -204,6 +191,6 @@ Réglages du site, selon le montage (voir le guide) :
                                   Python 3.12, sans environnement virtuel, fils activés (enable-threads)
 Comptes : $DOSSIER/lancer.sh outil app.accounts create <courriel>   (sur le serveur, commande courte)
 Preuve (un seul passage) : E2E_PROFIL=public E2E_BASE_URL=$ADRESSE E2E_EMAIL_A=… E2E_PASSWORD_A=… E2E_EMAIL_B=… E2E_PASSWORD_B=… bash harness/e2e-smoke.sh
-Retour arrière : sur le serveur, remettre le lien courant sur la version précédente (un geste, voir le
-  guide), puis redémarrer le site. Le schéma, lui, ne recule pas tout seul : voir le guide.
+Retour arrière : bash deploiement/alwaysdata/revenir.sh $HOTE $COMPTE $INSTANCE $ADRESSE
+  Le schéma, lui, ne recule pas tout seul : voir le guide.
 FIN
