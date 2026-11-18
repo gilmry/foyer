@@ -8,10 +8,12 @@ run() { echo ""; echo "▶ $*"; "$@"; }
 run bash "$ROOT/harness/verify.sh"          # plancher + structurel (G1/G2/H1/C1)
 run bash "$ROOT/harness/run-contract.sh"    # client TYPÉ api.ts à jour vs OpenAPI (anti-drift)
 run bash "$ROOT/harness/run-tests.sh"       # domaine + application (cargo test, sans DB)
-run bash "$ROOT/harness/run-integration.sh" # PostgreSQL réel — sqlx CQRS
+run bash "$ROOT/harness/run-integration.sh" # PostgreSQL réel, login sans privilège — sqlx CQRS et sea-orm
 run bash "$ROOT/harness/e2e-smoke.sh"       # serveur actix réel (correctness HTTP)
+run env TODO_PERSISTENCE=orm bash "$ROOT/harness/e2e-smoke.sh"  # même parcours, adaptateur sea-orm
 run bash "$ROOT/harness/e2e-chiffrement.sh" # port Chiffreur, quatre variantes, OpenBao dev (foyer#28)
 run bash "$ROOT/harness/run-visual.sh"      # régression d'apparence (goldens Chromium)
+run bash "$ROOT/harness/repeter-deploiement.sh" # déploiement répété sur une cible jetable (Debian 12, sans compilateur)
 
 echo ""
 echo "CI: 🟢 tous les gates bloquants sont verts."

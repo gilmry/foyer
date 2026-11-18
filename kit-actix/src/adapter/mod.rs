@@ -10,6 +10,9 @@ use crate::domain::{Clock, IdGenerator, RepoError, Todo, TodoRepository};
 /// Adaptateur de persistance alternatif : ORM sea-orm (même port `TodoRepository`).
 pub mod orm;
 
+/// Migrations embarquées et tracées (`migrate up|down|status`, ou au démarrage du serveur).
+pub mod migrations;
+
 /// Adaptateurs du port `Chiffreur` et compteurs de mesure (foyer#28).
 pub mod chiffrement;
 /// Persistance des fiches de personne chiffrées (foyer#28).
@@ -133,17 +136,97 @@ impl TodoRepository for CqrsTodoRepository {
     }
 }
 
-/// Construit un pool PostgreSQL depuis l'environnement (DATABASE_URL ou DB_*).
+/// Adresse de la base, lue dans l'environnement : `DATABASE_URL`, ou `DB_HOST` avec `DB_PORT`,
+/// `DB_NAME`, `DB_USER`, `DB_PASSWORD`. Sans l'une ni l'autre, l'erreur **nomme la variable
+/// manquante** : un programme lancé par un hébergeur doit dire pourquoi il ne démarre pas, et ne
+/// jamais retomber en silence sur une base par défaut.
+pub fn database_url() -> Result<String, String> {
+    if let Ok(url) = std::env::var("DATABASE_URL") {
+        if !url.trim().is_empty() {
+            return Ok(url);
+        }
+    }
+    let host = std::env::var("DB_HOST").map_err(|_| {
+        "DATABASE_URL manquante (ou, à défaut, DB_HOST avec DB_PORT, DB_NAME, DB_USER, DB_PASSWORD)".to_string()
+    })?;
+    Ok(format!(
+        "postgres://{u}:{pw}@{h}:{p}/{d}",
+        u = std::env::var("DB_USER").unwrap_or_else(|_| "todo".into()),
+        pw = std::env::var("DB_PASSWORD").unwrap_or_else(|_| "todo".into()),
+        h = host,
+        p = std::env::var("DB_PORT").unwrap_or_else(|_| "5432".into()),
+        d = std::env::var("DB_NAME").unwrap_or_else(|_| "todo".into()),
+    ))
+}
+
+/// Construit un pool PostgreSQL depuis l'environnement (voir [`database_url`]).
 pub async fn connect_pool() -> Result<PgPool, sqlx::Error> {
-    let url = std::env::var("DATABASE_URL").unwrap_or_else(|_| {
-        format!(
-            "postgres://{u}:{pw}@{h}:{p}/{d}",
-            u = std::env::var("DB_USER").unwrap_or_else(|_| "todo".into()),
-            pw = std::env::var("DB_PASSWORD").unwrap_or_else(|_| "todo".into()),
-            h = std::env::var("DB_HOST").unwrap_or_else(|_| "localhost".into()),
-            p = std::env::var("DB_PORT").unwrap_or_else(|_| "5432".into()),
-            d = std::env::var("DB_NAME").unwrap_or_else(|_| "todo".into()),
-        )
-    });
+    let url = database_url().map_err(|m| sqlx::Error::Configuration(m.into()))?;
     PgPool::connect(&url).await
+}
+
+/// Choix de l'adaptateur de persistance du serveur, par `TODO_PERSISTENCE` (`cqrs` par défaut,
+/// ou `orm`). Les deux partagent le même pool de connexions.
+#[derive(Clone)]
+pub enum Persistance {
+    Cqrs,
+    Orm(sea_orm::DatabaseConnection),
+}
+
+impl Persistance {
+    pub fn depuis_env(pool: &PgPool) -> Result<Self, String> {
+        match std::env::var("TODO_PERSISTENCE").unwrap_or_else(|_| "cqrs".into()).to_lowercase().as_str() {
+            "cqrs" | "" => Ok(Self::Cqrs),
+            "orm" => Ok(Self::Orm(sea_orm::SqlxPostgresConnector::from_sqlx_postgres_pool(pool.clone()))),
+            autre => Err(format!("TODO_PERSISTENCE invalide : « {autre} » (attendu : cqrs ou orm)")),
+        }
+    }
+
+    pub fn nom(&self) -> &'static str {
+        match self {
+            Self::Cqrs => "cqrs",
+            Self::Orm(_) => "orm",
+        }
+    }
+
+    pub fn repo(&self, pool: &PgPool) -> RepoChoisi {
+        match self {
+            Self::Cqrs => RepoChoisi::Cqrs(CqrsTodoRepository::new(pool.clone())),
+            Self::Orm(db) => RepoChoisi::Orm(orm::OrmTodoRepository::new(db.clone())),
+        }
+    }
+}
+
+/// L'adaptateur retenu, derrière le même port. Un `match` et non un `dyn` : le dispatch reste
+/// statique, le domaine n'a besoin ni d'`async-trait` ni d'objet-trait.
+pub enum RepoChoisi {
+    Cqrs(CqrsTodoRepository),
+    Orm(orm::OrmTodoRepository),
+}
+
+impl TodoRepository for RepoChoisi {
+    async fn find(&self, id: &str) -> Result<Option<Todo>, RepoError> {
+        match self {
+            Self::Cqrs(r) => r.find(id).await,
+            Self::Orm(r) => r.find(id).await,
+        }
+    }
+    async fn find_all(&self) -> Result<Vec<Todo>, RepoError> {
+        match self {
+            Self::Cqrs(r) => r.find_all().await,
+            Self::Orm(r) => r.find_all().await,
+        }
+    }
+    async fn save(&self, todo: &Todo) -> Result<(), RepoError> {
+        match self {
+            Self::Cqrs(r) => r.save(todo).await,
+            Self::Orm(r) => r.save(todo).await,
+        }
+    }
+    async fn delete(&self, id: &str) -> Result<(), RepoError> {
+        match self {
+            Self::Cqrs(r) => r.delete(id).await,
+            Self::Orm(r) => r.delete(id).await,
+        }
+    }
 }
