@@ -15,7 +15,7 @@ identifiant : remplacez `<hôte>`, `<compte>`, `<instance>` et `<adresse>` par l
 ```
 /home/<compte>/<instance>/            dossier de l'instance (hors de la racine du site)
 ├── config.php        configuration de l'instance, droits 600 — écrite UNE fois, sur le serveur
-├── .dbpass           mot de passe de la base, droits 600 — créé par vous, une fois
+├── .dbpass           mot de passe de la base, droits 600 — créé une fois, par le script (avec le jeton d'API) ou par vous
 ├── var/              état de l'instance : journaux (var/log/kit.log), sessions, compteurs
 ├── versions/<date>/  une version par déploiement : public/ src/ bin/ database/ vendor/ var/cache/
 ├── courant    →      versions/<date>     (la version servie ; bascule par renommage du lien)
@@ -56,7 +56,52 @@ la répétition locale joue par défaut sur **Apache + mod_fcgid + php-cgi** ; l
 de connexion sont **en base**, pas en fichiers verrouillés sur NFS ; `public/index.php` relit le
 lien `courant` à chaque requête, parce que PHP garde la résolution des chemins 120 secondes.
 
-## Avant le premier passage (une fois, à la main)
+## Avant le premier passage (une fois)
+
+Dans tous les cas, il faut déjà un accès SSH au compte et une adresse `<adresse>` qui mène chez
+l'hébergeur : le script ne touche ni au DNS ni aux clés SSH. Pour le reste, deux voies.
+
+### Avec le jeton d'API : rien à créer dans l'administration
+
+Donnez au script le jeton d'API de l'hébergeur, sous le nom `ALWAYSDATA_TOKEN` : par la variable
+d'environnement, ou par une ligne `ALWAYSDATA_TOKEN=…` dans un fichier `.env` à la racine du kit,
+sur votre poste (la variable passe avant le fichier). Ce fichier est ignoré par git ; dans un
+projet dérivé, vérifiez-le par `git check-ignore .env` avant d'y ranger le jeton. Le script ne
+l'affiche pas et ne le passe jamais en argument.
+
+À son étape 0, avant tout envoi, le script lit alors l'état du compte chez l'hébergeur et **crée ce
+qui manque, après l'avoir annoncé** dans sa sortie :
+
+- **l'utilisateur de base `<compte>_<instance>`.** Son mot de passe est tiré **sur le serveur**
+  (48 chiffres hexadécimaux) et rangé dans `~/<instance>/.dbpass`, où il reste. Il rejoint l'API
+  par un tube, de la sortie de `ssh` à l'entrée de l'appel : il traverse donc le poste, mais n'y
+  est ni affiché, ni écrit dans un fichier, ni passé en argument d'une commande ;
+- **la base MariaDB du même nom**, avec tous les droits pour ce seul utilisateur ;
+- **le site**, nommé `<instance>`, pour `<adresse>`, HTTPS forcé : type « PHP », racine sur
+  `<instance>/courant/public`, version de PHP `KIT_PHP_VERSION` (8.3 par défaut).
+
+La base et son utilisateur sont reconnus à leur nom, le site à son **adresse publique**, quel que
+soit son nom (il a pu être créé à la main). Le script **ne modifie ni ne supprime jamais** une
+base, un utilisateur ou un site existants ; rejoué, il les retrouve et ne recrée rien. Ce qu'il
+crée porte l'annotation « créé par deployer.sh pour `<instance>` ».
+
+Trois cas à connaître :
+
+- l'utilisateur de base existe chez l'hébergeur, mais ni son mot de passe (`.dbpass`) ni
+  `config.php` ne sont sur le serveur : le script s'arrête avant tout envoi, il ne change pas un
+  mot de passe qu'il n'a pas posé. Rangez-le dans `~/<instance>/.dbpass` (droits 600), puis rejouez ;
+- `config.php` est sur le serveur, mais l'utilisateur de base n'existe pas chez l'hébergeur : le
+  script s'arrête de même. Vérifiez le compte et le nom de l'instance ;
+- **`KIT_DB_NAME` ou `KIT_DB_USER` sortent de la convention `<compte>_<instance>`** : le script
+  l'annonce et **ne crée rien par l'API**, ni base, ni utilisateur, ni site, avec ou sans jeton.
+  Il ne s'arrête pas non plus avant l'envoi : tout se prépare alors à la main, comme ci-dessous.
+
+**Niveau de preuve.** Ces créations par le script ne sont prouvées qu'en **répétition locale**,
+contre un faux serveur d'API écrit pour le kit (`harness/faux-hebergeur.py`) : **non prouvé chez
+l'hébergeur**. Le 2026-11-18, les mêmes appels (création de l'utilisateur, de la base, du site)
+ont été faits chez l'hébergeur **à la main**, avec les mêmes corps, pas par le script.
+
+### Sans jeton : trois gestes à la main
 
 Dans l'administration de l'hébergeur :
 
@@ -78,6 +123,11 @@ Dans l'administration de l'hébergeur :
      PHP 8.4, réglez le site sur 8.4 **et** déployez avec `KIT_PHP_VERSION=8.4`.
    - HTTPS forcé (redirection de http vers https), si l'hébergeur le propose.
 
+Sans jeton, sur une instance **jamais préparée** (ni `config.php` ni `.dbpass` dans son dossier,
+sur le serveur), le script **s'arrête avant tout envoi** et rappelle ces trois gestes. Dès que
+l'un de ces deux fichiers est là, il livre sans rien créer : il suppose la base et le site créés
+à la main, sans le vérifier ; si le site manque, c'est la sonde de santé finale qui échoue.
+
 Extensions PHP requises, toutes fournies par l'hébergeur d'après la sonde du 2026-11-18 :
 `pdo_mysql`, `mbstring`, `ctype`, `iconv`, `xml`, `dom`, `session`, `tokenizer`, `openssl`
 (`intl` et `OPcache` sont utilisées si elles sont là).
@@ -95,6 +145,9 @@ Le script **refuse une adresse en `http://`** (le cookie de session n'aurait pas
 
 Le script est **rejouable** : chaque passage pose une nouvelle version. Ce qu'il fait :
 
+0. **S'assure que la base, son utilisateur et le site existent** chez l'hébergeur : avec le jeton
+   d'API il crée ce qui manque après l'avoir annoncé, sans jeton il s'arrête si l'instance n'a
+   jamais été préparée (voir « Avant le premier passage »). Rien n'est envoyé avant.
 1. **Construit sur le poste**, dans l'image PHP du kit : `composer install --no-dev
    --optimize-autoloader` d'après `composer.lock`, puis le **préchauffage du cache du noyau**
    Symfony. Le serveur n'installe et ne compile rien : ses règles réservent SSH aux commandes
@@ -110,10 +163,16 @@ Le script est **rejouable** : chaque passage pose une nouvelle version. Ce qu'il
    l'ancienne version ; si une migration échoue, rien ne bascule.
 5. **Bascule** le lien `courant` d'un seul renommage (atomique), garde l'ancienne version sous
    `precedent`, puis attend que `https://<adresse>/api/health` réponde **avec le nom de la
-   nouvelle version**.
+   nouvelle version**. Un site PHP ne se redémarre pas : la bascule du lien suffit, et le script
+   n'appelle pas l'API pour cela. L'attente se fait par des essais peu nombreux et espacés
+   (soixante, à trois secondes d'intervalle, `KIT_ATTENTE_ESSAIS` pour changer) : le frontal de l'hébergeur bloque une adresse qui le
+   sonde en rafale. Pour un site **qu'il vient de créer**, le script laisse d'abord 180 secondes
+   à l'émission du certificat (`KIT_ATTENTE_CERTIFICAT` pour changer), puis fait vingt essais à
+   quinze secondes d'intervalle.
 
 Variables utiles : `KIT_PHP_VERSION` (8.3 par défaut), `KIT_DB_HOST`, `KIT_DB_NAME`, `KIT_DB_USER`,
-`KIT_DB_PORT` si votre base ne suit pas les noms par défaut, `KIT_DOSSIER`. `KIT_SSH` et `KIT_SCP`
+`KIT_DB_PORT` si votre base ne suit pas les noms par défaut (le script ne crée alors rien par
+l'API), `KIT_DOSSIER`. `KIT_SSH` et `KIT_SCP`
 remplacent `ssh` et `scp` (c'est ainsi que la répétition locale vise sa cible jetable).
 
 ### Pourquoi le cache du noyau est préchauffé sur le poste
@@ -187,10 +246,21 @@ public n'en fait qu'un.
 La version précédente est restée sur le serveur. Revenir, c'est rebasculer le lien :
 
 ```bash
-ssh <hôte> 'cd ~/<instance> && ln -sfn "$(readlink precedent)" courant.nouveau && mv -T courant.nouveau courant'
+bash deploiement/alwaysdata/revenir.sh <hôte> <compte> <instance> https://<adresse>
 ```
 
-puis relire `https://<adresse>/api/health` : le champ `version` doit nommer l'ancienne version. **Le schéma, lui, ne revient pas tout seul.** Si
+Le script remet le lien `courant` sur la version que désigne `precedent`, puis attend que
+`https://<adresse>/api/health` réponde **avec le nom de la version reprise**. Il ne redémarre
+rien (un site PHP ne se redémarre pas) et n'a besoin ni de l'API ni du jeton.
+
+- **La version quittée devient la précédente** : rejouer le script annule le retour. Si le script
+  échoue à son attente finale, la bascule est déjà faite : ne le rejouez pas, relisez
+  `https://<adresse>/api/health`.
+- **Il refuse s'il n'y a pas de version précédente** (après un premier déploiement), ou si elle
+  est déjà en service, et ne change alors rien.
+- **Il ne joue ni ne défait aucune migration.**
+
+**Le schéma, lui, ne revient pas tout seul.** Si
 la version abandonnée avait apporté une migration, annulez-la **avant** de rebasculer, depuis le
 dossier de cette version, une migration à la fois :
 
@@ -200,7 +270,18 @@ ssh <hôte> 'cd ~/<instance>/courant && php bin/migrate.php status && php bin/mi
 
 Un `down` détruit ce que la migration avait créé (colonnes, tables, et leurs données). Quand une
 migration a déjà reçu des données réelles, le retour arrière est la **restauration d'une
-sauvegarde**, pas un `down`.
+sauvegarde**, pas un `down`. Après un `down`, ne rejouez pas `revenir.sh` pour repartir en avant :
+il ne rejoue pas la migration. Redéployez.
+
+`revenir.sh` n'est prouvé qu'en répétition locale : **non prouvé chez l'hébergeur**.
+
+En repli, le même geste à la main :
+
+```bash
+ssh <hôte> 'cd ~/<instance> && ln -sfn "$(readlink precedent)" courant.nouveau && mv -T courant.nouveau courant'
+```
+
+puis relire `https://<adresse>/api/health` : le champ `version` doit nommer l'ancienne version.
 
 ## Ce qui reste à votre charge
 
@@ -224,9 +305,19 @@ une cible jetable Debian 12 — **Apache + mod_fcgid + php-cgi**, le montage rel
 PHP sous l'identité d'un compte sans privilège, `.htaccess` limité à `AllowOverride FileInfo`,
 OPcache, sshd, TLS — et une MariaDB LTS à login sans privilège. Il y joue `deployer.sh` **deux
 fois** (au second passage : aucune migration rejouée, données intactes, version précédente
-présente, configuration inchangée), essaie le retour arrière, retire `mod_rewrite` pour voir que
+présente, configuration inchangée), joue `revenir.sh` (refusé sans version précédente, puis
+aller et retour, données intactes, aucune migration jouée ni défaite), retire `mod_rewrite` pour voir que
 le site ne sert alors plus rien (503), puis joue les smokes contre l'adresse de la cible pour
 chaque combinaison. `KIT_CIBLE=fpm` rejoue le tout sur Apache + PHP-FPM.
+
+Dans cette répétition, l'API de l'hébergeur est tenue par un **faux serveur local**
+(`harness/faux-hebergeur.py`) ; aucun appel ne part vers l'hébergeur réel. Elle y montre : sans
+jeton, sur une instance jamais préparée, l'arrêt avant tout envoi et sans appel à l'API ; au
+premier passage, trois créations (utilisateur, base, site), annoncées avant ; au second, aucune de
+plus ; aucune pendant les retours arrière ; ni mot de passe de la base, ni secret du noyau, ni
+jeton d'API dans les sorties des scripts et le journal du faux serveur ; `hebergeur.sh`,
+`hebergeur.py` et `harness/faux-hebergeur.py` identiques dans les trois kits. Ce faux serveur
+prouve que le script tient son contrat ; il ne prouve pas l'hébergeur lui-même.
 
 Combinaisons prouvées le **2026-11-18** en répétition locale, puis **chez l'hébergeur le même
 jour** (voir plus bas).
@@ -258,7 +349,9 @@ y rejoue `integration` et les smokes e2e des quatre combinaisons. Les deux moteu
 
 Un site « PHP » (version 8.3) et une base MariaDB d'essai ; le script du kit joué deux fois ; le
 **smoke public** (`E2E_PROFIL=public`, un passage par combinaison) contre l'adresse publique, en
-HTTPS. Le site d'essai a été supprimé ensuite.
+HTTPS. Ce jour-là, la base, son utilisateur et le site avaient été créés à la main, par les mêmes
+appels d'API et les mêmes corps que ceux du script d'aujourd'hui, pas par le script. Le site
+d'essai a été supprimé ensuite.
 
 | Adaptateur HTTP | Persistance | Smoke public chez l'hébergeur |
 |---|---|---|
@@ -286,16 +379,27 @@ Ce que ce déploiement a montré, et que la répétition ne pouvait pas montrer 
 minutes environ qui suivent la création du site, l'hébergeur présente son certificat générique, que le
 client refuse ; l'application, elle, répond déjà. Un premier passage du script lancé aussitôt
 peut donc échouer à son contrôle final sans que rien soit cassé : attendez, puis rejouez le script.
+Le script laisse désormais ce délai de lui-même, mais seulement au site qu'il vient de créer dans
+le même passage ; pour un site créé à la main juste avant, ou pour un passage rejoué aussitôt
+après un échec, la consigne reste la même.
 
 **Non prouvé chez l'hébergeur** :
 
+- **la création par le script** de l'utilisateur de base, de la base et du site : prouvée en
+  répétition locale seulement, contre un faux serveur d'API (les mêmes appels ont été faits à la
+  main le 2026-11-18, voir plus haut). Ne sont pas joués par la répétition de ce kit : l'attente du
+  certificat d'un site neuf (la répétition la met à zéro), le cas des noms hors convention
+  (`KIT_DB_NAME`, `KIT_DB_USER`), et le passage sans jeton sur une instance déjà préparée (ce
+  dernier est joué par la répétition de `kit-fastapi`, avec les mêmes fichiers communs) ;
+- **le retour arrière par `revenir.sh`** : prouvé en répétition locale seulement ;
 - **le parcours complet** du smoke (corps invalides, limite d'essais, mesure des délais, liste
   longue des chemins) : il reste à la répétition locale, voir « Vérifier » ;
 - **le gestionnaire PHP exact** du site (toujours non lu). La répétition couvre mod_fcgid (défaut)
   et PHP-FPM ;
 - **le délai** après lequel la bascule est vue : la sonde a nommé la nouvelle version, le temps
   qu'elle a mis n'a pas été mesuré (PHP peut garder l'ancien chemin jusqu'à 120 secondes,
-  `realpath_cache_ttl` relevé ; le script attend jusqu'à 3 minutes) ;
+  `realpath_cache_ttl` relevé ; le script fait soixante essais à trois secondes d'intervalle, soit
+  trois minutes de pauses) ;
 - **les sessions en fichiers sur NFS** : le verrou que PHP pose sur le fichier d'une session n'y
   est pas prouvé (deux requêtes simultanées d'une même session pourraient s'écraser), ni la purge
   des fichiers (`gc_probability=1` relevé, effet non observé). L'expiration des sessions est tenue

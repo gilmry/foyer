@@ -2,10 +2,12 @@
 # Déploie une instance du kit sur un hébergement PHP infogéré (alwaysdata : site de type « PHP »
 # servi par l'Apache de l'hébergeur, base MariaDB gérée). Rejouable. Guide : README.md voisin.
 #
-# Avant le premier passage (une fois, dans l'administration de l'hébergeur) : la base et son
-# utilisateur, tous droits sur elle et sur elle seule ; sur le serveur, le fichier
-# <dossier>/.dbpass qui contient le seul mot de passe de cet utilisateur (droits 600) ; le site
-# PHP, racine sur <dossier>/courant/public.
+# Avec le jeton d'API de l'hébergeur (ALWAYSDATA_TOKEN dans le fichier .env du kit, ignoré par
+# git), le script crée lui-même ce qui manque, après l'avoir annoncé : la base MariaDB
+# <compte>_<instance>, son utilisateur du même nom (mot de passe tiré sur le serveur, rangé dans
+# <dossier>/.dbpass) et le site PHP, racine sur <dossier>/courant/public. Il ne modifie ni ne
+# supprime jamais une base ou un site existants. Sans jeton, ces trois choses se créent à la main
+# (voir le guide) et le script s'arrête avant tout envoi si elles manquent.
 #
 # Usage : bash deploiement/alwaysdata/deployer.sh <hôte ssh> <compte> <instance> <adresse publique>
 #   ex. : bash deploiement/alwaysdata/deployer.sh <hôte> <compte> <instance> https://<adresse>
@@ -13,8 +15,10 @@
 #   KIT_DB_HOST, KIT_DB_NAME, KIT_DB_USER, KIT_DB_PORT  base de l'instance (défauts : ceux de l'hébergeur).
 #   KIT_DOSSIER (défaut /home/<compte>/<instance>)      dossier de l'instance sur le serveur.
 #   KIT_SSH, KIT_SCP              commandes ssh et scp de remplacement (répétition locale).
+#   ALWAYSDATA_API                adresse de l'API de l'hébergeur (la répétition y met un faux serveur).
 #
 # Ce que fait le script, et dans quel ordre :
+#   0. s'assure que la base, son utilisateur et le site existent chez l'hébergeur ;
 #   1. construit vendor/ SUR LE POSTE, dans l'image PHP du kit (composer install --no-dev), et
 #      préchauffe le cache du noyau ; rien de tout cela ne tourne jamais sur le serveur ;
 #   2. envoie la version en une archive, dans un dossier de version neuf ;
@@ -26,10 +30,10 @@
 #      puis attend que la sonde de santé réponde AVEC le nom de la nouvelle version.
 # Rien ne tourne dans la session SSH au-delà de copies et de commandes courtes.
 set -euo pipefail
-[ $# -eq 4 ] || { sed -n '2,16p' "$0"; exit 2; }
+[ $# -eq 4 ] || { sed -n '2,19p' "$0"; exit 2; }
 HOTE="$1"; COMPTE="$2"; INSTANCE="$3"; ADRESSE="${4%/}"
 ICI="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$ICI/../.." && pwd)"
+ROOT="$(cd "$ICI/../.." && pwd)"; RACINE="$ROOT"
 
 # Ces valeurs entrent dans des commandes, des chemins et la configuration : rien d'exotique.
 # Un hôte qui commencerait par un tiret serait lu par ssh comme une option.
@@ -60,6 +64,21 @@ esac
 VERSION="$(date -u +%Y%m%d-%H%M%S)"
 CIBLE="$DOSSIER/versions/$VERSION"
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
+
+KIT_BASE_MOTEUR=MYSQL; KIT_FICHIER_MDP=.dbpass; KIT_FICHIER_CONFIG=config.php
+# La racine d'un site se donne relative au dossier du compte.
+KIT_SITE_REGLAGES="{\"type\":\"php\",\"path\":\"${DOSSIER#/home/$COMPTE/}/courant/public\",\"php_version\":\"$KIT_PHP_VERSION\"}"
+source "$ICI/hebergeur.sh"
+# PHP peut garder l'ancienne résolution du lien `courant` jusqu'à 120 secondes (realpath_cache_ttl
+# relevé chez l'hébergeur) : la sonde attend jusqu'à trois minutes.
+KIT_ATTENTE_ESSAIS="${KIT_ATTENTE_ESSAIS:-60}"
+echo "0/5 Hébergeur : la base, son utilisateur et le site (créés s'ils manquent, jamais modifiés)"
+if [ "$DB_NAME" = "${COMPTE}_${INSTANCE}" ] && [ "$DB_USER" = "${COMPTE}_${INSTANCE}" ]; then
+  hebergeur_preparer
+else
+  SITE_NEUF=0
+  echo "  base ou utilisateur hors convention (KIT_DB_NAME, KIT_DB_USER) : le script ne crée rien chez l'hébergeur"
+fi
 
 echo "1/5 Construction de la version $VERSION sur le poste (PHP $KIT_PHP_VERSION, composer install --no-dev)"
 source "$ROOT/harness/ensure-images.sh"; ensure_php_image
@@ -177,22 +196,16 @@ principal
 DISTANT
 
 echo "Sonde de santé : $ADRESSE/api/health doit répondre avec la version $VERSION"
-ok=0
-for _ in $(seq 1 90); do
-  rep="$(curl -sf --max-time 10 "$ADRESSE/api/health" 2>/dev/null || true)"
-  case "$rep" in *'"status":"ok"'*"\"version\":\"$VERSION\""*) ok=1; break ;; esac
-  sleep 2
-done
-if [ "$ok" != 1 ]; then
+# Un site PHP ne se redémarre pas : la bascule du lien suffit, la sonde le prouve.
+if ! hebergeur_attendre "$ADRESSE/api/health" "\"version\":\"$VERSION\""; then
   cat <<FIN
 échec : la sonde de santé ne répond pas avec la version $VERSION.
-  - premier passage : créer le site PHP (racine $DOSSIER/courant/public), puis relancer ;
-  - sinon, retour arrière (voir le guide) :
-      ssh $HOTE 'cd $DOSSIER && ln -sfn "\$(readlink precedent)" courant.nouveau && mv -T courant.nouveau courant'
+  - sans jeton d'API, au premier passage : créer le site PHP (racine $DOSSIER/courant/public), puis relancer ;
+  - sinon, retour arrière : bash deploiement/alwaysdata/revenir.sh $HOTE $COMPTE $INSTANCE $ADRESSE
 FIN
   exit 1
 fi
-echo "  santé verte : $rep"
+echo "  santé verte : la version $VERSION répond"
 
 cat <<FIN
 
@@ -201,4 +214,6 @@ Site de l'hébergeur (type « PHP », version $KIT_PHP_VERSION) :
   racine du site   $DOSSIER/courant/public
 Comptes (l'inscription par l'API est fermée) :
   ssh $HOTE 'cd $DOSSIER/courant && php bin/account.php create <courriel>'
+Preuve (un seul passage) : le smoke au profil public, E2E_PROFIL=public (voir le guide)
+Retour arrière : bash deploiement/alwaysdata/revenir.sh $HOTE $COMPTE $INSTANCE $ADRESSE
 FIN

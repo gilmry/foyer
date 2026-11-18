@@ -6,6 +6,8 @@
 # MariaDB LTS à login sans privilège ; y joue le VRAI script deploiement/alwaysdata/deployer.sh
 # DEUX fois ; puis rejoue les smokes e2e contre son adresse (E2E_BASE_URL), pour CHAQUE
 # combinaison adaptateur HTTP (apiplatform, vanilla) × persistance (cqrs, doctrine).
+# L'API de l'hébergeur est tenue par un faux serveur local (harness/faux-hebergeur.py) : le script
+# y crée la base, son utilisateur et le site ; aucun appel ne part vers l'hébergeur réel.
 # Le gate `integration` y est aussi rejoué, sur MariaDB, avec le login sans privilège.
 #
 # Ce gate ne prouve pas l'hébergeur lui-même : il prouve que le kit et son script tiennent leurs
@@ -26,7 +28,7 @@ case "$KIT_CIBLE" in fcgid) VARIANTE=cli; MONTAGE="Apache + mod_fcgid + php-cgi"
 IMAGE_CIBLE="todo-kit-php-cible:$KIT_PHP_VERSION-$KIT_CIBLE"
 COMPTE=repet; INSTANCE=kit
 DOSSIER="/home/$COMPTE/$INSTANCE"; DB="${COMPTE}_${INSTANCE}"; DB_INTEG="${COMPTE}_integ"
-PORT_SSH=12322; PORT_SITE=18443
+PORT_SSH=12322; PORT_SITE=18443; PORT_API=18444
 ADRESSE="https://127.0.0.1:$PORT_SITE"
 TMP="$(mktemp -d)"
 JOURNAL="$TMP/deployer.log"
@@ -51,6 +53,7 @@ attendre_sante() {
 }
 
 nettoyer() {
+  [ -z "${PID_API:-}" ] || kill "$PID_API" 2>/dev/null || true
   docker rm -f "$CIBLE" "$BASE_DB" >/dev/null 2>&1 || true
   docker network rm "$RESEAU" >/dev/null 2>&1 || true
   rm -rf "$TMP"
@@ -86,18 +89,24 @@ for _ in $(seq 1 60); do docker exec "$CIBLE" test -s /etc/ssl/kit/cert.pem 2>/d
 docker exec "$CIBLE" cat /etc/ssl/kit/cert.pem > "$TMP/cert.pem"
 export CURL_CA_BUNDLE="$TMP/cert.pem"
 
-echo "▶ base gérée : MariaDB, login « $DB » sans privilège ; mot de passe tiré sur la cible"
+echo "▶ base gérée : MariaDB (le login « $DB » et sa base seront créés par le script, par l'API)"
 for _ in $(seq 1 90); do echo 'SELECT 1;' | admin_sql >/dev/null 2>&1 && break; sleep 1; done
 VERSION_BASE="$(echo 'SELECT VERSION();' | admin_sql | tail -1)"
 echo "  · $VERSION_BASE (image mariadb:lts)"
-# Ce que le porteur fait dans l'administration de l'hébergeur. Le mot de passe naît sur la cible
-# et n'est jamais affiché : il passe d'un conteneur à l'autre par un tube.
-sur_cible "umask 077; mkdir -p $DOSSIER; openssl rand -hex 24 > $DOSSIER/.dbpass"
+# Ce que fait l'hébergeur quand son API crée un login et une base. Le mot de passe arrive par
+# l'entrée standard et n'est jamais affiché.
+creer_utilisateur() {
+  local mdp; mdp="$(cat)"
+  case "$1$mdp" in *[!A-Za-z0-9_]*) return 1 ;; esac
+  printf "CREATE USER '%s'@'%%' IDENTIFIED BY '%s';\n" "$1" "$mdp" | admin_sql
+}
+creer_base() {
+  case "$1" in *[!A-Za-z0-9_]*) return 1 ;; esac
+  printf "CREATE DATABASE %s CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;\nGRANT ALL PRIVILEGES ON %s.* TO '%s'@'%%';\nFLUSH PRIVILEGES;\n" "$1" "$1" "$1" | admin_sql
+}
+export -f creer_utilisateur creer_base admin_sql; export BASE_DB
 ( umask 077; printf 'DB_HOST=%s\nDB_PORT=3306\nDB_NAME=%s\nDB_USER=%s\nDB_PASSWORD=%s\n' "$BASE_DB" "$DB_INTEG" "$DB_INTEG" "$(openssl rand -hex 24)" > "$TMP/integ.env" )
 {
-  printf "CREATE DATABASE %s CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;\n" "$DB"
-  printf "CREATE USER '%s'@'%%' IDENTIFIED BY '%s';\n" "$DB" "$(sur_cible "cat $DOSSIER/.dbpass")"
-  printf "GRANT ALL PRIVILEGES ON %s.* TO '%s'@'%%';\n" "$DB" "$DB"
   printf "CREATE DATABASE %s CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;\n" "$DB_INTEG"
   printf "CREATE USER '%s'@'%%' IDENTIFIED BY '%s';\n" "$DB_INTEG" "$(sed -n 's/^DB_PASSWORD=//p' "$TMP/integ.env")"
   printf "GRANT ALL PRIVILEGES ON %s.* TO '%s'@'%%';\nFLUSH PRIVILEGES;\n" "$DB_INTEG" "$DB_INTEG"
@@ -117,16 +126,42 @@ verifier "adresse publique en http:// → refus" refuse cible "$COMPTE" "$INSTAN
 verifier "hôte qui commence par un tiret → refus" refuse "-oProxyCommand=true" "$COMPTE" "$INSTANCE" "$ADRESSE"
 verifier "KIT_PHP_VERSION fantaisiste → refus" env KIT_PHP_VERSION='8.3; id' bash -c "! bash '$ROOT/deploiement/alwaysdata/deployer.sh' cible '$COMPTE' '$INSTANCE' '$ADRESSE' >/dev/null 2>&1"
 
-deployer() {
+echo "▶ faux serveur de l'API de l'hébergeur (aucun appel ne part vers l'hébergeur réel)"
+JETON_API="jeton-de-repetition-$(openssl rand -hex 12)"
+printf 'ALWAYSDATA_TOKEN=%s\n' "$JETON_API" > "$TMP/env-avec-jeton"; : > "$TMP/env-sans-jeton"
+FAUX_JETON="$JETON_API" FAUX_COMPTE="$COMPTE" FAUX_PORT="$PORT_API" FAUX_JOURNAL="$TMP/api.log" \
+FAUX_CREER_UTILISATEUR=creer_utilisateur FAUX_CREER_BASE=creer_base FAUX_REDEMARRER=false \
+  python3 -I "$ROOT/harness/faux-hebergeur.py" & PID_API=$!
+for _ in $(seq 1 30); do curl -s -o /dev/null "http://127.0.0.1:$PORT_API/" && break; sleep 0.2; done
+: > "$TMP/api.log"   # l'attente ci-dessus n'est pas un appel du script
+
+# Le script ne voit QUE le faux serveur et le jeton de répétition : le jeton réel du projet, s'il
+# existe (variable d'environnement ou fichier .env), n'est jamais lu ici.
+script() {  # script <deployer|revenir> <fichier d'environnement>
+  env -u ALWAYSDATA_TOKEN -u ALWAYSDATA_SITE -u KIT_REDEMARRAGE -u KIT_DB_NAME -u KIT_DB_USER \
+  ALWAYSDATA_API="http://127.0.0.1:$PORT_API/v1" KIT_ENV_FICHIER="$2" KIT_ATTENTE_CERTIFICAT=0 KIT_ATTENTE_PAS=2 \
   KIT_SSH="ssh -F $TMP/ssh_config -o BatchMode=yes" KIT_SCP="scp -q -F $TMP/ssh_config -o BatchMode=yes" \
-  KIT_DB_HOST="$BASE_DB" bash "$ROOT/deploiement/alwaysdata/deployer.sh" cible "$COMPTE" "$INSTANCE" "$ADRESSE"
+  KIT_DB_HOST="$BASE_DB" bash "$ROOT/deploiement/alwaysdata/$1.sh" cible "$COMPTE" "$INSTANCE" "$ADRESSE"
 }
+deployer() { script deployer "$TMP/env-avec-jeton"; }
+revenir() { script revenir "$TMP/env-avec-jeton"; }
+creations() { grep -cE '^POST /v1/(site|database|database/user)/ ' "$TMP/api.log" || true; }
+
+echo "▶ sans jeton d'API, sur une instance jamais préparée : arrêt avant tout envoi"
+script deployer "$TMP/env-sans-jeton" > "$JOURNAL.0" 2>&1 && code0=0 || code0=$?
+verifier "le script s'arrête (code $code0)" test "$code0" -ne 0
+verifier "il dit quoi créer à la main (base, mot de passe, site)" bash -c "grep -q 'créer à la main' '$JOURNAL.0' && grep -q '.dbpass' '$JOURNAL.0' && grep -q 'un site pour' '$JOURNAL.0'"
+verifier "rien n'a été envoyé sur la cible, aucun appel à l'API" bash -c "! docker exec -u $COMPTE $CIBLE test -e $DOSSIER && [ ! -s '$TMP/api.log' ]"
 
 echo "▶ premier déploiement"
 if deployer > "$JOURNAL.1" 2>&1; then ok "deployer.sh sort en 0"; else ko "deployer.sh (premier passage)"; cat "$JOURNAL.1"; fi
 sed 's/^/    | /' "$JOURNAL.1"
 V1="$(sur_cible "basename \$(readlink $DOSSIER/courant)")"
 verifier "configuration créée au premier passage" grep -q 'configuration créée' "$JOURNAL.1"
+verifier "la base, son utilisateur et le site ont été créés par l'API (3 créations, annoncées avant)" bash -c "[ \"\$(grep -cE '^POST /v1/(site|database|database/user)/ 201' '$TMP/api.log')\" = 3 ] && [ \"\$(grep -c 'création d' '$JOURNAL.1')\" = 3 ]"
+verifier "le site créé est un site PHP, racine sur courant/public" grep -q '"type":"php","path":"kit/courant/public"' "$JOURNAL.1"
+refus_retour() { ! revenir > "$TMP/revenir-0.log" 2>&1 && grep -q 'aucune version précédente' "$TMP/revenir-0.log" && [ "$(sur_cible "basename \$(readlink $DOSSIER/courant)")" = "$V1" ]; }
+verifier "retour arrière sans version précédente : refusé, rien n'est changé" refus_retour
 verifier "les trois migrations sont jouées, par bin/migrate.php" grep -q 'migrations : 3 appliquée(s)' "$JOURNAL.1"
 verifier "configuration de l'instance : droits 600, hors de la racine du site" sur_cible "test \"\$(stat -c %a $DOSSIER/config.php)\" = 600 && test \"\$(stat -c %a $DOSSIER/.dbpass)\" = 600"
 verifier "la configuration ferme l'inscription et vise l'adaptateur de référence" sur_cible "grep -q \"'registration' => 'closed'\" $DOSSIER/config.php && grep -q \"'http' => 'apiplatform'\" $DOSSIER/config.php"
@@ -141,6 +176,7 @@ verifier "sonde de santé : version $V1" bash -c "curl -s '$ADRESSE/api/health' 
 SECRET_NOYAU="$(racine_cible "sed -n \"s/.*'secret' => '\\([0-9a-f]*\\)'.*/\\1/p\" $DOSSIER/config.php")"
 MDP_BASE="$(racine_cible "cat $DOSSIER/.dbpass")"
 verifier "le secret du noyau a été tiré sur le serveur (64 hexadécimaux)" test "${#SECRET_NOYAU}" = 64
+verifier "le mot de passe de la base a été tiré sur le serveur (48 hexadécimaux)" test "${#MDP_BASE}" = 48
 if grep -qF -e "$SECRET_NOYAU" -e "$MDP_BASE" "$JOURNAL.1"; then ko "un secret figure dans la sortie de deployer.sh"; else ok "aucun secret dans la sortie de deployer.sh"; fi
 SOMME_CONFIG="$(racine_cible "sha256sum $DOSSIER/config.php | cut -d' ' -f1")"
 
@@ -162,6 +198,7 @@ V2="$(sur_cible "basename \$(readlink $DOSSIER/courant)")"
 verifier "une nouvelle version est servie ($V2)" test "$V2" != "$V1"
 verifier "aucune migration rejouée" grep -q 'migrations : 0 appliquée(s)' "$JOURNAL.2"
 verifier "configuration gardée" grep -q 'configuration gardée' "$JOURNAL.2"
+verifier "rien n'est recréé chez l'hébergeur : toujours 3 créations, aucune de plus" bash -c "[ \"\$(grep -cE '^POST /v1/(site|database|database/user)/ ' '$TMP/api.log')\" = 3 ] && ! grep -q 'création d' '$JOURNAL.2'"
 verifier "configuration inchangée (même somme de contrôle)" test "$(racine_cible "sha256sum $DOSSIER/config.php | cut -d' ' -f1")" = "$SOMME_CONFIG"
 verifier "version précédente présente, désignée par le lien « precedent »" sur_cible "test \"\$(readlink $DOSSIER/precedent)\" = versions/$V1 && test -f $DOSSIER/versions/$V1/public/index.php"
 verifier "données intactes : la donnée témoin est toujours là" bash -c "curl -s '$ADRESSE/api/todos/$TEMOIN' -H '@$TMP/temoin.hdr' | grep -q 'avant le second passage'"
@@ -177,11 +214,25 @@ toutes_versions() {
 }
 verifier "après le déploiement, tous les processus PHP servent $V2 (12 requêtes de suite)" toutes_versions "$V2"
 
-echo "▶ retour arrière : le lien « courant » revient sur la version précédente, puis repart"
-par_ssh "cd $DOSSIER && ln -sfn \"\$(readlink precedent)\" courant.nouveau && mv -T courant.nouveau courant"
+echo "▶ retour arrière (revenir.sh), puis retour à la version quittée"
+if revenir > "$TMP/revenir-1.log" 2>&1; then ok "revenir.sh sort en 0"; else ko "revenir.sh"; cat "$TMP/revenir-1.log"; fi
 verifier "retour arrière vu AUSSITÔT par tous les processus PHP ($V1, 12 requêtes de suite, sans redémarrer PHP)" toutes_versions "$V1"
-par_ssh "cd $DOSSIER && ln -sfn versions/$V2 courant.nouveau && mv -T courant.nouveau courant"
-verifier "bascule inverse vue aussitôt par tous les processus PHP ($V2, 12 requêtes de suite)" toutes_versions "$V2"
+verifier "la version quittée est gardée, désignée par le lien « precedent »" sur_cible "test \"\$(readlink $DOSSIER/precedent)\" = versions/$V2"
+verifier "données intactes, aucune migration jouée ni défaite" bash -c "curl -s '$ADRESSE/api/todos/$TEMOIN' -H '@$TMP/temoin.hdr' | grep -q 'avant le second passage' && [ \"\$(echo 'SELECT COUNT(*) FROM $DB.schema_migrations;' | docker exec -i $BASE_DB sh -c 'exec mariadb -uroot -p\"\$MARIADB_ROOT_PASSWORD\"' | tail -1)\" = 3 ]"
+if revenir > "$TMP/revenir-2.log" 2>&1; then ok "revenir.sh rejoué sort en 0"; else ko "revenir.sh rejoué"; cat "$TMP/revenir-2.log"; fi
+verifier "rejoué, le script remet la version quittée ($V2, 12 requêtes de suite)" toutes_versions "$V2"
+verifier "les retours n'ont rien créé chez l'hébergeur" test "$(creations)" = 3
+if grep -qF -e "$SECRET_NOYAU" -e "$MDP_BASE" -e "$JETON_API" "$JOURNAL".[012] "$TMP"/revenir-[012].log "$TMP/api.log"; then ko "un secret figure dans une sortie des scripts ou dans le journal de l'API"; else ok "ni mot de passe de la base, ni secret du noyau, ni jeton d'API dans les sorties des scripts et le journal de l'API"; fi
+memes_gestes() {
+  local k f
+  for k in kit-actix kit-fastapi; do
+    [ -d "$ROOT/../$k/deploiement/alwaysdata" ] || continue   # un projet dérivé n'a qu'un kit
+    for f in deploiement/alwaysdata/hebergeur.sh deploiement/alwaysdata/hebergeur.py harness/faux-hebergeur.py; do
+      cmp -s "$ROOT/$f" "$ROOT/../$k/$f" || return 1
+    done
+  done
+}
+verifier "les gestes communs sont les mêmes fichiers dans les trois kits" memes_gestes
 
 echo "▶ ce que PHP reçoit du serveur ($MONTAGE)"
 # (La bascule vue aussitôt par tous les processus, ci-dessus, prouve aussi que SCRIPT_FILENAME

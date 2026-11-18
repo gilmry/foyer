@@ -170,10 +170,27 @@ de sécurité sont posés par l'application. Une erreur de base → 503 généri
 
 ```bash
 bash deploiement/alwaysdata/deployer.sh <hôte ssh> <compte> <instance> <adresse publique>
+bash deploiement/alwaysdata/revenir.sh  <hôte ssh> <compte> <instance> <adresse publique>   # retour arrière
 ```
 
 `vendor/` et le cache du noyau sont construits **sur le poste** ; versions datées, bascule
 atomique du lien `courant`, version précédente gardée, configuration créée une fois sur le serveur.
+
+Avec le jeton d'API `ALWAYSDATA_TOKEN` (dans l'environnement, ou dans le `.env` du kit, ignoré
+par git), `deployer.sh` crée d'abord ce qui manque chez l'hébergeur, après
+l'avoir annoncé : l'utilisateur de base `<compte>_<instance>`, la base du même nom, le site PHP
+(retrouvé par son adresse, racine `<instance>/courant/public`). Il ne modifie ni ne supprime rien
+d'existant ; si `KIT_DB_NAME` ou `KIT_DB_USER` sortent de la convention, il ne crée rien. Sans
+jeton, il s'arrête avant tout envoi si l'instance n'a jamais été préparée. `revenir.sh` rebascule
+le lien `courant` sur la version précédente (un site PHP ne se redémarre pas) ; rejoué, il annule
+le retour ; il ne joue ni ne défait aucune migration. Ces créations et `revenir.sh` ne sont
+prouvés qu'en répétition locale, contre le faux serveur d'API : non prouvé chez l'hébergeur.
+
+Fichiers communs aux trois kits : `deploiement/alwaysdata/hebergeur.sh`, `hebergeur.py` (les
+gestes auprès de l'API de l'hébergeur : lire l'état, créer ce qui manque, redémarrer) et
+`harness/faux-hebergeur.py` (le faux serveur d'API de la répétition). **Ces trois fichiers sont
+identiques dans `kit-actix`, `kit-fastapi` et `kit-php` : toute modification se reporte dans les
+trois** (le gate `deploiement` le vérifie).
 Guide, retour arrière et tableau de ce qui est prouvé : [`deploiement/alwaysdata/README.md`](deploiement/alwaysdata/README.md).
 Séquence du rôle : `pilote/roles/deployeur-heberge.md`.
 
