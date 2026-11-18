@@ -10,6 +10,13 @@
 #   et révoque ses jetons. Les deux comptes existent déjà (`python -m app.accounts create …`) :
 #     E2E_EMAIL_A, E2E_PASSWORD_A, E2E_EMAIL_B, E2E_PASSWORD_B
 #   L'inscription y est attendue FERMÉE (E2E_REGISTRATION=open si le déploiement la laisse ouverte).
+# E2E_PROFIL=public : parcours ALLÉGÉ et ESPACÉ, à utiliser contre un hébergeur réel. Le frontal d'un
+#   hébergement mutualisé prend une rafale de refus (401, 404, chemins sensibles, gros corps) pour une
+#   attaque et peut bloquer l'adresse du poste, pour tous les sites du compte. Ce profil garde
+#   l'identité, le parcours, le cloisonnement, la session, quatre fichiers non servis et les en-têtes ;
+#   il laisse à la répétition locale (gate `deploiement`) les entrées hostiles, la limite d'essais et
+#   les chemins détournés. E2E_PAUSE=<secondes> entre deux requêtes (1 par défaut dans ce profil).
+#   Un seul passage par déploiement : ne jamais l'enchaîner.
 # Aucun secret ne passe en argument de commande : identifiants et jetons vont à curl par fichier.
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -48,9 +55,16 @@ fi
 # Origine du site (schéma://hôte[:port]) : celle que le navigateur enverrait dans `Origin`.
 ORIGINE="$(printf '%s' "$BASE" | sed -E 's#^(https?://[^/]+).*#\1#')"
 
-C=(curl -s --max-time 30)
+PROFIL="${E2E_PROFIL:-complet}"
+case "$PROFIL" in
+  complet) PAUSE="${E2E_PAUSE:-0}" ;;
+  public) PAUSE="${E2E_PAUSE:-1}"; cible="$cible, profil public" ;;
+  *) echo "E2E_PROFIL : « complet » ou « public », reçu « $PROFIL »" >&2; exit 2 ;;
+esac
+requete() { [ "$PAUSE" = 0 ] || sleep "$PAUSE"; curl -s --max-time 30 "$@"; }
+C=(requete)
 JSON=(-H 'Content-Type: application/json')
-for _ in $(seq 1 60); do "${C[@]}" -f "$BASE/api/health" >/dev/null 2>&1 && break; sleep 0.5; done
+for _ in $(seq 1 60); do curl -s --max-time 30 -f "$BASE/api/health" >/dev/null 2>&1 && break; sleep 0.5; [ "$PROFIL" = complet ] || sleep 4; done
 
 fail=0
 ok() { echo "  ✓ $1"; }
@@ -71,9 +85,11 @@ echo "— identité : sans jeton ni session, tout est refusé (401)"
 sans=$(rep "$BASE/api/todos")
 assert "GET /api/todos sans identité → 401" 401 "$(code_de "$sans")"
 assert "POST /api/todos sans identité → 401" 401 "$(code -X POST "$BASE/api/todos" "${JSON[@]}" -d '{"title":"intrus"}')"
-assert "GET /api/todos/{id} sans identité → 401" 401 "$(code "$BASE/api/todos/un-id")"
-assert "PATCH /api/todos/{id} sans identité → 401" 401 "$(code -X PATCH "$BASE/api/todos/un-id")"
-assert "DELETE /api/todos/{id} sans identité → 401" 401 "$(code -X DELETE "$BASE/api/todos/un-id")"
+if [ "$PROFIL" = complet ]; then
+  assert "GET /api/todos/{id} sans identité → 401" 401 "$(code "$BASE/api/todos/un-id")"
+  assert "PATCH /api/todos/{id} sans identité → 401" 401 "$(code -X PATCH "$BASE/api/todos/un-id")"
+  assert "DELETE /api/todos/{id} sans identité → 401" 401 "$(code -X DELETE "$BASE/api/todos/un-id")"
+fi
 assert "jeton porteur jamais délivré → 401" 401 "$(code -H 'Authorization: Bearer jamais-delivre' "$BASE/api/todos")"
 verifier "le refus ne contient aucun todo" "! corps_de \"\$sans\" | grep -q '\"items\"'"
 
@@ -129,6 +145,7 @@ assert "PATCH id inconnu → 404" 404 "$(code_de "$inexistant")"
 assert "DELETE /api/todos/{id} → 200" 200 "$(code "${A[@]}" -X DELETE "$BASE/api/todos/$id")"
 assert "DELETE id inconnu → 404" 404 "$(code "${A[@]}" -X DELETE "$BASE/api/todos/inconnu")"
 
+if [ "$PROFIL" = complet ]; then
 echo "— entrées hostiles : refusées à la validation, jamais par une erreur 500"
 assert "JSON mal formé sans identité → 401 (l'identité d'abord)" 401 "$(code -X POST "$BASE/api/todos" "${JSON[@]}" -d '{pas du json')"
 assert "JSON mal formé avec identité → 422" 422 "$(code "${A[@]}" -X POST "$BASE/api/todos" "${JSON[@]}" -d '{pas du json')"
@@ -145,6 +162,7 @@ assert "connexion, mot de passe de 200 caractères → 401 (refusé avant hachag
 printf '{"email":"%s","password":"%s"}' "$EMAIL_A" "$(alea 10000)" > "$T/enorme.json"
 assert "corps de 20 Ko → 413" 413 "$(code -X POST "$BASE/api/auth/token" "${JSON[@]}" --data-binary "@$T/enorme.json")"
 assert "le compte A n'est pas verrouillé par ces refus → 200" 200 "$(code "${A[@]}" "$BASE/api/auth/me")"
+fi
 
 echo "— cloisonnement par propriétaire"
 de_b=$(champ id "$(corps_de "$(rep "${B[@]}" -X POST "$BASE/api/todos" "${JSON[@]}" -d '{"title":"todo de B"}')")")
@@ -160,7 +178,8 @@ for verbe in GET PATCH DELETE; do
 done
 relu=$("${C[@]}" "${B[@]}" "$BASE/api/todos/$de_b")
 verifier "le todo de B est intact (ni basculé, ni supprimé)" "printf '%s' \"\$relu\" | grep -q '\"done\":false'"
-for intrus in owner_id ownerId owner; do
+if [ "$PROFIL" = complet ]; then intrus_essayes="owner_id ownerId owner"; else intrus_essayes="owner_id"; fi
+for intrus in $intrus_essayes; do
   assert "POST avec le champ « $intrus » désignant B → 422" 422 \
     "$(code "${A[@]}" -X POST "$BASE/api/todos" "${JSON[@]}" -d "{\"title\":\"pour B\",\"$intrus\":\"$de_b\"}")"
 done
@@ -197,6 +216,7 @@ assert "DELETE avec le cookie et la bonne origine (nettoyage) → 200" 200 "$(co
 assert "POST /api/auth/logout (cookie) → 200" 200 "$(code "${S[@]}" -H "Origin: $ORIGINE" -X POST "$BASE/api/auth/logout")"
 assert "après déconnexion, le cookie est refusé → 401" 401 "$(code "${S[@]}" "$BASE/api/todos")"
 
+if [ "$PROFIL" = complet ]; then
 echo "— limite d'essais de connexion (courriel jetable : les comptes du smoke ne sont pas verrouillés)"
 identifiants limite "limite-$(alea 6)@exemple.test" "$(alea)"
 essais=""
@@ -204,11 +224,14 @@ for _ in 1 2 3 4 5; do essais="$essais$(code -X POST "$BASE/api/auth/token" "${J
 assert "cinq essais échoués → 401 chacun" "401 401 401 401 401 " "$essais"
 assert "sixième essai → 429" 429 "$(code -X POST "$BASE/api/auth/token" "${JSON[@]}" --data-binary "@$T/limite.json")"
 assert "le compte A n'est pas verrouillé par ces essais → 200" 200 "$(code "${A[@]}" "$BASE/api/auth/me")"
+fi
 
 echo "— seuls public/ et l'API sont servis"
-for chemin in /.env /.git/config /.git/ /app/config.py /requirements.txt /requirements.lock /database/ \
-              /database/migrations/pending/0001_create_todos.up.sql /wsgi.py /lancer.sh /deps/ \
-              /%2e%2e/requirements.txt /..%2f.env /../app/config.py; do
+chemins="/.env /.git/config /.git/ /app/config.py /requirements.txt /requirements.lock /database/
+  /database/migrations/pending/0001_create_todos.up.sql /wsgi.py /lancer.sh /deps/
+  /%2e%2e/requirements.txt /..%2f.env /../app/config.py"
+[ "$PROFIL" = complet ] || chemins="/.env /app/config.py /database/migrations/pending/0001_create_todos.up.sql /wsgi.py"
+for chemin in $chemins; do
   r=$(rep --path-as-is "$BASE$chemin")
   c=$(code_de "$r")
   case "$c" in 400|403|404) bon=1 ;; *) bon=0 ;; esac
@@ -218,7 +241,9 @@ done
 assert "la page du front est servie → 200" 200 "$(code "$BASE/")"
 
 echo "— en-têtes de sécurité émis par l'application"
-for cas in "page:/" "API:/api/health" "refus 401:/api/todos" "fichier absent:/introuvable"; do
+cas_entetes=("page:/" "API:/api/health" "refus 401:/api/todos" "fichier absent:/introuvable")
+[ "$PROFIL" = complet ] || cas_entetes=("page:/" "API:/api/health")
+for cas in "${cas_entetes[@]}"; do
   nom="${cas%%:*}"; chemin="${cas#*:}"
   "${C[@]}" -D "$T/entetes" -o /dev/null "$BASE$chemin"
   for entete in strict-transport-security x-content-type-options referrer-policy; do

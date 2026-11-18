@@ -203,7 +203,7 @@ Réglages du site, selon le montage (voir le guide) :
   B — « Python » (uWSGI)        : application $DOSSIER/wsgi.py, répertoire de travail $DOSSIER,
                                   Python 3.12, sans environnement virtuel, fils activés (enable-threads)
 Comptes : $DOSSIER/lancer.sh outil app.accounts create <courriel>   (sur le serveur, commande courte)
-Preuve  : E2E_BASE_URL=$ADRESSE E2E_EMAIL_A=… E2E_PASSWORD_A=… E2E_EMAIL_B=… E2E_PASSWORD_B=… bash harness/e2e-smoke.sh
+Preuve (un seul passage) : E2E_PROFIL=public E2E_BASE_URL=$ADRESSE E2E_EMAIL_A=… E2E_PASSWORD_A=… E2E_EMAIL_B=… E2E_PASSWORD_B=… bash harness/e2e-smoke.sh
 Retour arrière : sur le serveur, remettre le lien courant sur la version précédente (un geste, voir le
   guide), puis redémarrer le site. Le schéma, lui, ne recule pas tout seul : voir le guide.
 FIN

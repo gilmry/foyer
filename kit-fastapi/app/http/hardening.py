@@ -6,6 +6,7 @@
    ligne au journal. Jamais de trace ni de message de pilote dans une réponse."""
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 
@@ -26,6 +27,11 @@ SECURITY_HEADERS = (
 _NAMES = {name for name, _ in SECURITY_HEADERS}
 # Aucun corps de l'API ne dépasse quelques centaines d'octets : la borne est large, et fixe.
 MAX_BODY = 16 * 1024
+# Un corps refusé est tout de même LU avant la réponse, dans ces deux limites. Répondre puis fermer
+# sans le lire coupe la connexion pendant que le frontal écrit encore : il perd alors la réponse, et
+# le client ne reçoit rien au lieu du 413. Au-delà des limites, on répond sans lire.
+DRAIN_MAX = 1024 * 1024
+DRAIN_SECONDS = 5.0
 
 
 class Hardening:
@@ -59,7 +65,24 @@ class Hardening:
             })
             await send({"type": "http.response.body", "body": body})
 
-        # Taille du corps bornée AVANT toute lecture : longueur annoncée trop grande → 413 ; corps
+        async def drain() -> None:
+            seen = 0
+            while seen <= DRAIN_MAX:
+                message = await receive()
+                if message["type"] != "http.request":
+                    return
+                seen += len(message.get("body", b""))
+                if not message.get("more_body"):
+                    return
+
+        async def refuse_after_drain(status: int, message: str) -> None:
+            try:
+                await asyncio.wait_for(drain(), DRAIN_SECONDS)
+            except TimeoutError:
+                pass
+            await refuse(status, message)
+
+        # Taille du corps bornée AVANT tout traitement : longueur annoncée trop grande → 413 ; corps
         # sans longueur annoncée (envoi par morceaux) → 411, sa taille ne pouvant être bornée d'avance.
         headers_in = {k.lower(): v for k, v in scope.get("headers", [])}
         length = headers_in.get(b"content-length")
@@ -67,11 +90,14 @@ class Hardening:
             if not length.isdigit():
                 await refuse(400, "Requête invalide.")
                 return
-            if int(length) > MAX_BODY:
+            if int(length) > DRAIN_MAX:
                 await refuse(413, "Corps trop volumineux.")
                 return
+            if int(length) > MAX_BODY:
+                await refuse_after_drain(413, "Corps trop volumineux.")
+                return
         elif b"transfer-encoding" in headers_in:
-            await refuse(411, "Longueur du corps requise.")
+            await refuse_after_drain(411, "Longueur du corps requise.")
             return
 
         try:

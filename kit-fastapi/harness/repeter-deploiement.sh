@@ -18,7 +18,7 @@ piege
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$ROOT/harness/ensure-images.sh"; ensure_postgres
 # Aucun réglage de déploiement réel ne doit fuir dans la répétition.
-unset ALWAYSDATA_SITE ALWAYSDATA_TOKEN KIT_DOSSIER KIT_PYTHON E2E_BASE_URL
+unset ALWAYSDATA_SITE ALWAYSDATA_TOKEN KIT_DOSSIER KIT_PYTHON E2E_BASE_URL E2E_PROFIL E2E_PAUSE
 
 CIBLE=kit-fastapi-cible
 IMAGE_CIBLE=todo-kit-fastapi-cible:local
@@ -196,6 +196,12 @@ combinaison() {  # $1 montage, $2 http, $3 persistance
 
 echo ""; echo "▶ smoke e2e après le premier déploiement"
 combinaison A fastapi cqrs
+# Le profil public (celui qu'on joue contre un hébergeur réel) est prouvé ici, sans pause.
+if E2E_PROFIL=public E2E_PAUSE=0 smoke > "$TMP/smoke-public.log" 2>&1; then
+  ok "profil public du smoke : vert ($(grep -c '✓' "$TMP/smoke-public.log") vérifications)"
+else
+  ko "profil public du smoke : rouge"; grep -E '✗|🔴' "$TMP/smoke-public.log" | sed 's/^/      /' || true
+fi
 
 # Une donnée témoin (un todo du compte A), l'état des migrations et celui de .env, pour le second passage.
 printf '{"email":"%s","password":"%s"}' "$EMAIL_A" "$MDP_A" > "$TMP/a.json"

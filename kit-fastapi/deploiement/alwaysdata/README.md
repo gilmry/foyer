@@ -11,9 +11,10 @@ donnez à cette instance du kit, `<adresse>` l'adresse publique du site.
 
 > **État des preuves.** Tout ce qui suit a été joué en **répétition locale** (gate `deploiement`,
 > `bash harness/repeter-deploiement.sh`) contre une cible jetable qui imite l'hébergeur. Les faits
-> sur l'hébergeur viennent de sondes en lecture seule du 2026-11-18. **Aucun déploiement réel de
-> ce kit n'a été fait** : ce que seule la plateforme peut montrer est marqué « non prouvé chez
-> l'hébergeur ».
+> sur l'hébergeur viennent de sondes en lecture seule du 2026-11-18. **Un déploiement réel a été
+> fait le 2026-11-18**, dans les deux montages, sur un site et une base d'essai : les huit
+> combinaisons y ont passé le smoke contre l'adresse publique (voir « Combinaisons prouvées »).
+> Ce qui reste à montrer est marqué « non prouvé chez l'hébergeur ».
 
 ## Quel montage choisir
 
@@ -150,31 +151,53 @@ si la commande est lancée depuis un terminal :
 Créez deux comptes pour le smoke (commande ci-dessus), puis, depuis le poste :
 
 ```sh
-E2E_BASE_URL=https://<adresse> \
+E2E_PROFIL=public E2E_BASE_URL=https://<adresse> \
 E2E_EMAIL_A=<courriel A> E2E_PASSWORD_A=<…> E2E_EMAIL_B=<courriel B> E2E_PASSWORD_B=<…> \
   bash harness/e2e-smoke.sh
 ```
 
-Le smoke ne remet rien à zéro : il supprime les todos qu'il crée et révoque ses jetons. Il laisse
-cinq lignes d'essais de connexion échoués (empreintes, sans courriel), que l'application purge
-d'elle-même à la connexion suivante, passé un quart d'heure. Il joue le parcours de référence,
-les cinq scénarios d'identité et de cloisonnement, vérifie que rien hors de `public/` n'est servi
-et que les en-têtes de sécurité sont là.
+Le smoke ne remet rien à zéro : il supprime les todos qu'il crée et révoque ses jetons. Il joue le
+parcours de référence, l'identité et le cloisonnement, la session par cookie, vérifie que quatre
+fichiers hors de `public/` ne sont pas servis et que les en-têtes de sécurité sont là.
+
+**Contre l'hébergeur, toujours `E2E_PROFIL=public`, et un seul passage.** Ce profil est allégé
+(70 vérifications) et espacé (une seconde entre deux requêtes, `E2E_PAUSE` pour
+changer). Le parcours complet envoie en quelques secondes des dizaines de refus : 401, 404, chemins
+comme `/.env`, essais de connexion ratés, corps de 20 Ko. Le 2026-11-18, après neuf parcours
+complets enchaînés depuis le même poste (1 179 requêtes en moins d'une heure, dont les deux tiers de refus),
+le frontal de l'hébergeur a cessé d'accepter les connexions de l'adresse du poste, **pour tous les
+sites du compte**. La règle exacte et sa durée ne sont pas connues. Les entrées hostiles, la
+limite d'essais et les chemins détournés restent prouvés par la répétition locale, qui joue les
+deux profils.
 
 ### Combinaisons prouvées
 
-Répétition locale du **2026-11-18** (gate `deploiement`) ; **non prouvé chez l'hébergeur**.
+Répétition locale du **2026-11-18** (gate `deploiement`), puis déploiement réel du même jour :
+parcours complet du smoke (108 vérifications) contre l'adresse publique, en HTTPS.
 
 | Montage | HTTP | Persistance | Smoke e2e (répétition locale) | Chez l'hébergeur |
 |---|---|---|---|---|
-| A | fastapi | cqrs | 🟢 | non prouvé |
-| A | fastapi | orm | 🟢 | non prouvé |
-| A | starlette | cqrs | 🟢 | non prouvé |
-| A | starlette | orm | 🟢 | non prouvé |
-| B | fastapi | cqrs | 🟢 | non prouvé |
-| B | fastapi | orm | 🟢 | non prouvé |
-| B | starlette | cqrs | 🟢 | non prouvé |
-| B | starlette | orm | 🟢 | non prouvé |
+| A | fastapi | cqrs | 🟢 | 🟢 2026-11-18 |
+| A | fastapi | orm | 🟢 | 🟢 2026-11-18 (au second essai, voir ci-dessous) |
+| A | starlette | cqrs | 🟢 | 🟢 2026-11-18 |
+| A | starlette | orm | 🟢 | 🟢 2026-11-18 |
+| B | fastapi | cqrs | 🟢 | 🟢 2026-11-18 |
+| B | fastapi | orm | 🟢 | 🟢 2026-11-18 |
+| B | starlette | cqrs | 🟢 | 🟢 2026-11-18 |
+| B | starlette | orm | 🟢 | 🟢 2026-11-18 |
+
+Chez l'hébergeur : Python 3.12 du système et dépendances préparées sur le poste (modules compilés
+chargés), base PostgreSQL gérée avec un login sans privilège, montage B sous uWSGI 2.0.31. Le
+script joué une seconde fois n'a rejoué aucune migration ni réécrit `.env`. Le site et son adresse
+d'essai ont été supprimés après le smoke.
+
+**Défaut trouvé par ce déploiement, corrigé depuis.** Un essai sur huit, le refus d'un corps trop
+gros (413) n'est jamais arrivé au client : l'application répondait puis fermait la connexion sans
+lire le corps, pendant que le frontal l'écrivait encore, et le frontal perdait la réponse. En
+local, un client qui envoie le corps après les en-têtes perdait la réponse à chaque fois.
+L'application lit maintenant le corps refusé avant de répondre (dans la limite de 1 Mio et de cinq
+secondes ; au-delà elle répond sans lire). La correction est prouvée en local (`tests/http`),
+**pas encore rejouée chez l'hébergeur**.
 
 Dans la répétition : le script est joué **deux fois** (au second passage, aucune migration
 rejouée, données intactes, `.env` inchangé, version précédente gardée) ; le site écoute en
@@ -206,9 +229,11 @@ Le pont : **`a2wsgi` 1.10.10**, licence Apache-2.0, sans dépendance. Relevé su
 risque à connaître (nombre de mainteneurs non vérifié). Le pont tient en un fichier de 300 lignes. Il porte une boucle d'événements dans
 un fil par processus ; chaque requête y est remise par le fil de uWSGI qui la sert.
 
-**Non prouvé chez l'hébergeur** pour ce montage : les options que la plateforme passe réellement
-à uWSGI (nombre de processus, fils, mode de chargement), la façon dont son uWSGI charge un
-Python 3.12 sans environnement virtuel, et le rechargement après un déploiement.
+**Relevé chez l'hébergeur le 2026-11-18** pour ce montage : uWSGI 2.0.31, quatre processus,
+`lazy-apps` et `enable-threads = true` ; le Python 3.12 du système charge l'application et ses
+dépendances préparées sans environnement virtuel ; les quatre combinaisons passent le smoke.
+**Non prouvé chez l'hébergeur** : la durée de l'arrêt (le cas des 62 s ci-dessus) et le
+comportement sous plusieurs requêtes simultanées de longue durée.
 
 ## Retour arrière
 
@@ -245,14 +270,31 @@ retire : au-delà d'un essai, le vrai retour arrière des données est la restau
   donnée de santé.
 - **La bascule du nom de domaine** : par l'humain, jamais par un script.
 
+## Pièges rencontrés chez l'hébergeur
+
+- **Le port voisin.** L'hébergeur attribue les ports des sites d'un compte à la suite. Si un
+  autre programme du compte écoute de lui-même sur « son port + 1 » (un service annexe lancé par
+  le lanceur d'un autre site, par exemple), le site suivant reçoit ce port : son adresse publique
+  mène alors à ce service, et son propre programme n'est jamais lancé. Symptôme : une réponse
+  immédiate qui n'est pas celle du kit (404 ou 401), et aucun démarrage dans le journal du site.
+  Remède : aucun programme du compte ne choisit un port dans la plage que l'hébergeur attribue
+  (8100 et suivants) ; un service annexe prend un port fixe loin de cette plage.
+- **Retirer toutes les adresses d'un site ne le ferme pas** : la modification est sans effet.
+  Pour fermer un site d'essai, on le supprime.
+- **Un sous-domaine du nom de compte n'existe pas** (`<quelque-chose>.<compte>.<hébergeur>`) :
+  ni le DNS ni l'API ne l'acceptent. Pour une adresse d'essai, prenez un sous-domaine d'un domaine
+  qui pointe déjà vers l'hébergeur ; le certificat est fourni.
+- **Le blocage d'adresse par le frontal** : voir « Prouver le déploiement ».
+
 ## Ce qui n'est pas prouvé chez l'hébergeur
 
-- Le déploiement lui-même, dans l'un ou l'autre montage, et le smoke contre une adresse publique.
-- Le redémarrage par l'API (`ALWAYSDATA_SITE`) : le code est celui d'un projet consommateur déjà
-  déployé ainsi, mais il n'a pas été rejoué pour ce kit.
-- Le chargement des modules compilés par le Python 3.12 de l'hébergeur : la sonde dit qu'il
-  accepte les roues `manylinux` jusqu'à glibc 2.36, la répétition les charge sur une Debian 12
-  avec la même version mineure ; `deployer.sh` le revérifie sur le serveur avant de basculer.
+- La correction du refus 413 (corps lu avant la réponse) : prouvée en local seulement.
+- Le redémarrage par `ALWAYSDATA_SITE` : l'appel à l'API de redémarrage est prouvé (le site a été
+  redémarré ainsi à chaque passage du 2026-11-18, par une commande passée dans
+  `KIT_REDEMARRAGE`), mais la branche du script qui lit le jeton dans le `.env` du kit n'a pas
+  été jouée chez l'hébergeur. Le temps pendant lequel le site ne répond pas n'est pas mesuré.
+- Le profil public du smoke : prouvé en local seulement ; les preuves du 2026-11-18 ont été
+  faites avec le parcours complet.
 - Le dossier du compte est sur **NFS v4** (relevé en lecture seule le 2026-11-18). Rien dans le kit
   ne repose sur un verrou de fichier : l'exclusion des migrations est un verrou consultatif en
   base, le témoin `.migrer` n'est que lu puis effacé. La bascule, elle, est un renommage de lien
@@ -261,9 +303,10 @@ retire : au-delà d'un essai, le vrai retour arrière des données est la restau
   lequel un démarrage voit la nouvelle version n'est pas mesuré. C'est sans effet sur
   l'intégrité (chaque version est entière, le témoin lui est adressé), et le contrôle final du
   script échoue si le site redémarre sur l'ancienne.
-- Le montage B sous le uWSGI de l'hébergeur (2.0.31 ; la répétition tourne en 2.0.30).
-- Le comportement derrière le frontal : en-têtes transmis, flux, délai d'inactivité, relance
-  après arrêt.
+- Le comportement derrière le frontal pour le flux, le délai d'inactivité et la relance après
+  arrêt. (Les en-têtes de sécurité et le cookie `__Host-` arrivent bien au client : le smoke les
+  vérifie.)
+- La règle du frontal qui bloque une adresse après une rafale de refus, et sa durée.
 - Le front statique servi par un site statique de l'hébergeur plutôt que par l'application :
   possible, non essayé — le kit le sert lui-même, ce qui garde les en-têtes de sécurité et une
   seule origine pour le cookie de session.

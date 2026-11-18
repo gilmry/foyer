@@ -228,6 +228,44 @@ def test_body_size_is_bounded(world) -> None:  # @security
     assert state.todos.todos.count() == 0
 
 
+def _refusal(headers, chunks):
+    """Joue une requête ASGI contre l'enveloppe seule : renvoie (statut, morceaux lus, ordre)."""
+    import asyncio
+
+    pending, order = list(chunks), []
+
+    async def receive():
+        order.append("lu")
+        body = pending.pop(0)
+        return {"type": "http.request", "body": body, "more_body": bool(pending)}
+
+    async def send(message):
+        if message["type"] == "http.response.start":
+            order.append(message["status"])
+
+    async def never(scope, receive, send):
+        raise AssertionError("l'application ne doit pas être appelée")
+
+    scope = {"type": "http", "method": "POST", "path": "/api/todos", "headers": headers}
+    asyncio.run(Hardening(never)(scope, receive, send))
+    return order
+
+
+def test_refused_body_is_read_before_the_answer() -> None:  # @security
+    """Répondre 413 puis fermer sans lire le corps fait perdre la réponse derrière un frontal."""
+    chunks = [b"x" * 8000, b"x" * 8000, b"x" * 4000]
+    assert _refusal([(b"content-length", b"20000")], chunks) == ["lu", "lu", "lu", 413]
+    assert _refusal([(b"transfer-encoding", b"chunked")], chunks) == ["lu", "lu", "lu", 411]
+
+
+def test_refused_body_is_not_read_without_bound() -> None:  # @security
+    from app.http import hardening
+    assert _refusal([(b"content-length", str(hardening.DRAIN_MAX + 1).encode())], [b"x"]) == [413]
+    # Corps sans longueur annoncée : la lecture s'arrête dès la limite franchie.
+    piece = b"x" * (hardening.DRAIN_MAX // 2 + 1)
+    assert _refusal([(b"transfer-encoding", b"chunked")], [piece] * 6) == ["lu", "lu", 411]
+
+
 def test_unstorable_text_is_a_validation_error_not_a_500(world) -> None:  # @negative
     client, state, _ = world
     headers = _bearer(client)

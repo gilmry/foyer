@@ -49,7 +49,8 @@ Décision et raisons : `docs/adr/ADR-001-authentification.md`. À retenir pour c
   une réponse. Compte inconnu et mauvais mot de passe : même réponse. 5 échecs en 15 minutes
   pour un courriel → 429, y compris sous des requêtes simultanées (essai réservé avant
   vérification, atomique par sujet).
-- **Entrées bornées** : corps de 16 Kio au plus (413), longueur annoncée exigée (411),
+- **Entrées bornées** : corps de 16 Kio au plus (413), longueur annoncée exigée (411) — le corps
+  refusé est lu avant la réponse (1 Mio et 5 s au plus), sinon un frontal perd la réponse —,
   `application/json` exigé (422), texte non stockable (octet NUL, demi-codet isolé) refusé à la
   validation (400, 401 ou 404 selon la route) — jamais de 500 déclenchable par l'appelant.
 - **Toute route des todos exige une identité** (401 sinon). Le propriétaire est l'identité de
@@ -117,6 +118,10 @@ Tester l'e2e sur l'ORM : `TODO_PERSISTENCE=orm bash harness/e2e-smoke.sh`.
 ```sh
 E2E_BASE_URL=https://… E2E_EMAIL_A=… E2E_PASSWORD_A=… E2E_EMAIL_B=… E2E_PASSWORD_B=… bash harness/e2e-smoke.sh
 ```
+
+Contre un hébergeur réel, ajouter `E2E_PROFIL=public` (parcours allégé, une seconde entre deux
+requêtes) et ne faire **qu'un passage** : une rafale de refus fait bloquer l'adresse du poste par
+le frontal (guide de déploiement, « Prouver le déploiement »).
 
 Port de PostgreSQL : `KIT_PG_PORT` (défaut 15432, sur 127.0.0.1). Le conteneur `todo-postgres`
 est partagé avec les autres kits : chaque kit y a son rôle et sa base, à son nom.
