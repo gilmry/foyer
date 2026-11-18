@@ -4,28 +4,27 @@ declare(strict_types=1);
 
 namespace TodoApp\Application\Todo;
 
+use TodoApp\Domain\Account\CurrentUser;
 use TodoApp\Domain\Todo\TodoNotFoundException;
 use TodoApp\Domain\Todo\TodoRepository;
 
-/** Cas d'usage : supprimer une tâche. */
+/** Cas d'usage : supprimer une tâche du compte courant. */
 final class DeleteTodo
 {
-    public function __construct(private readonly TodoRepository $todos)
-    {
+    public function __construct(
+        private readonly TodoRepository $todos,
+        private readonly CurrentUser $user,
+    ) {
     }
 
-    /**
-     * @return array{deleted:bool}
-     * @throws TodoNotFoundException
-     */
-    public function execute(string $id): array
+    /** @throws TodoNotFoundException */
+    public function execute(string $id): void
     {
-        if ($this->todos->find($id) === null) {
+        $ownerId = $this->user->id();
+        if ($this->todos->find($ownerId, $id) === null) {
             throw TodoNotFoundException::withId($id);
         }
 
-        $this->todos->delete($id);
-
-        return ['deleted' => true];
+        $this->todos->delete($ownerId, $id);
     }
 }

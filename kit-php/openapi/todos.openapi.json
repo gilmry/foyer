@@ -2,25 +2,353 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Todo — API",
-    "description": "Source de vérité : le client JS (public/generated/todos.client.js) est GÉNÉRÉ depuis cette spec par harness/codegen-todos-client.php. Ne pas éditer le client à la main (gate contrat anti-drift).",
-    "version": "1.0.0"
+    "description": "Source de vérité du contrat : le client TypeScript typé (frontend-todos/src/generated/api.ts) est GÉNÉRÉ depuis ce fichier par frontend-todos/scripts/gen-api.mjs (gate `contrat`, anti-dérive). Les deux adaptateurs HTTP du kit (API Platform, de référence, et vanilla) servent CE contrat ; les opérations marquées x-adaptateurs n'existent que dans l'adaptateur cité. Erreurs au format problème (RFC 9457). Voir docs/adr/ADR-001-authentification.md.",
+    "version": "2.0.0"
   },
+  "security": [
+    {
+      "sessionCookie": []
+    },
+    {
+      "bearerToken": []
+    }
+  ],
   "paths": {
-    "/api/todos": {
+    "/api/health": {
       "get": {
-        "operationId": "listTodos",
-        "summary": "Liste les tâches",
+        "operationId": "health",
+        "summary": "Sonde de santé (publique) : dit quelle combinaison d'adaptateurs répond",
+        "security": [],
         "responses": {
           "200": {
-            "description": "Liste des tâches",
+            "description": "Service et base joignables",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "required": ["items"],
-                  "properties": {
-                    "items": { "type": "array", "items": { "$ref": "#/components/schemas/TodoView" } }
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service indisponible",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/me": {
+      "get": {
+        "operationId": "me",
+        "summary": "Compte courant",
+        "responses": {
+          "200": {
+            "description": "Compte courant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Account"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentification requise",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/login": {
+      "post": {
+        "operationId": "login",
+        "summary": "Ouvre une session (cookie HttpOnly, SameSite=Strict)",
+        "security": [],
+        "x-adaptateurs": [
+          "apiplatform"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Credentials"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Session ouverte",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Account"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Identifiants refusés (même réponse pour un compte inconnu)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origine refusée",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Trop de tentatives",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/logout": {
+      "post": {
+        "operationId": "logout",
+        "summary": "Ferme la session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "x-adaptateurs": [
+          "apiplatform"
+        ],
+        "responses": {
+          "204": {
+            "description": "Session fermée"
+          }
+        }
+      }
+    },
+    "/api/register": {
+      "post": {
+        "operationId": "register",
+        "summary": "Demande la création d'un compte, si la configuration ouvre l'inscription. Même réponse que le courriel ait déjà un compte ou non",
+        "security": [],
+        "x-adaptateurs": [
+          "apiplatform"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Credentials"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Demande acceptée (ne dit pas si le courriel avait déjà un compte)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Registration"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide ou champ inconnu",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Inscription fermée ou origine refusée",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation refusée",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Trop de demandes depuis cette adresse",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tokens": {
+      "post": {
+        "operationId": "issueToken",
+        "summary": "Émet un jeton porteur (rendu en clair cette seule fois)",
+        "security": [],
+        "x-adaptateurs": [
+          "apiplatform"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Credentials"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Jeton émis",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssuedToken"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Identifiants refusés",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Trop de tentatives",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tokens/current": {
+      "delete": {
+        "operationId": "revokeToken",
+        "summary": "Révoque le jeton porteur de la requête",
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Jeton révoqué"
+          },
+          "401": {
+            "description": "Authentification requise",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/todos": {
+      "get": {
+        "operationId": "listTodos",
+        "summary": "Liste les tâches du compte courant (liste bornée)",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tâches du compte courant, par date de création",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TodoView"
                   }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentification requise",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             }
@@ -29,68 +357,388 @@
       },
       "post": {
         "operationId": "createTodo",
-        "summary": "Crée une tâche",
+        "summary": "Crée une tâche pour le compte courant",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/TodoCreateInput" }
+              "schema": {
+                "$ref": "#/components/schemas/TodoCreateInput"
+              }
             }
           }
         },
         "responses": {
-          "201": { "description": "Tâche créée", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TodoView" } } } },
-          "400": { "description": "Libellé invalide", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorList" } } } }
+          "201": {
+            "description": "Tâche créée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TodoView"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide ou champ inconnu (dont tout champ propriétaire)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentification requise",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Libellé invalide",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
         }
       }
     },
     "/api/todos/{id}": {
       "parameters": [
-        { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
       ],
+      "get": {
+        "operationId": "getTodo",
+        "summary": "Lit une tâche du compte courant",
+        "responses": {
+          "200": {
+            "description": "Tâche",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TodoView"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentification requise",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tâche introuvable (inexistante ou d'un autre compte : même réponse)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
       "patch": {
         "operationId": "toggleTodo",
         "summary": "Bascule le statut d'une tâche",
         "responses": {
-          "200": { "description": "Tâche mise à jour", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TodoView" } } } },
-          "404": { "description": "Tâche introuvable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+          "200": {
+            "description": "Tâche mise à jour",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TodoView"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentification requise",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tâche introuvable (inexistante ou d'un autre compte : même réponse)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
         }
       },
       "delete": {
         "operationId": "deleteTodo",
         "summary": "Supprime une tâche",
         "responses": {
-          "200": { "description": "Supprimée", "content": { "application/json": { "schema": { "type": "object", "properties": { "deleted": { "type": "boolean" } } } } } },
-          "404": { "description": "Tâche introuvable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+          "204": {
+            "description": "Supprimée"
+          },
+          "401": {
+            "description": "Authentification requise",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tâche introuvable (inexistante ou d'un autre compte : même réponse)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
         }
       }
     }
   },
   "components": {
+    "securitySchemes": {
+      "sessionCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "kit_session",
+        "description": "Session ouverte par POST /api/login (adaptateur API Platform). Toute requête non sûre doit porter l'en-tête Origin du site."
+      },
+      "bearerToken": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Jeton opaque émis par POST /api/tokens ou par `php bin/account.php token`."
+      }
+    },
     "schemas": {
       "TodoView": {
         "type": "object",
-        "required": ["id", "title", "done", "createdAt", "updatedAt"],
+        "required": [
+          "id",
+          "title",
+          "done",
+          "createdAt",
+          "updatedAt"
+        ],
         "properties": {
-          "id": { "type": "string" },
-          "title": { "type": "string" },
-          "done": { "type": "boolean" },
-          "createdAt": { "type": "string", "format": "date-time" },
-          "updatedAt": { "type": "string", "format": "date-time" }
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "done": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "TodoCreateInput": {
         "type": "object",
-        "required": ["title"],
-        "properties": { "title": { "type": "string" } }
+        "required": [
+          "title"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 255
+          }
+        }
       },
-      "Error": {
+      "Credentials": {
         "type": "object",
-        "properties": { "error": { "type": "string" } }
+        "required": [
+          "email",
+          "password"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "minLength": 12
+          }
+        }
       },
-      "ErrorList": {
+      "Account": {
         "type": "object",
-        "properties": { "errors": { "type": "array", "items": { "type": "string" } } }
+        "required": [
+          "id",
+          "email"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          }
+        }
+      },
+      "IssuedToken": {
+        "type": "object",
+        "required": [
+          "token",
+          "expiresAt"
+        ],
+        "properties": {
+          "token": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Health": {
+        "type": "object",
+        "required": [
+          "status",
+          "version",
+          "http",
+          "persistence",
+          "auth",
+          "registration"
+        ],
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "http": {
+            "type": "string",
+            "enum": [
+              "apiplatform",
+              "vanilla"
+            ]
+          },
+          "persistence": {
+            "type": "string",
+            "enum": [
+              "cqrs",
+              "doctrine"
+            ]
+          },
+          "auth": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "session",
+                "bearer"
+              ]
+            }
+          },
+          "registration": {
+            "type": "string",
+            "enum": [
+              "open",
+              "closed"
+            ]
+          }
+        }
+      },
+      "Violation": {
+        "type": "object",
+        "required": [
+          "propertyPath",
+          "message"
+        ],
+        "properties": {
+          "propertyPath": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "Problem": {
+        "type": "object",
+        "required": [
+          "type",
+          "title",
+          "status"
+        ],
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "violations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Violation"
+            }
+          }
+        }
+      },
+      "Registration": {
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "accepted"
+            ]
+          }
+        }
       }
     }
   }

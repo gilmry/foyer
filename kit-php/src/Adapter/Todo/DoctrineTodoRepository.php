@@ -6,13 +6,15 @@ namespace TodoApp\Adapter\Todo;
 
 use Doctrine\ORM\EntityManagerInterface;
 use TodoApp\Adapter\Todo\Doctrine\TodoRecord;
+use TodoApp\Domain\Todo\OwnershipViolationException;
 use TodoApp\Domain\Todo\Todo;
 use TodoApp\Domain\Todo\TodoRepository;
 
 /**
  * Adaptateur de persistance — option ORM (Doctrine). Même port que CqrsTodoRepository.
  * Doctrine ne fuit jamais hors de l'adaptateur : on mappe TodoRecord ↔ entité de domaine Todo.
- * Schéma : les migrations up/down SQL communes, ou le schema-tool Doctrine (voir harness).
+ * Schéma : les migrations up/down SQL communes (bin/migrate.php).
+ * Chaque lecture filtre sur `ownerId` ; chaque écriture vérifie le propriétaire de la ligne.
  */
 final class DoctrineTodoRepository implements TodoRepository
 {
@@ -20,25 +22,33 @@ final class DoctrineTodoRepository implements TodoRepository
     {
     }
 
-    public function find(string $id): ?Todo
+    public function find(string $ownerId, string $id): ?Todo
     {
-        $record = $this->em->find(TodoRecord::class, $id);
+        $record = $this->em->getRepository(TodoRecord::class)->findOneBy(['id' => $id, 'ownerId' => $ownerId]);
 
         return $record ? self::toDomain($record) : null;
     }
 
-    public function findAll(): array
+    public function findAll(string $ownerId, int $limit, int $offset = 0): array
     {
         $records = $this->em->getRepository(TodoRecord::class)
-            ->findBy([], ['createdAt' => 'ASC', 'id' => 'ASC']);
+            ->findBy(['ownerId' => $ownerId], ['createdAt' => 'ASC', 'id' => 'ASC'], max(0, $limit), max(0, $offset));
 
         return array_map(self::toDomain(...), $records);
     }
 
-    public function save(Todo $todo): void
+    public function save(string $ownerId, Todo $todo): void
     {
-        $record = $this->em->find(TodoRecord::class, $todo->id()) ?? new TodoRecord();
+        if ($todo->ownerId() !== $ownerId) {
+            throw new OwnershipViolationException();
+        }
+        $record = $this->em->find(TodoRecord::class, $todo->id());
+        if ($record !== null && $record->ownerId !== $ownerId) {
+            throw new OwnershipViolationException();
+        }
+        $record ??= new TodoRecord();
         $record->id = $todo->id();
+        $record->ownerId = $ownerId;
         $record->title = $todo->title();
         $record->done = $todo->isDone();
         $record->createdAt = $todo->createdAt();
@@ -47,9 +57,9 @@ final class DoctrineTodoRepository implements TodoRepository
         $this->em->flush();
     }
 
-    public function delete(string $id): void
+    public function delete(string $ownerId, string $id): void
     {
-        $record = $this->em->find(TodoRecord::class, $id);
+        $record = $this->em->getRepository(TodoRecord::class)->findOneBy(['id' => $id, 'ownerId' => $ownerId]);
         if ($record !== null) {
             $this->em->remove($record);
             $this->em->flush();
@@ -58,6 +68,6 @@ final class DoctrineTodoRepository implements TodoRepository
 
     private static function toDomain(TodoRecord $r): Todo
     {
-        return new Todo($r->id, $r->title, $r->done, $r->createdAt, $r->updatedAt);
+        return new Todo($r->id, $r->ownerId, $r->title, $r->done, $r->createdAt, $r->updatedAt);
     }
 }

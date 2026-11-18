@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Autoloader PSR-4 minimal (le kit vanilla n'a pas de vendor/composer).
+ * Autoloader PSR-4 minimal (l'adaptateur vanilla et les outils bin/ n'ont pas besoin de Composer).
  * Mappe le préfixe TodoApp\ vers src/.
  */
 spl_autoload_register(static function (string $class): void {
@@ -17,3 +17,7 @@ spl_autoload_register(static function (string $class): void {
         require $path;
     }
 });
+
+// Les dates sont stockées sans fuseau : on les écrit et on les relit en UTC, quel que soit le
+// fuseau par défaut du PHP de l'hébergeur.
+date_default_timezone_set('UTC');

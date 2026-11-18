@@ -1,6 +1,7 @@
 // gen-api.mjs — génère un client TypeScript TYPÉ (src/generated/api.ts) depuis le contrat OpenAPI.
 // Source de vérité : ../openapi/todos.openapi.json. Le front ne connaît d'URL/endpoint que via ce
 // client généré (anti-drift). Lancé par `npm run prebuild`. NE PAS éditer api.ts à la main.
+// Le client porte aussi les schémas de sécurité du contrat et l'exigence de chaque opération.
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -22,6 +23,7 @@ function tsType(schema) {
     const nullable = schema.anyOf.some((s) => s.type === 'null');
     return parts.join(' | ') + (nullable ? ' | null' : '');
   }
+  if (schema.enum) return schema.enum.map((v) => JSON.stringify(v).replace(/"/g, "'")).join(' | ');
   switch (schema.type) {
     case 'string': return 'string';
     case 'integer':
@@ -51,20 +53,29 @@ const interfaces = Object.entries(schemas)
   .join('\n\n');
 
 // 2. Méthodes typées par operationId.
-const successOf = (op) => op.responses?.['200'] ?? op.responses?.['201'];
+const successOf = (op) => op.responses?.['200'] ?? op.responses?.['201'] ?? op.responses?.['202'] ?? op.responses?.['204'];
 const bodySchema = (op) => op.requestBody?.content?.['application/json']?.schema;
 const respSchema = (op) => successOf(op)?.content?.['application/json']?.schema;
 
 const methods = [];
+const security = [];
 for (const [path, ops] of Object.entries(spec.paths ?? {})) {
   for (const http of ['get', 'post', 'patch', 'delete']) {
     const op = ops[http];
     if (!op?.operationId) continue;
     const hasId = path.includes('{id}');
     const body = bodySchema(op);
-    const ret = respSchema(op) ? tsType(respSchema(op)) : 'unknown';
-    const jsPath = path.replace(/^\//, '').replace('{id}', '${encodeURIComponent(id)}');
-    const args = [hasId ? 'id: string' : null, body ? `input: ${tsType(body)}` : null].filter(Boolean).join(', ');
+    const query = (op.parameters ?? []).filter((p) => p.in === 'query');
+    // Une réponse sans corps (204) est typée void : le client ne promet pas ce que l'API ne rend pas.
+    const ret = respSchema(op) ? tsType(respSchema(op)) : op.responses?.['204'] ? 'void' : 'unknown';
+    let jsPath = path.replace(/^\//, '').replace('{id}', '${encodeURIComponent(id)}');
+    if (query.length) jsPath += '${queryString(params)}';
+    const queryType = `{ ${query.map((p) => `${p.name}${p.required ? '' : '?'}: ${tsType(p.schema)}`).join('; ')} }`;
+    const args = [
+      hasId ? 'id: string' : null,
+      body ? `input: ${tsType(body)}` : null,
+      query.length ? `params: ${queryType} = {}` : null,
+    ].filter(Boolean).join(', ');
     let opts = `{ method: '${http.toUpperCase()}'`;
     if (body) opts += ", body: JSON.stringify(input)";
     opts += ' }';
@@ -72,8 +83,17 @@ for (const [path, ops] of Object.entries(spec.paths ?? {})) {
       `    ${op.operationId}: (${args}): Promise<${ret}> =>\n` +
       `      transport(\`${jsPath}\`, ${opts}) as Promise<${ret}>,`
     );
+    const required = (op.security ?? spec.security ?? []).flatMap((s) => Object.keys(s));
+    security.push(`  ${op.operationId}: [${required.map((s) => `'${s}'`).join(', ')}],`);
   }
 }
+
+const schemes = Object.entries(spec.components?.securitySchemes ?? {})
+  .map(([name, s]) => {
+    const fields = Object.entries(s).filter(([k]) => k !== 'description').map(([k, v]) => `${k}: '${v}'`).join(', ');
+    return `  ${name}: { ${fields} },`;
+  })
+  .join('\n');
 
 const out = `// GÉNÉRÉ depuis openapi/todos.openapi.json par frontend-todos/scripts/gen-api.mjs.
 // NE PAS ÉDITER À LA MAIN — regénéré par \`npm run prebuild\` ; le gate contrat vérifie sa fraîcheur.
@@ -84,6 +104,23 @@ export type Transport = (
 ) => Promise<unknown>;
 
 ${interfaces}
+
+// Schémas de sécurité du contrat (components.securitySchemes).
+export const securitySchemes = {
+${schemes}
+} as const;
+
+// Par opération : les schémas qui l'ouvrent (l'un OU l'autre). Vide = opération publique.
+export const operationSecurity = {
+${security.join('\n')}
+} as const;
+
+function queryString(params: Record<string, string | number | undefined>): string {
+  const pairs = Object.entries(params)
+    .filter(([, v]) => v !== undefined)
+    .map(([k, v]) => \`\${encodeURIComponent(k)}=\${encodeURIComponent(String(v))}\`);
+  return pairs.length ? \`?\${pairs.join('&')}\` : '';
+}
 
 export function createTodosClient(transport: Transport) {
   return {

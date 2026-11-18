@@ -6,7 +6,7 @@ namespace TodoApp;
 
 use PDO;
 
-/** Fabrique de connexion PDO/MySQL. */
+/** Fabrique de connexion PDO vers MySQL ou MariaDB. */
 final class Database
 {
     /** @param array<string,mixed> $config */
@@ -25,6 +25,7 @@ final class Database
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES => false,
+            PDO::ATTR_TIMEOUT => 5,
         ]);
     }
 }
