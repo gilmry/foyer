@@ -96,9 +96,27 @@ Le serveur pose lui-même les en-têtes de sécurité sur toutes ses réponses (
 ## Déploiement sur hébergement infogéré
 
 Guide et scripts : [`deploiement/alwaysdata/`](deploiement/alwaysdata/README.md) (`construire.sh`,
-`deployer.sh`, `lancer.sh`). Le serveur de l'hébergeur ne compile rien : le binaire sort de l'image
-du kit (Debian 12). Le gate `deploiement` répète tout le déploiement en local avant d'y aller.
-Le pourquoi : `../skills/deploiement-heberge-infogere.md`.
+`deployer.sh`, `revenir.sh`, `lancer.sh`). Le serveur de l'hébergeur ne compile rien : le binaire
+sort de l'image du kit (Debian 12). Le gate `deploiement` répète tout le déploiement en local
+avant d'y aller. Le pourquoi : `../skills/deploiement-heberge-infogere.md`.
+
+- `deployer.sh <hôte ssh> <compte> <instance> <adresse publique>` — rejouable. Avec le jeton
+  `ALWAYSDATA_TOKEN` (fichier `.env` du kit, ignoré par git, ou environnement), il crée d'abord
+  ce qui manque chez l'hébergeur, après l'avoir annoncé : l'utilisateur de base
+  `<compte>_<instance>`, la base du même nom, le site (retrouvé par son adresse). Il ne modifie
+  ni ne supprime rien d'existant. Sans jeton, il s'arrête avant tout envoi si l'instance n'a
+  jamais été préparée. Redémarrage par l'API, sur le site retrouvé par son adresse.
+- `revenir.sh <hôte ssh> <compte> <instance> <adresse publique>` — retour arrière : remet la
+  version précédente en service et redémarre ; rejoué, il annule le retour ; il ne joue ni ne
+  défait aucune migration.
+- Niveau de preuve : les créations par l'API et `revenir.sh` ne sont prouvés qu'en répétition
+  locale, contre le faux serveur d'API ; non prouvé chez l'hébergeur (voir le guide).
+
+Fichiers communs aux trois kits : `deploiement/alwaysdata/hebergeur.sh`, `hebergeur.py` (les
+gestes auprès de l'API de l'hébergeur : lire l'état, créer ce qui manque, redémarrer) et
+`harness/faux-hebergeur.py` (le faux serveur d'API de la répétition). **Ces trois fichiers sont
+identiques dans `kit-actix`, `kit-fastapi` et `kit-php` : toute modification se reporte dans les
+trois** (le gate `deploiement` le vérifie).
 
 ## Chiffrement par personne — port `Chiffreur` et module de mesure (foyer#28)
 
