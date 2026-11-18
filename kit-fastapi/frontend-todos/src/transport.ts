@@ -1,6 +1,17 @@
 // Couche réseau de l'îlot : fetch + gestion d'erreur. Aucune URL d'endpoint en dur ici —
 // les chemins et les types viennent du client généré (src/generated/api.ts, issu d'OpenAPI).
+// `credentials: 'same-origin'` : le navigateur joint le cookie de session (HttpOnly, donc
+// invisible de ce script) aux seules requêtes vers notre propre origine.
 import type { Transport } from './generated/api';
+
+/** Erreur d'API : porte le code HTTP, pour distinguer « non connecté » (401) du reste. */
+export class ApiError extends Error {
+  status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+  }
+}
 
 export function createBrowserTransport(): Transport {
   return async (url, options = {}) => {
@@ -25,7 +36,7 @@ export function createBrowserTransport(): Transport {
         (Array.isArray(errs) && errs.length ? errs.join(' ') : null) ??
         (data as { error?: string })?.error ??
         `HTTP ${res.status}`;
-      throw new Error(msg);
+      throw new ApiError(res.status, msg);
     }
     return data;
   };

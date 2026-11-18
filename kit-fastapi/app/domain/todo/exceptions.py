@@ -15,4 +15,5 @@ class TodoNotFoundError(Exception):
 
     @classmethod
     def with_id(cls, todo_id: str) -> "TodoNotFoundError":
-        return cls(f"Tâche introuvable : {todo_id}.")
+        # Le message ne dépend pas de la raison (inexistant ou appartenant à autrui).
+        return cls("Tâche introuvable.")

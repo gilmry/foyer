@@ -1,7 +1,9 @@
-fastapi==0.115.5
+# Dépendances d'EXÉCUTION, versions épinglées. Les transitives sont verrouillées, avec leurs
+# empreintes, dans requirements.lock (généré par `bash docker/verrouiller.sh`, jamais à la main).
+fastapi==0.163.2
 uvicorn==0.32.1
 pydantic==2.10.3
 psycopg[binary]==3.2.3
 SQLAlchemy==2.0.36
-pytest==8.3.4
-httpx==0.28.1
+argon2-cffi==25.1.0
+a2wsgi==1.10.10

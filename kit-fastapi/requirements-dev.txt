@@ -1,0 +1,5 @@
+# Dépendances de TEST et d'outillage : jamais livrées sur l'hébergement. Verrou :
+# requirements-dev.lock (généré par `bash docker/verrouiller.sh`).
+-r requirements.txt
+pytest==8.3.4
+httpx==0.28.1
