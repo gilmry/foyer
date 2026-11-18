@@ -134,6 +134,9 @@ l'humain**, qui peut décider une exception datée ; le rôle ne l'accorde pas l
 
 ## Ce que ce rôle ne fait jamais
 - **Mettre de la charge sur l'hébergeur** : ni test de charge, ni mesure de performance.
+- **Enchaîner les smokes contre l'hébergeur**, ou y jouer le parcours complet : un seul passage du
+  smoke public, allégé et espacé. Une rafale de refus fait bloquer l'adresse du poste par le
+  frontal, pour tous les sites du compte (cas mesuré dans le skill).
 - **Compiler, installer des dépendances lourdes ou lancer un build par SSH.** Un constructeur de
   site passe en tâche planifiée « une passe puis s'arrête » ; un processus permanent, en service.
 - **Basculer le DNS**, ou arrêter la source sans décision de l'humain.

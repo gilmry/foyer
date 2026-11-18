@@ -46,7 +46,8 @@ au vert quel que soit l'adaptateur sélectionné (ex. `integration` rejoué sur 
 - **Déployable hors conteneur** : Docker sert aux gates, pas à la production. Chaque kit porte
   `deploiement/alwaysdata/` (script rejouable, guide) et un gate `deploiement` qui **répète le
   déploiement en local** sur une cible jetable avant d'aller chez l'hébergeur ; le smoke e2e vise
-  n'importe quelle adresse par `E2E_BASE_URL`. Le pourquoi : `skills/deploiement-heberge-infogere.md`.
+  n'importe quelle adresse par `E2E_BASE_URL` (contre un hébergeur réel : `E2E_PROFIL=public`,
+  parcours allégé et espacé, un seul passage). Le pourquoi : `skills/deploiement-heberge-infogere.md`.
 
 ## Kits de la famille
 
@@ -65,14 +66,17 @@ une cible jetable qui ressemble à l'hébergeur, puis le smoke e2e contre son ad
 
 | Kit | Montage chez l'hébergeur | Répétition locale (2026-11-18) | Chez l'hébergeur |
 |---|---|---|---|
-| **`kit-actix`** | programme utilisateur : binaire construit sur le poste (Debian 12), PostgreSQL géré | 🟢 `cqrs` et `orm`, écoute IPv6 | **non prouvé** |
-| **`kit-fastapi`** | **A** — programme utilisateur (uvicorn, recommandé) ; **B** — site Python (uWSGI + pont ASGI→WSGI). Dépendances préparées sur le poste, Python 3.12 de l'hébergeur | 🟢 8 combinaisons : 2 montages × 2 adaptateurs HTTP × 2 persistances | **non prouvé** |
-| **`kit-php`** | site PHP natif (Apache et PHP de l'hébergeur), racine sur `public/`, MariaDB gérée ; `vendor/` construit sur le poste | 🟢 4 combinaisons : 2 adaptateurs HTTP × 2 persistances, sur MariaDB | **non prouvé** |
+| **`kit-actix`** | programme utilisateur : binaire construit sur le poste (Debian 12), PostgreSQL géré | 🟢 `cqrs` et `orm`, écoute IPv6 | 🟢 **2026-11-18** : `cqrs` et `orm`, smoke public, script joué deux fois |
+| **`kit-fastapi`** | **A** — programme utilisateur (uvicorn, recommandé) ; **B** — site Python (uWSGI + pont ASGI→WSGI). Dépendances préparées sur le poste, Python 3.12 de l'hébergeur | 🟢 8 combinaisons : 2 montages × 2 adaptateurs HTTP × 2 persistances | 🟢 **2026-11-18** : les 8 combinaisons, smoke complet contre l'adresse publique |
+| **`kit-php`** | site PHP natif (Apache et PHP de l'hébergeur), racine sur `public/`, MariaDB gérée ; `vendor/` construit sur le poste | 🟢 4 combinaisons : 2 adaptateurs HTTP × 2 persistances, sur MariaDB | 🟢 **2026-11-18** : les 4 combinaisons, smoke public, script joué deux fois |
 
 Relevé chez l'hébergeur le 2026-11-18, **en lecture seule** : Debian 12 (glibc 2.36), Python 3.12
-qui accepte les paquets binaires `manylinux`, uWSGI 2.0, PHP 8.3 et 8.4 avec `pdo_mysql`. Aucun
-site ni base n'y a été créé pour les kits : la colonne de droite se remplit par un déploiement
-réel suivi de `E2E_BASE_URL=https://… bash harness/e2e-smoke.sh`.
+qui accepte les paquets binaires `manylinux`, uWSGI 2.0, PHP 8.3 et 8.4 avec `pdo_mysql`. La
+colonne de droite se remplit par un déploiement réel, sur un site et une base d'essai, suivi de
+`E2E_PROFIL=public E2E_BASE_URL=https://… bash harness/e2e-smoke.sh` — **un seul passage** :
+neuf parcours complets enchaînés ont fait bloquer l'adresse du poste par le frontal de l'hébergeur,
+pour tous les sites du compte. Le déploiement de kit-fastapi a aussi trouvé un défaut que la
+répétition locale ne montrait pas (un refus 413 perdu derrière le frontal), corrigé depuis.
 
 > Chaque kit **réimplémente uniquement les adaptateurs** (HTTP + persistance) et le point d'entrée ;
 > le Domaine et l'Application restent structurés à l'identique. Un même parcours de référence
@@ -89,8 +93,9 @@ réel suivi de `E2E_BASE_URL=https://… bash harness/e2e-smoke.sh`.
 - ✅ **Authentification et cloisonnement par propriétaire** — kit-php (API Platform / Symfony
   Security) et kit-fastapi (FastAPI et Starlette) ; décision dans `docs/adr/ADR-001-authentification.md`
   de chaque kit. **kit-actix** reste à faire (foyer#32).
-- **Déploiement réel chez l'hébergeur** — les trois kits sont prouvés en répétition locale ; la
-  preuve contre une adresse publique reste à relever (foyer#35).
+- ✅ **Déploiement réel chez l'hébergeur** — les trois kits sont prouvés contre une adresse
+  publique (2026-11-18, sites et bases d'essai). Reste, par kit, ce que son guide marque « non
+  prouvé chez l'hébergeur » (pannes provoquées, arrêt pour inactivité, parcours complet du smoke).
 - **kit-actix · adaptateur HTTP alternatif** — un second choix (ex. Axum) pour l'axe HTTP côté Rust.
 
 ## Choix du kit par le pilote (sans friction pour le PO)
