@@ -8,6 +8,7 @@
 # adaptateur de persistance. Ce gate ne prouve pas l'hébergeur lui-même : il prouve que le kit et
 # son script tiennent leurs promesses avant d'y aller.
 set -Eeuo pipefail
+unset E2E_PROFIL E2E_PAUSE   # la répétition choisit elle-même le profil du smoke
 # Le gate ne meurt jamais sans dire où.
 trap 'echo "✗ arrêt inattendu ligne $LINENO : $BASH_COMMAND" >&2' ERR
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -93,6 +94,8 @@ verifier "aucun compilateur sur la cible (le serveur ne compile rien)" "! sur_ci
 verifier "le login de la base est sans privilège" "[ \"\$(sql \"SELECT rolsuper OR rolbypassrls OR rolcreaterole FROM pg_roles WHERE rolname = current_user\")\" = f ]"
 echo "  smoke e2e, persistance cqrs :"
 smoke | sed 's/^/  /' || ko "smoke cqrs après le premier déploiement"
+echo "  smoke e2e, profil public (celui qu'on joue contre un hébergeur réel), sans pause :"
+E2E_PROFIL=public E2E_PAUSE=0 smoke | sed 's/^/  /' || ko "smoke, profil public"
 
 # Une donnée témoin et l'état des migrations, pour le second passage.
 temoin=$(curl -s -X POST "$ADRESSE/api/todos" -H 'Content-Type: application/json' -d '{"title":"donnée témoin"}' | sed -n 's/.*"id":"\([^"]*\)".*/\1/p')

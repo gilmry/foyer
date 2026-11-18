@@ -132,7 +132,7 @@ Instance prête dans $HOTE:$DOSSIER
 Réglages du site (type « programme utilisateur ») :
   commande              $DOSSIER/lancer.sh
   répertoire de travail $DOSSIER
-Preuve : E2E_BASE_URL=$ADRESSE bash harness/e2e-smoke.sh
+Preuve (un seul passage) : E2E_PROFIL=public E2E_BASE_URL=$ADRESSE bash harness/e2e-smoke.sh
 Retour arrière : sur le serveur, remettre server.precedent, migrate.precedent et public.precedent
   à la place des versions courantes, puis redémarrer le site.
 FIN

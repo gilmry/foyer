@@ -37,7 +37,7 @@ Volumes de cache cargo → compilations rapides après la première.
 | `contrat` (api.ts à jour) | `bash harness/run-contract.sh` | — |
 | `unit`+`bdd` (domaine+application) | `bash harness/run-tests.sh` | — |
 | `integration` (sqlx CQRS **et** sea-orm, **login sans privilège**) | `bash harness/run-integration.sh` | PostgreSQL (auto) |
-| `e2e` (serveur Actix réel) | `bash harness/e2e-smoke.sh` (`TODO_PERSISTENCE=orm` pour sea-orm ; `E2E_BASE_URL=https://…` pour viser une adresse en service, sans Docker) | PostgreSQL (auto) |
+| `e2e` (serveur Actix réel) | `bash harness/e2e-smoke.sh` (`TODO_PERSISTENCE=orm` pour sea-orm ; `E2E_BASE_URL=https://…` pour viser une adresse en service, sans Docker ; contre un hébergeur réel, ajouter `E2E_PROFIL=public` et ne faire qu'un passage) | PostgreSQL (auto) |
 | `visuel` (goldens Chromium) | `bash harness/run-visual.sh` (`VISUAL_MODE=capture` pour régénérer) | PostgreSQL (auto) |
 | `doc-vivante` (preuve de valeur) | `bash harness/run-demo.sh` → `harness/demo/vitrine/` | PostgreSQL (auto) |
 | `chiffrement` (port `Chiffreur`, foyer#28) | `bash harness/e2e-chiffrement.sh` | PostgreSQL + OpenBao dev (auto) |

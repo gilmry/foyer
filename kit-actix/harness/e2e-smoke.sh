@@ -5,6 +5,12 @@
 #   serveur à son démarrage), login sans privilège. TODO_PERSISTENCE=cqrs|orm choisit l'adaptateur.
 # Avec E2E_BASE_URL=https://… : le même parcours contre une adresse déjà en service (un déploiement
 #   réel, ou la répétition locale). Ni Docker, ni remise à zéro : le smoke supprime ce qu'il crée.
+# E2E_PROFIL=public : parcours ALLÉGÉ et ESPACÉ, à utiliser contre un hébergeur réel. Le frontal d'un
+#   hébergement mutualisé prend une rafale de refus (404, chemins sensibles) pour une attaque et peut
+#   bloquer l'adresse du poste, pour tous les sites du compte. Ce profil garde le parcours, quatre
+#   fichiers non servis et les en-têtes ; il laisse les chemins détournés à la répétition locale
+#   (gate `deploiement`). E2E_PAUSE=<secondes> entre deux requêtes (1 par défaut dans ce profil).
+#   Un seul passage par déploiement : ne jamais l'enchaîner.
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PERSISTENCE="${TODO_PERSISTENCE:-cqrs}"
@@ -28,8 +34,15 @@ else
   trap 'docker stop "$cid" >/dev/null 2>&1 || true' EXIT
 fi
 
-C=(curl -s --max-time 20)
-for i in $(seq 1 40); do "${C[@]}" -f "$BASE/api/todos" >/dev/null 2>&1 && break; sleep 0.5; done
+PROFIL="${E2E_PROFIL:-complet}"
+case "$PROFIL" in
+  complet) PAUSE="${E2E_PAUSE:-0}" ;;
+  public) PAUSE="${E2E_PAUSE:-1}"; cible="$cible, profil public" ;;
+  *) echo "E2E_PROFIL : « complet » ou « public », reçu « $PROFIL »" >&2; exit 2 ;;
+esac
+requete() { [ "$PAUSE" = 0 ] || sleep "$PAUSE"; curl -s --max-time 20 "$@"; }
+C=(requete)
+for i in $(seq 1 40); do curl -s --max-time 20 -f "$BASE/api/todos" >/dev/null 2>&1 && break; sleep 0.5; [ "$PROFIL" = complet ] || sleep 4; done
 
 fail=0
 code() { "${C[@]}" -o /dev/null -w '%{http_code}' "$@"; }
@@ -51,8 +64,10 @@ assert "DELETE id inconnu → 404" 404 "$(code -X DELETE "$BASE/api/todos/inconn
 assert "DELETE de la seconde tâche (nettoyage) → 200" 200 "$(code -X DELETE "$BASE/api/todos/$id2")"
 
 # --- Seuls public/ et l'API sont servis : ni sources, ni migrations, ni configuration, ni fichier caché.
-for chemin in /.env /.git/config /Cargo.toml /src/main.rs /database/migrations/pending/0001_create_todos.up.sql \
-              /lancer.sh /server /%2e%2e/Cargo.toml /..%2f.env; do
+chemins="/.env /.git/config /Cargo.toml /src/main.rs /database/migrations/pending/0001_create_todos.up.sql
+  /lancer.sh /server /%2e%2e/Cargo.toml /..%2f.env"
+[ "$PROFIL" = complet ] || chemins="/.env /Cargo.toml /database/migrations/pending/0001_create_todos.up.sql /lancer.sh"
+for chemin in $chemins; do
   rep=$("${C[@]}" --path-as-is -w '\n%{http_code}' "$BASE$chemin")
   c=$(printf '%s' "$rep" | tail -n1)
   case "$c" in 400|403|404) ok=1 ;; *) ok=0 ;; esac

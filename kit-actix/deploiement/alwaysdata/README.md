@@ -61,12 +61,20 @@ Sans `ALWAYSDATA_SITE`, redémarrez le site depuis l'administration après le pa
 ## Prouver
 
 ```sh
-E2E_BASE_URL=https://<adresse> bash harness/e2e-smoke.sh
+E2E_PROFIL=public E2E_BASE_URL=https://<adresse> bash harness/e2e-smoke.sh
 ```
 
 Le même smoke qu'en local, contre l'adresse publique : le parcours de référence (créer, lister,
 basculer, supprimer), le refus de servir autre chose que `public/` et l'API, et les en-têtes de
 sécurité. Il supprime ce qu'il crée.
+
+**Contre l'hébergeur, toujours `E2E_PROFIL=public`, et un seul passage.** Ce profil est allégé et
+espacé (une seconde entre deux requêtes, `E2E_PAUSE` pour changer). Le parcours complet envoie en
+quelques secondes des dizaines de refus (401, 404, chemins comme `/.env`, essais de connexion
+ratés) : le frontal d'un hébergement mutualisé peut y voir une attaque et bloquer l'adresse du
+poste, pour tous les sites du compte — c'est arrivé le 2026-11-18 avec un autre kit, après neuf
+parcours complets enchaînés. Le parcours complet reste prouvé par la répétition locale, qui joue
+les deux profils.
 
 Pour le second adaptateur de persistance, changez `TODO_PERSISTENCE=orm` dans le `.env` de
 l'instance, redémarrez le site, rejouez le smoke.
@@ -75,10 +83,10 @@ l'instance, redémarrez le site, rejouez le smoke.
 
 | Preuve | Répétition locale (gate `deploiement`) | Chez l'hébergeur |
 |---|---|---|
-| Parcours de référence, persistance `cqrs` | 🟢 2026-11-18 | **non prouvé** |
-| Parcours de référence, persistance `orm` | 🟢 2026-11-18 | **non prouvé** |
-| Écoute en IPv6 sur `IP` et `PORT` | 🟢 2026-11-18 | **non prouvé** |
-| Rejouer le déploiement : aucune migration rejouée, données intactes, `.env` inchangé, version précédente gardée | 🟢 2026-11-18 | **non prouvé** |
+| Parcours de référence, persistance `cqrs` | 🟢 2026-11-18 | 🟢 2026-11-18 (smoke public) |
+| Parcours de référence, persistance `orm` | 🟢 2026-11-18 | 🟢 2026-11-18 (smoke public) |
+| Écoute en IPv6 sur `IP` et `PORT` | 🟢 2026-11-18 | 🟢 2026-11-18 (adresse IPv6 et port de la plateforme, lus au journal du site) |
+| Rejouer le déploiement : aucune migration rejouée, données intactes, `.env` inchangé, version précédente gardée | 🟢 2026-11-18 | 🟢 2026-11-18 (« 1 appliquée » puis « 0 appliquée » au journal, `.env` identique, `*.precedent` présents ; données intactes non vérifié : la base était vide) |
 | Refus de démarrer sans configuration, message qui nomme `DATABASE_URL` | 🟢 2026-11-18 | **non prouvé** |
 | Aucun secret dans le journal du site ni dans les sorties du script | 🟢 2026-11-18 | **non prouvé** |
 | Arrêt par `SIGTERM`, relance, données toujours là | 🟢 2026-11-18 | **non prouvé** |
@@ -86,9 +94,18 @@ l'instance, redémarrez le site, rejouez le smoke.
 | Migration déjà passée dont le fichier a changé : refus, le site ne démarre pas, le témoin reste | 🟢 2026-11-18 | **non prouvé** |
 | Relance **par une requête** après l'arrêt pour inactivité | sans objet (c'est la plateforme qui relance) | **non prouvé** |
 
-La colonne de droite se remplit par un déploiement réel suivi du smoke ci-dessus. Un projet
-consommateur dérivé de ce kit (même framework, même base) tourne ainsi chez cet hébergeur depuis
-le 2026-11-17 : c'est un précédent, pas une preuve du kit.
+Déploiement réel du 2026-11-18 : un site « programme utilisateur » et une base PostgreSQL d'essai,
+le script du kit joué deux fois, le site redémarré par l'API de l'hébergeur (commande passée dans
+`KIT_REDEMARRAGE` ; la branche `ALWAYSDATA_SITE` du script, qui lit le jeton dans le `.env` du kit,
+n'a pas été jouée), puis le smoke public (20 vérifications)
+pour chaque persistance, en HTTPS. Le site d'essai a été supprimé ensuite. Les lignes encore
+« non prouvé » ne se voient qu'en provoquant une panne ou en attendant l'arrêt pour inactivité :
+elles n'ont pas été jouées chez l'hébergeur.
+
+**Le certificat d'une adresse neuve n'est pas immédiat.** Relevé le 2026-11-18 : pendant les trois
+minutes environ qui suivent la création du site, l'hébergeur présente son certificat générique, que le
+client refuse ; l'application, elle, répond déjà. Un premier passage du script lancé aussitôt
+peut donc échouer à son contrôle final sans que rien soit cassé : attendez, puis rejouez le script.
 
 ## Retour arrière
 
