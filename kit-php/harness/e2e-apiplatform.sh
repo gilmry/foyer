@@ -71,9 +71,11 @@ if grep -qi '^set-cookie:' "$f"; then ko "un refus 401 pose un cookie de session
 
 echo "▶ connexion par session (cookie)"
 assert "POST /api/login, mauvais mot de passe → 401" 401 "$(connexion "$A_EMAIL" "pas-le-bon-$RANDOM" "$f" login)"
-assert "POST /api/login, compte inconnu → 401" 401 "$(connexion "inconnu-$RANDOM@exemple.test" "pas-le-bon-$RANDOM" "$g" login)"
-verifier "même réponse pour « compte inconnu » et « mauvais mot de passe »" cmp -s "$f" "$g"
-assert "POST /api/login sans origine → 403 (CSRF)" 403 "$(identifiants "$A_EMAIL" "$A_PASS" | code -X POST "$BASE/api/login" "${JSON[@]}" --data-binary @-)"
+if e2e_complet; then
+  assert "POST /api/login, compte inconnu → 401" 401 "$(connexion "inconnu-$RANDOM@exemple.test" "pas-le-bon-$RANDOM" "$g" login)"
+  verifier "même réponse pour « compte inconnu » et « mauvais mot de passe »" cmp -s "$f" "$g"
+  assert "POST /api/login sans origine → 403 (CSRF)" 403 "$(identifiants "$A_EMAIL" "$A_PASS" | code -X POST "$BASE/api/login" "${JSON[@]}" --data-binary @-)"
+fi
 assert "POST /api/login, origine étrangère → 403 (CSRF)" 403 "$(identifiants "$A_EMAIL" "$A_PASS" | code -X POST "$BASE/api/login" "${JSON[@]}" -H 'Origin: https://pirate.exemple' --data-binary @-)"
 assert "A : POST /api/login → 200" 200 "$(connexion "$A_EMAIL" "$A_PASS" "$f" login -c "$JA" -D "$E2E_TMP/login.h")"
 assert "B : POST /api/login → 200" 200 "$(connexion "$B_EMAIL" "$B_PASS" "$f" login -c "$JB")"
@@ -93,7 +95,7 @@ assert "A : POST avec sa session mais sans origine → 403 (CSRF)" 403 "$(code -
 assert "A : DELETE avec sa session, origine étrangère → 403 (CSRF)" 403 "$(code -X DELETE "$BASE/api/todos/x" -b "$JA" -H 'Origin: https://pirate.exemple')"
 
 echo "▶ jeton porteur"
-assert "POST /api/tokens, mauvais mot de passe → 401" 401 "$(identifiants "$A_EMAIL" "pas-le-bon" | code -X POST "$BASE/api/tokens" "${JSON[@]}" --data-binary @-)"
+if e2e_complet; then assert "POST /api/tokens, mauvais mot de passe → 401" 401 "$(identifiants "$A_EMAIL" "pas-le-bon" | code -X POST "$BASE/api/tokens" "${JSON[@]}" --data-binary @-)"; fi
 assert "A : POST /api/tokens → 201" 201 "$(identifiants "$A_EMAIL" "$A_PASS" | corps "$f" -X POST "$BASE/api/tokens" "${JSON[@]}" --data-binary @- -D "$E2E_TMP/tok.h")"
 TA="$(champ token < "$f")"; printf 'Authorization: Bearer %s' "$TA" > "$E2E_TMP/a.hdr"
 assert "B : POST /api/tokens → 201" 201 "$(identifiants "$B_EMAIL" "$B_PASS" | corps "$f" -X POST "$BASE/api/tokens" "${JSON[@]}" --data-binary @-)"
@@ -103,6 +105,7 @@ curl -s -o /dev/null -D "$f" "$BASE/api/todos" -H "@$E2E_TMP/a.hdr"
 if grep -qi '^set-cookie:' "$f"; then ko "un client à jeton reçoit un cookie de session"; else ok "un client à jeton ne reçoit aucun cookie de session"; fi
 assert "jeton altéré → 401" 401 "$(code "$BASE/api/todos" -H "Authorization: Bearer kit_$(openssl rand -hex 16)")"
 
+if e2e_complet; then
 # Le délai ne doit pas dire si un compte existe : compte inconnu et mauvais mot de passe coûtent le
 # même hachage (leurre). Trois essais ratés de chaque côté, on compare les plus courts.
 T_CONNU="$(e2e_temps_connexion "$B_EMAIL")"; T_INCONNU="$(e2e_temps_connexion "inconnu-$RANDOM-$(date +%s)@exemple.test")"
@@ -110,6 +113,7 @@ if [ "$((T_INCONNU * 2))" -ge "$T_CONNU" ]; then
   ok "délai d'un refus : compte inconnu ${T_INCONNU} ms, mauvais mot de passe ${T_CONNU} ms (même ordre de grandeur)"
 else
   ko "délai d'un refus : compte inconnu ${T_INCONNU} ms contre ${T_CONNU} ms pour un mauvais mot de passe — le délai trahit l'existence du compte"
+fi
 fi
 
 echo "▶ parcours de référence et cloisonnement — jeton porteur (sans en-tête Origin)"
@@ -125,6 +129,7 @@ for chemin in $(grep -o '"/api/[^"]*"' "$ROOT/openapi/todos.openapi.json" | sort
   verifier "la documentation couvre $chemin du contrat" grep -qF "\"$(printf '%s' "$chemin" | sed 's#/#\\/#g')\":" "$f"
 done
 
+if e2e_complet; then
 echo "▶ limitation des essais : un seul compteur par compte (variantes du courriel, deux pare-feu), essais simultanés"
 essai() { printf '{"email":"%s","password":"mauvais-%s"}' "$1" "$RANDOM" | code -X POST "$BASE/api/$2" "${JSON[@]}" "${ORIGINE[@]}" --data-binary @-; }
 jetable="jetable-$RANDOM-$(date +%s)@exemple.test"
@@ -149,6 +154,7 @@ if [ "$verifies" -le 5 ] && [ "$((verifies + refuses))" = 12 ]; then
   ok "12 essais simultanés : $verifies vérifiés (401), $refuses refusés d'emblée (429)"
 else
   ko "12 essais simultanés : $verifies vérifiés (401), $refuses refusés (429) — attendu au plus 5 vérifiés"
+fi
 fi
 
 echo "▶ révocation et déconnexion (le smoke défait ce qu'il a fait)"

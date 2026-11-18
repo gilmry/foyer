@@ -120,6 +120,9 @@ E2E sur Doctrine : `TODO_PERSISTENCE=doctrine bash harness/e2e-apiplatform.sh`.
 E2E contre une adresse existante (ni Docker ni remise à zéro, nettoie ce qu'il crée) :
 `E2E_BASE_URL=https://… E2E_A_EMAIL=… E2E_A_PASSWORD=… E2E_B_EMAIL=… E2E_B_PASSWORD=… bash harness/e2e-apiplatform.sh`
 et `E2E_BASE_URL=https://… E2E_A_TOKEN=… E2E_B_TOKEN=… bash harness/e2e-smoke.sh`.
+Contre un hébergeur réel, ajouter `E2E_PROFIL=public` (parcours allégé, une seconde entre deux
+requêtes) et ne faire **qu'un passage** par combinaison : une rafale de refus fait bloquer l'adresse
+du poste par le frontal (guide de déploiement, « Vérifier »).
 
 ### Base du harnais : un login sans privilège
 

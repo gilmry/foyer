@@ -7,11 +7,29 @@
 #   - distant (E2E_BASE_URL=…)  : vise une adresse existante. Ni Docker, ni remise à zéro : le
 #                                 smoke ne touche qu'à ce qu'il crée, et le supprime.
 # curl seul : aucun autre outil n'est requis en mode distant.
+#
+# E2E_PROFIL=public : parcours ALLÉGÉ et ESPACÉ, à utiliser contre un hébergeur réel. Le frontal d'un
+#   hébergement mutualisé prend une rafale de refus (401, 404, chemins sensibles, essais de connexion
+#   ratés) pour une attaque et peut bloquer l'adresse du poste, pour tous les sites du compte. Ce
+#   profil garde la sonde, les en-têtes, cinq fichiers non servis, l'identité, le parcours, le
+#   cloisonnement et les deux mécanismes ; il laisse à la répétition locale (gate `deploiement`) les
+#   corps invalides, la limite d'essais, la mesure des délais et la liste longue des chemins.
+#   E2E_PAUSE=<secondes> entre deux requêtes (1 par défaut dans ce profil). Un seul passage par
+#   déploiement : ne jamais l'enchaîner.
 
 BASE="${E2E_BASE_URL:-http://127.0.0.1:8080}"; BASE="${BASE%/}"
 E2E_REMOTE=0; [ -n "${E2E_BASE_URL:-}" ] && E2E_REMOTE=1
 E2E_TMP="$(mktemp -d)"
 fail=0
+E2E_PROFIL="${E2E_PROFIL:-complet}"
+case "$E2E_PROFIL" in
+  complet) E2E_PAUSE="${E2E_PAUSE:-0}" ;;
+  public) E2E_PAUSE="${E2E_PAUSE:-1}" ;;
+  *) echo "E2E_PROFIL : « complet » ou « public », reçu « $E2E_PROFIL »" >&2; exit 2 ;;
+esac
+# Toutes les requêtes du smoke passent par ici : la pause s'applique à chacune.
+curl() { [ "$E2E_PAUSE" = 0 ] || sleep "$E2E_PAUSE"; command curl "$@"; }
+e2e_complet() { [ "$E2E_PROFIL" = complet ]; }
 
 ok() { echo "  ✓ $1"; }
 ko() { echo "  ✗ $1"; fail=1; }
@@ -47,10 +65,12 @@ e2e_sante() {
 
 # @negative (#34) — rien hors de public/ n'est servi : 403 ou 404, et aucun contenu de fichier.
 e2e_hors_public() {
-  local chemin f="$E2E_TMP/hors" c
-  for chemin in /src/config.php /src/Config.php /src/config.example.php /vendor/ /vendor/autoload.php \
-                /database/ /database/schema.sql /composer.json /composer.lock /.git/ /.git/config /.env \
-                /bin/migrate.php /var/log/kit.log /.htaccess; do
+  local chemin f="$E2E_TMP/hors" c chemins
+  chemins="/src/config.php /src/Config.php /src/config.example.php /vendor/ /vendor/autoload.php
+    /database/ /database/schema.sql /composer.json /composer.lock /.git/ /.git/config /.env
+    /bin/migrate.php /var/log/kit.log /.htaccess"
+  e2e_complet || chemins="/src/config.php /vendor/autoload.php /database/schema.sql /composer.json /.env"
+  for chemin in $chemins; do
     c="$(corps "$f" "$BASE$chemin")"
     if { [ "$c" = 403 ] || [ "$c" = 404 ]; } && ! grep -qE '<\?php|"require"|CREATE TABLE|RewriteEngine|\[core\]|packages' "$f"; then
       ok "$chemin non servi ($c)"
@@ -58,13 +78,15 @@ e2e_hors_public() {
       ko "$chemin : attendu 403 ou 404 sans contenu, obtenu $c"
     fi
   done
-  assert "/todos-island/ (dossier) : pas de listing" 404 "$(code "$BASE/todos-island/")"
+  if e2e_complet; then assert "/todos-island/ (dossier) : pas de listing" 404 "$(code "$BASE/todos-island/")"; fi
 }
 
 # En-têtes de sécurité, posés par l'application : sur le document, sur l'API, sur un statique.
 e2e_entetes() {
   local cible h="$E2E_TMP/entetes"
-  for cible in / /api/health /api/todos; do
+  local cibles="/ /api/health /api/todos"
+  e2e_complet || cibles="/ /api/health"
+  for cible in $cibles; do
     curl -s -o /dev/null --max-time 30 -D "$h" "$BASE$cible"
     verifier "$cible : X-Content-Type-Options nosniff" grep -qi '^x-content-type-options: *nosniff' "$h"
     verifier "$cible : inclusion en cadre interdite" grep -qiE "^x-frame-options: *DENY|^content-security-policy:.*frame-ancestors 'none'" "$h"
@@ -83,6 +105,7 @@ e2e_sans_identite() {
   assert "sans identité : GET /api/todos → 401" 401 "$(corps "$f" "$BASE/api/todos")"
   verifier "401 au format problème (application/problem+json)" grep -q '"status":401' "$f"
   assert "sans identité : POST /api/todos → 401" 401 "$(code -X POST "$BASE/api/todos" "${JSON[@]}" "${ORIGINE[@]}" -d '{"title":"intrus"}')"
+  e2e_complet || return 0
   assert "sans identité : GET /api/todos/{id} → 401" 401 "$(code "$BASE/api/todos/$id")"
   assert "sans identité : PATCH /api/todos/{id} → 401" 401 "$(code -X PATCH "$BASE/api/todos/$id" "${JSON[@]}" "${ORIGINE[@]}")"
   assert "sans identité : DELETE /api/todos/{id} → 401" 401 "$(code -X DELETE "$BASE/api/todos/$id" "${ORIGINE[@]}")"
@@ -123,7 +146,9 @@ e2e_parcours() {
   verifier "B : son todo n'a pas été basculé par A" grep -q '"done":false' "$f"
 
   # @security (#31) — le propriétaire ne vient jamais de la requête : champ refusé (400).
-  for cle in ownerId owner owner_id; do
+  local cles="ownerId owner owner_id"
+  e2e_complet || cles="ownerId"
+  for cle in $cles; do
     assert "A : POST avec un champ « $cle » → 400 (désérialisation stricte)" 400 \
       "$(code -X POST "$BASE/api/todos" "${_a[@]}" "${JSON[@]}" -d "{\"title\":\"$marque usurpation\",\"$cle\":\"$idb\"}")"
   done
@@ -133,9 +158,11 @@ e2e_parcours() {
   # Validation et corps invalides.
   assert "POST libellé vide → 422" 422 "$(corps "$f" -X POST "$BASE/api/todos" "${_a[@]}" "${JSON[@]}" -d '{"title":"  "}')"
   verifier "422 au format problème, avec les violations" grep -q '"violations":\[{"propertyPath":"title"' "$f"
-  assert "POST libellé trop long → 422" 422 "$(printf '{"title":"%0300d"}' 0 | code -X POST "$BASE/api/todos" "${_a[@]}" "${JSON[@]}" --data-binary @-)"
-  assert "POST JSON mal formé → 400" 400 "$(code -X POST "$BASE/api/todos" "${_a[@]}" "${JSON[@]}" -d '{pas du json')"
-  assert "POST libellé non textuel → 400" 400 "$(code -X POST "$BASE/api/todos" "${_a[@]}" "${JSON[@]}" -d '{"title":12}')"
+  if e2e_complet; then
+    assert "POST libellé trop long → 422" 422 "$(printf '{"title":"%0300d"}' 0 | code -X POST "$BASE/api/todos" "${_a[@]}" "${JSON[@]}" --data-binary @-)"
+    assert "POST JSON mal formé → 400" 400 "$(code -X POST "$BASE/api/todos" "${_a[@]}" "${JSON[@]}" -d '{pas du json')"
+    assert "POST libellé non textuel → 400" 400 "$(code -X POST "$BASE/api/todos" "${_a[@]}" "${JSON[@]}" -d '{"title":12}')"
+  fi
   if grep -qiE 'stack|trace|\.php|Symfony|ApiPlatform|SQLSTATE' "$f"; then ko "une erreur divulgue une trace"; else ok "aucune trace dans les erreurs"; fi
 
   # @happy — bascule puis suppression (parcours de référence).

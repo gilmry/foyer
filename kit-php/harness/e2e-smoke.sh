@@ -54,11 +54,12 @@ echo "▶ @negative — sans identité"
 e2e_sans_identite 00000000-0000-4000-8000-000000000000
 [ "$E2E_REMOTE" = 0 ] && assert "aucun cas d'usage exécuté par les requêtes refusées (lignes de todos inchangées)" "$AVANT" "$(e2e_compte_todos)"
 assert "jeton altéré → 401" 401 "$(code "$BASE/api/todos" -H "Authorization: Bearer kit_$(openssl rand -hex 16)")"
-assert "schéma d'authentification inconnu → 401" 401 "$(code "$BASE/api/todos" -H 'Authorization: Basic YTpi')"
+if e2e_complet; then assert "schéma d'authentification inconnu → 401" 401 "$(code "$BASE/api/todos" -H 'Authorization: Basic YTpi')"; fi
 assert "A : GET /api/me → 200" 200 "$(code "$BASE/api/me" "${A[@]}")"
 
 echo "▶ ce que l'adaptateur vanilla ne fait pas (ADR-001) : ni connexion, ni inscription, ni émission"
-for route in login register tokens; do
+routes="login register tokens"; e2e_complet || routes="login"
+for route in $routes; do
   assert "POST /api/$route sans jeton → 401" 401 "$(code -X POST "$BASE/api/$route" "${JSON[@]}" -d '{"email":"a@exemple.test","password":"un-mot-de-passe-long"}')"
   assert "POST /api/$route avec jeton → 404 (route absente)" 404 "$(code -X POST "$BASE/api/$route" "${A[@]}" "${JSON[@]}" -d '{"email":"a@exemple.test","password":"un-mot-de-passe-long"}')"
 done

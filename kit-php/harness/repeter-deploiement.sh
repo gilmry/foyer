@@ -12,6 +12,7 @@
 # promesses avant d'y aller. Ce qui ne se prouve que là-bas reste « non prouvé chez l'hébergeur ».
 #   KIT_PHP_VERSION (défaut 8.3) : version de PHP de la cible ET de la construction de vendor/.
 set -Eeuo pipefail
+unset E2E_PROFIL E2E_PAUSE   # la répétition choisit elle-même le profil du smoke
 # Le gate ne meurt jamais sans dire où : ligne et commande de tout arrêt inattendu.
 trap 'echo "✗ arrêt inattendu ligne $LINENO : $BASH_COMMAND" >&2' ERR
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -218,6 +219,11 @@ for http in apiplatform vanilla; do
 done
 par_ssh "sed -i \"s/'http' => '[a-z]*'/'http' => 'apiplatform'/; s/'persistence' => '[a-z]*'/'persistence' => 'cqrs'/\" $DOSSIER/config.php"
 attendre_sante '"http":"apiplatform","persistence":"cqrs"' || ko "retour à la combinaison de référence"
+# Le profil public (celui qu'on joue contre un hébergeur réel) est prouvé ici, sans pause.
+E2E_PROFIL=public E2E_PAUSE=0 E2E_BASE_URL="$ADRESSE" E2E_EXPECT_PERSISTENCE=cqrs E2E_A_EMAIL="$A_EMAIL" E2E_A_PASSWORD="$A_PASS" \
+  E2E_B_EMAIL="$B_EMAIL" E2E_B_PASSWORD="$B_PASS" bash "$ROOT/harness/e2e-apiplatform.sh" > "$TMP/smoke-public.log" 2>&1 && r=0 || r=$?
+if [ "$r" = 0 ]; then ok "profil public du smoke : vert ($(grep -c '✓' "$TMP/smoke-public.log" || true) vérifications)"
+else grep -E '✗' "$TMP/smoke-public.log" | sed 's/^/    /'; ko "profil public du smoke : rouge"; fi
 verifier "le smoke a nettoyé derrière lui : seule la donnée témoin reste" test "$(echo "SELECT COUNT(*) FROM $DB.todos;" | admin_sql | tail -1)" = 1
 
 echo "▶ @security — base injoignable : 503 générique, sans trace ni identifiant"

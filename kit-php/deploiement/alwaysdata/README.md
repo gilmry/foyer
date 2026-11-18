@@ -155,12 +155,12 @@ qu'à ce qu'il crée, et le supprime. Créez-lui deux comptes (commande ci-dessu
 
 ```bash
 # adaptateur de référence (API Platform) : session par cookie et jeton porteur
-E2E_BASE_URL=https://<adresse> \
+E2E_PROFIL=public E2E_BASE_URL=https://<adresse> \
 E2E_A_EMAIL=<courriel A> E2E_A_PASSWORD=… E2E_B_EMAIL=<courriel B> E2E_B_PASSWORD=… \
   bash harness/e2e-apiplatform.sh
 
 # adaptateur vanilla ('http' => 'vanilla' dans config.php) : jeton porteur
-E2E_BASE_URL=https://<adresse> E2E_A_TOKEN=… E2E_B_TOKEN=… bash harness/e2e-smoke.sh
+E2E_PROFIL=public E2E_BASE_URL=https://<adresse> E2E_A_TOKEN=… E2E_B_TOKEN=… bash harness/e2e-smoke.sh
 ```
 
 Il vérifie le parcours de référence (créer, lister, basculer, supprimer), le cloisonnement entre
@@ -169,9 +169,18 @@ interdiction d'inclusion en cadre, `Referrer-Policy`), et que rien hors de `publ
 (`/src/config.php`, `/vendor/`, `/database/`, `/composer.json`, `/.git/`, `/.env` → 403 ou 404).
 `E2E_EXPECT_PERSISTENCE=cqrs|doctrine` fait échouer le smoke si une autre persistance répond.
 
-Le smoke consomme une trentaine d'essais de connexion ratés, presque tous sur des identifiants
-jetables ; il ne verrouille pas vos comptes, mais deux smokes lancés dans la même minute depuis la
-même adresse peuvent atteindre le plafond par adresse.
+**Contre l'hébergeur, toujours `E2E_PROFIL=public`, et un seul passage.** Ce profil est allégé et
+espacé (une seconde entre deux requêtes, `E2E_PAUSE` pour changer). Le parcours complet envoie en
+quelques secondes des dizaines de refus (401, 404, chemins comme `/.env`, essais de connexion
+ratés) : le frontal d'un hébergement mutualisé peut y voir une attaque et bloquer l'adresse du
+poste, pour tous les sites du compte — c'est arrivé le 2026-11-18 avec un autre kit, après neuf
+parcours complets enchaînés. Le parcours complet reste prouvé par la répétition locale, qui joue
+les deux profils.
+
+Sans `E2E_PROFIL=public`, le smoke consomme une trentaine d'essais de connexion ratés, presque
+tous sur des identifiants jetables ; il ne verrouille pas vos comptes, mais deux smokes lancés
+dans la même minute depuis la même adresse peuvent atteindre le plafond par adresse. Le profil
+public n'en fait qu'un.
 
 ## Retour arrière
 
@@ -219,7 +228,8 @@ présente, configuration inchangée), essaie le retour arrière, retire `mod_rew
 le site ne sert alors plus rien (503), puis joue les smokes contre l'adresse de la cible pour
 chaque combinaison. `KIT_CIBLE=fpm` rejoue le tout sur Apache + PHP-FPM.
 
-Combinaisons prouvées le **2026-11-18** — **répétition locale ; non prouvé chez l'hébergeur**.
+Combinaisons prouvées le **2026-11-18** en répétition locale, puis **chez l'hébergeur le même
+jour** (voir plus bas).
 Cible : Debian 12, Apache + mod_fcgid + php-cgi, PHP 8.3.36, MariaDB 12.3.3 (image `mariadb:lts`), TLS.
 
 | Adaptateur HTTP | Persistance | Smoke e2e contre l'adresse de la cible (`E2E_BASE_URL`) |
@@ -244,19 +254,48 @@ MariaDB dans les gates locaux (question ouverte 3 de l'issue #34) : les gates `i
 y rejoue `integration` et les smokes e2e des quatre combinaisons. Les deux moteurs sont donc dans
 `harness/ci.sh`.
 
-**Non prouvé chez l'hébergeur** (aucun déploiement réel n'a été fait depuis ce kit) :
+### Chez l'hébergeur (déploiement réel du 2026-11-18)
 
-- **le parcours de référence contre l'adresse publique d'un déploiement réel**, pour chaque
-  adaptateur : c'est le « fini quand » de l'issue, et il reste à faire ;
-- **le gestionnaire PHP exact** du site (non lu : aucun site PHP n'existait). La répétition couvre
-  mod_fcgid (défaut) et PHP-FPM ; un autre gestionnaire n'est pas couvert ;
-- que l'en-tête `Authorization` arrive à PHP par la réécriture du `.htaccess` **sur ce
-  gestionnaire** (prouvé en local sous mod_fcgid et sous PHP-FPM, sans `CGIPassAuth`) : le jeton
-  porteur en dépend. Premier essai à faire : `GET /api/me` avec un jeton doit répondre 200 ;
-- que `SCRIPT_FILENAME` y arrive non résolu, donc que la bascule du lien `courant` est vue
-  aussitôt (prouvé en local sous les deux montages : 12 requêtes de suite sur la nouvelle
-  version). Sinon PHP garde l'ancien chemin jusqu'à 120 secondes (`realpath_cache_ttl` relevé) :
-  le script attend jusqu'à 3 minutes que la sonde nomme la nouvelle version, et échoue sinon ;
+Un site « PHP » (version 8.3) et une base MariaDB d'essai ; le script du kit joué deux fois ; le
+**smoke public** (`E2E_PROFIL=public`, un passage par combinaison) contre l'adresse publique, en
+HTTPS. Le site d'essai a été supprimé ensuite.
+
+| Adaptateur HTTP | Persistance | Smoke public chez l'hébergeur |
+|---|---|---|
+| `apiplatform` (référence) | `cqrs` | 🟢 111 vérifications |
+| `apiplatform` (référence) | `doctrine` | 🟢 111 vérifications |
+| `vanilla` | `cqrs` | 🟢 51 vérifications |
+| `vanilla` | `doctrine` | 🟢 51 vérifications |
+
+Ce que ce déploiement a montré, et que la répétition ne pouvait pas montrer :
+
+- l'en-tête `Authorization` **arrive à PHP** sous le gestionnaire de l'hébergeur : le parcours par
+  jeton porteur passe, dans les deux adaptateurs ;
+- la session par cookie (`Secure`, `HttpOnly`, `SameSite=Strict`) et le contrôle d'origine passent
+  derrière le frontal ;
+- rien hors de `public/` n'est servi par l'Apache de l'hébergeur (`/src/config.php`,
+  `/vendor/autoload.php`, `/database/schema.sql`, `/composer.json`, `/.env`) ;
+- les noms par défaut du script sont les bons : hôte `mysql-<compte>.<domaine de l'hébergeur>`,
+  base et utilisateur `<compte>_<instance>` ;
+- **PHP 8.4 en ligne de commande avec un site en 8.3** : les migrations, la création de compte et
+  l'émission de jeton tournent sous 8.4 pendant que le site sert en 8.3 ;
+- au second passage : aucune migration rejouée, `config.php` inchangé, version précédente gardée,
+  et la sonde de santé nomme la nouvelle version (la bascule du lien `courant` est vue).
+
+**Le certificat d'une adresse neuve n'est pas immédiat.** Relevé le 2026-11-18 : pendant les trois
+minutes environ qui suivent la création du site, l'hébergeur présente son certificat générique, que le
+client refuse ; l'application, elle, répond déjà. Un premier passage du script lancé aussitôt
+peut donc échouer à son contrôle final sans que rien soit cassé : attendez, puis rejouez le script.
+
+**Non prouvé chez l'hébergeur** :
+
+- **le parcours complet** du smoke (corps invalides, limite d'essais, mesure des délais, liste
+  longue des chemins) : il reste à la répétition locale, voir « Vérifier » ;
+- **le gestionnaire PHP exact** du site (toujours non lu). La répétition couvre mod_fcgid (défaut)
+  et PHP-FPM ;
+- **le délai** après lequel la bascule est vue : la sonde a nommé la nouvelle version, le temps
+  qu'elle a mis n'a pas été mesuré (PHP peut garder l'ancien chemin jusqu'à 120 secondes,
+  `realpath_cache_ttl` relevé ; le script attend jusqu'à 3 minutes) ;
 - **les sessions en fichiers sur NFS** : le verrou que PHP pose sur le fichier d'une session n'y
   est pas prouvé (deux requêtes simultanées d'une même session pourraient s'écraser), ni la purge
   des fichiers (`gc_probability=1` relevé, effet non observé). L'expiration des sessions est tenue
@@ -266,12 +305,6 @@ y rejoue `integration` et les smokes e2e des quatre combinaisons. Les deux moteu
   l'inscription lisent `REMOTE_ADDR` ; si PHP ne voit que l'adresse du frontal, ce plafond vaut
   pour tous vos utilisateurs ensemble. Vérifiez-le au premier déploiement, et réglez
   `'login_ip_limit'` dans `config.php` (0 l'ôte). Le plafond par compte (5 par minute) n'en dépend pas ;
-- les noms par défaut que `deployer.sh` écrit dans la configuration : hôte de la base
-  `mysql-<compte>.<domaine de l'hébergeur>`, base et utilisateur `<compte>_<instance>`. Ils suivent
-  l'usage de l'hébergeur mais n'ont pas été sondés : vérifiez-les dans son administration, et
-  passez `KIT_DB_HOST`, `KIT_DB_NAME`, `KIT_DB_USER` s'ils diffèrent ;
 - la version de MariaDB de l'hébergeur (non lue ; la répétition prend la LTS courante de l'image
   publique) ;
-- PHP 8.4 en ligne de commande avec un site réglé sur 8.3 (les outils `bin/` n'ont pas besoin de
-  Composer et tournent sous les deux ; le mélange n'a pas été répété) ;
 - la preuve qu'une sauvegarde de l'hébergeur se restaure.
