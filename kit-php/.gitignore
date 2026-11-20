@@ -1,9 +1,16 @@
 # Configuration réelle avec secrets — jamais versionnée (gate plancher G1).
 /src/config.php
+# Aucun fichier de mot de passe dans le dépôt, où qu'il soit posé.
+.dbpass
+# Fichier d'environnement du poste : il porte le jeton d'API de l'hébergeur (deployer.sh le lit).
+.env
 
-# Dépendances Composer (Doctrine…) — réinstallables via `composer install` (option persistance doctrine).
+# Dépendances Composer — réinstallables via `composer install`. composer.lock, lui, EST versionné :
+# mêmes dépendances au gate et au déploiement (issue #34).
 /vendor/
-/composer.lock
+
+# État local : cache et journaux du noyau, sessions, identifiants tirés du harnais, cache Composer.
+/var/
 
 # Dépendances front (réinstallables via npm install).
 /frontend-todos/node_modules/

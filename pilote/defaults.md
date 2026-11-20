@@ -30,6 +30,9 @@ Uniquement les points **irréversibles ET compréhensibles sans être dev**, en 
 - **Points de non-retour métier** : « On **supprime définitivement** les tâches faites, ou on les
   **archive** ? » (≠ « hard delete ou soft delete ? »).
 - **Mise en ligne** : « On publie *maintenant* pour de vrais utilisateurs, ou ça reste un test ? »
+  C'est l'arrêt « passage à des données réelles » du **premier** déploiement (`arbitrage.md`). Il
+  ne se repose pas à chaque livraison : gates verts, le pilote redéploie seul une instance en
+  service (phase L), et **où** livrer se demande une seule fois (`parcours.md`).
 
 > Test de formulation : si la question contient un mot que le PO devrait googler, **c'est un défaut,
 > pas une question**. L'agent tranche, annonce, avance.

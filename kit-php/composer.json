@@ -1,15 +1,20 @@
 {
     "name": "foyer/kit-php",
-    "description": "Kit Foyer PHP hexagonal — adaptateurs de persistance enfichables (CQRS SQL ↔ Doctrine).",
+    "description": "Kit Foyer PHP hexagonal — adaptateurs enfichables : HTTP (API Platform/Symfony ↔ vanilla) et persistance (CQRS SQL ↔ Doctrine).",
     "type": "project",
+    "license": "MIT",
     "require": {
         "php": ">=8.3",
-        "doctrine/orm": "^3.3",
-        "doctrine/dbal": "^4.2",
-        "symfony/cache": "^7.2",
         "api-platform/core": "^4.3",
+        "doctrine/dbal": "^4.2",
+        "doctrine/orm": "^3.3",
+        "symfony/cache": "^7.2",
+        "symfony/expression-language": "^7.2",
         "symfony/framework-bundle": "^7.2",
-        "symfony/runtime": "^7.2"
+        "symfony/rate-limiter": "^7.2",
+        "symfony/runtime": "^7.2",
+        "symfony/security-bundle": "^7.2",
+        "symfony/validator": "^7.2"
     },
     "autoload": {
         "psr-4": {
@@ -18,6 +23,9 @@
     },
     "config": {
         "sort-packages": true,
+        "platform": {
+            "php": "8.3.0"
+        },
         "allow-plugins": {
             "symfony/runtime": true,
             "php-http/discovery": true

@@ -1,6 +1,7 @@
 // scene.mjs — cœur de la documentation vidéo vivante (transposé du pattern « klaar »
 // du kit stagesmed). Pilote une page Playwright en cadence (~1 action/s) avec une
-// narration incrustée dans le DOM (visible dans la vidéo). Pas d'auth ici (todo mono-utilisateur).
+// narration incrustée dans le DOM (visible dans la vidéo). L'authentification se joue à l'écran
+// (inscription puis connexion par l'îlot), comme un utilisateur.
 
 export const RHYTHM_MS = Number(process.env.DEMO_RHYTHM_MS ?? 1000);
 

@@ -1,0 +1,5 @@
+#!/bin/sh
+# Lanceur de php-cgi pour mod_fcgid : un processus PHP par processus fcgid, recyclé de temps en temps.
+PHP_FCGI_MAX_REQUESTS=1000
+export PHP_FCGI_MAX_REQUESTS
+exec /usr/local/bin/php-cgi

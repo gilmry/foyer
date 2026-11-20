@@ -136,6 +136,7 @@ skills/                    Les 4 outils d'objectivation (enfants de la primitive
   convergence-iac.md         état observé (salt-ssh, GitOps, distroless, rollback)
   depot-cible-sluis.md       générer un dépôt cible et le faire juger par sluis_verifier_depot
   adoption.md                usage réel (RACE → Adoption, RICE/WSJF)
+  deploiement-heberge-infogere.md  serveur que l'on n'administre pas : sonde jetable, login sans privilège, reprise prouvée
   abaque-cout-capacite.md    estimation prospective TCO + ROI + empreinte mémoire
   arbitrage-hybride.md       grille de souveraineté pour tout choix hybride (cloud/on-prem, proprio/OSS, support, IA)
   enforcement.md             les 3 anneaux : permissions / plugin / substrat

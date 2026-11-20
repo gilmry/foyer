@@ -17,3 +17,7 @@ __pycache__/
 # Sorties du harnais visuel (les goldens sont versionnés).
 /harness/visual/test-results/
 /harness/demo/vitrine/videos/apercu.png
+
+# Déploiement : livraison construite sur le poste, et jeton d'API de l'hébergeur (jamais versionnés).
+/deploiement/alwaysdata/dist/
+/.env

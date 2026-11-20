@@ -1,6 +1,6 @@
 {
   "slug": "todo-parcours-de-reference",
-  "title": "Parcours de référence — créer, terminer, supprimer",
+  "title": "Parcours de référence — se connecter, créer, terminer, supprimer",
   "narration": [
     {
       "t": 0,
@@ -8,26 +8,38 @@
     },
     {
       "t": 6,
+      "texte": "Sans compte, rien n'est visible : l'API répond 401 et l'îlot demande de se connecter."
+    },
+    {
+      "t": 13,
+      "texte": "0) Créer un compte, puis la session s'ouvre (cookie HttpOnly, SameSite=Strict)."
+    },
+    {
+      "t": 23,
       "texte": "1) Ajouter une tâche : « acheter du pain »."
     },
     {
-      "t": 12,
+      "t": 29,
       "texte": "2) Ajouter une deuxième tâche : « réviser Foyer »."
     },
     {
-      "t": 19,
+      "t": 35,
       "texte": "3) Marquer « acheter du pain » comme faite (elle se barre)."
     },
     {
-      "t": 25,
+      "t": 42,
       "texte": "4) Supprimer la tâche faite."
     },
     {
-      "t": 29,
-      "texte": "La liste est persistée en base : elle survit au rechargement."
+      "t": 46,
+      "texte": "La liste est persistée en base : elle survit au rechargement, et n'appartient qu'à ce compte."
     },
     {
-      "t": 36,
+      "t": 53,
+      "texte": "5) Se déconnecter : l'API se referme."
+    },
+    {
+      "t": 58,
       "texte": "Parcours terminé — même parcours que l'E2E (correctness) et le golden (apparence)."
     }
   ]

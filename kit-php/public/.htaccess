@@ -1,0 +1,36 @@
+# Point d'entrée de production (Apache de l'hébergeur, racine du site = ce dossier public/).
+# N'utilise que des directives de réécriture et d'en-têtes (AllowOverride FileInfo suffit).
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # L'en-tête Authorization (jeton porteur) n'arrive pas toujours jusqu'à PHP en FastCGI.
+    RewriteCond %{HTTP:Authorization} .+
+    RewriteRule ^ - [E=HTTP_AUTHORIZATION:%0]
+
+    # Aucun fichier ni dossier caché (.git, .env, .htaccess…). Seule exception : /.well-known/
+    # (validation de certificat, security.txt), qui suit le sort commun — 404 si rien n'y est posé.
+    RewriteRule (^|/)\.(?!well-known/) - [F,L]
+
+    # La page et tout ce qui n'est pas un fichier statique de public/ passent par le contrôleur
+    # frontal : /api/*, la racine (pour que l'application pose ses en-têtes de sécurité sur le
+    # document), les dossiers (pas de listing) et les chemins inconnus (404 de l'application).
+    RewriteRule ^(index\.html)?$ index.php [L]
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^ index.php [L]
+</IfModule>
+
+# Sans mod_rewrite, ne rien servir plutôt que servir à moitié.
+<IfModule !mod_rewrite.c>
+    Redirect 503 /
+</IfModule>
+
+# Les fichiers statiques sont servis par Apache sans passer par PHP : mêmes en-têtes, si le
+# module est là (l'application les pose elle-même sur le document et sur l'API).
+<IfModule mod_headers.c>
+    <FilesMatch "\.(?!php$)[A-Za-z0-9]+$">
+        Header always set X-Content-Type-Options "nosniff"
+        Header always set X-Frame-Options "DENY"
+        Header always set Referrer-Policy "no-referrer"
+    </FilesMatch>
+</IfModule>

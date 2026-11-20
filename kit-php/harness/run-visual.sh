@@ -1,44 +1,48 @@
 #!/usr/bin/env bash
-# Gate `visuel` — régression d'apparence par goldens (Chromium Playwright).
+# Gate `visuel` — régression d'apparence par goldens (Chromium Playwright), sur l'adaptateur HTTP
+# de référence (API Platform) : formulaire de connexion, puis la liste après connexion PAR L'UI.
 #   VISUAL_MODE=capture → (ré)écrit les goldens        VISUAL_MODE=compare → gate (défaut)
-# Prérequis : MySQL `todo-mysql` up + serveur web `todo-web` sur :8080 (démarrés ci-dessous si absents).
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MODE="${VISUAL_MODE:-compare}"
 IMAGE="todo-kit-visual:local"
+BASE=http://127.0.0.1:8080
 
 source "$ROOT/harness/ensure-images.sh"
 ensure_php_image        # serveur web + seed
+ensure_vendor
 ensure_visual_image     # Chromium
 ensure_visual_modules   # node_modules côté hôte (le montage masque ceux de l'image)
 
-# 1. MySQL + table.
-docker ps --filter name=todo-mysql --format '{{.Names}}' | grep -q todo-mysql || \
-  docker run -d --name todo-mysql -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=todo \
-    -p 13306:3306 mysql:8.0 --default-authentication-plugin=mysql_native_password >/dev/null
-for i in $(seq 1 30); do docker exec todo-mysql mysqladmin ping -uroot -proot --silent 2>/dev/null | grep -q alive && break; sleep 1; done
-docker run --rm --network host -v "$ROOT":/app -w /app \
-  -e DB_HOST=127.0.0.1 -e DB_PORT=13306 todo-kit-php:local php -r '
-  require "/app/src/bootstrap.php";
-  $db = TodoApp\Database::connect(["db"=>["host"=>"127.0.0.1","port"=>13306,"database"=>"todo","username"=>"root","password"=>"root","charset"=>"utf8mb4"]]);
-  $db->exec("DROP TABLE IF EXISTS todos");
-  $db->exec(file_get_contents("/app/database/migrations/pending/0001_create_todos.up.sql"));
-'
+# 1. MySQL (login sans privilège) + base vide + migrations, puis le serveur web.
+TMP="$(mktemp -d)"
+trap 'kit_stop; rm -rf "$TMP"' EXIT
+ensure_mysql
+kit_reset_db
+kit_serve apiplatform "${TODO_PERSISTENCE:-cqrs}"
 
-# 2. Serveur web.
-docker rm -f todo-web >/dev/null 2>&1 || true
-docker run -d --name todo-web --network host -v "$ROOT":/app -w /app \
-  -e DB_HOST=127.0.0.1 -e DB_PORT=13306 -e DB_NAME=todo -e DB_USER=root -e DB_PASSWORD=root \
-  todo-kit-php:local php -S 127.0.0.1:8080 -t public harness/dev-router.php >/dev/null
-trap 'docker rm -f todo-web >/dev/null 2>&1 || true' EXIT
-for i in $(seq 1 20); do curl -sf http://127.0.0.1:8080/api/todos >/dev/null 2>&1 && break; sleep 0.5; done
+# 2. Compte du parcours : courriel fixe (il figure dans le golden), mot de passe tiré à chaque
+#    passage, transmis par l'entrée standard et par un fichier d'environnement à droits 600.
+EMAIL=demo@exemple.test
+( umask 077; printf 'VISUAL_EMAIL=%s\nVISUAL_PASSWORD=%s\n' "$EMAIL" "$(openssl rand -hex 16)" > "$TMP/visual.env" )
+sed -n 's/^VISUAL_PASSWORD=//p' "$TMP/visual.env" | kit_php php bin/account.php create "$EMAIL" >/dev/null
 
-# 3. Seed du parcours de référence (données stables pour un golden reproductible).
-curl -s -X POST http://127.0.0.1:8080/api/todos -H 'Content-Type: application/json' -d '{"title":"acheter du pain"}' >/dev/null
-curl -s -X POST http://127.0.0.1:8080/api/todos -H 'Content-Type: application/json' -d '{"title":"réviser Foyer"}' >/dev/null
-curl -s -X POST http://127.0.0.1:8080/api/todos -H 'Content-Type: application/json' -d '{"title":"préparer la démo"}' >/dev/null
+# 3. Seed du parcours de référence par l'API, avec un jeton porteur (données stables → golden reproductible).
+printf 'Authorization: Bearer %s' "$(kit_php php bin/account.php token "$EMAIL" 2>/dev/null)" > "$TMP/jeton.hdr"
+for titre in "acheter du pain" "réviser Foyer" "préparer la démo"; do
+  curl -s -o /dev/null -X POST "$BASE/api/todos" -H "@$TMP/jeton.hdr" -H 'Content-Type: application/json' -d "{\"title\":\"$titre\"}"
+  sleep 1.1   # dates de création distinctes (à la seconde) → ordre de la liste stable d'un passage à l'autre
+done
 
-# 4. Capture / comparaison.
-exec docker run --rm --network host -v "$ROOT":/app -w /app/harness/visual \
-  -e VISUAL_MODE="$MODE" -e VISUAL_BASE_URL=http://127.0.0.1:8080 \
-  "$IMAGE" node visual.mjs
+# 4. Capture / comparaison, sur l'adaptateur de référence (session par cookie).
+visuel() {
+  docker run --rm --network host -u "$(id -u):$(id -g)" -e HOME=/tmp -v "$ROOT":/app -w /app/harness/visual \
+    --env-file "$TMP/visual.env" -e VISUAL_MODE="$MODE" -e VISUAL_BASE_URL="$BASE" "$@" "$IMAGE" node visual.mjs
+}
+visuel
+
+# 5. Le même îlot sur l'adaptateur vanilla : pas de session, on colle un jeton porteur. Parcours
+#    fonctionnel seulement (pas de golden) : il prouve que le front marche sur les deux adaptateurs.
+kit_serve vanilla "${TODO_PERSISTENCE:-cqrs}"
+( umask 077; printf 'VISUAL_TOKEN=%s\n' "$(kit_php php bin/account.php token "$EMAIL" 2>/dev/null)" >> "$TMP/visual.env" )
+visuel -e VISUAL_SCENARIO=jeton

@@ -20,6 +20,7 @@ les **références** (kit Foyer + dogfood rétrofit stagesmed) à recopier/adapt
 | `e2e` | frontend D1 | **oui** | correctness du parcours de référence |
 | `caracterisation` | rétrofit, chaque bascule | **oui** | comportement externe inchangé |
 | `visuel` | bascule D2 | **oui à la bascule** | régression visuelle (goldens, tolérance) |
+| `deploiement` | avant tout déploiement sur un hébergement infogéré, puis à chaque build | **oui** (si le projet se déploie ainsi) | **répétition locale** du déploiement : le vrai script joué deux fois sur une cible jetable qui ressemble à l'hébergeur (aucune migration rejouée, données et configuration intactes, version précédente gardée), puis `e2e` contre son adresse. Ne prouve pas l'hébergeur : la preuve réelle est `e2e` joué contre l'adresse publique (`../../skills/deploiement-heberge-infogere.md`) |
 | `doc-vivante` | avec la fonctionnalité | non | preuve de valeur (galerie + vidéo) |
 | `promotion` | avant toute promotion de branche (bascule, fusion vers la branche source de vérité, mise en production) | **oui** | la preuve est **complète** : plancher et tests verts sur le head ; quatre classes présentes **et exécutées** ; vitrine présente si la story touche un écran critique. Ne juge pas la valeur, vérifie qu'on peut la juger (`../roles/arbitre-de-promotion.md`) |
 

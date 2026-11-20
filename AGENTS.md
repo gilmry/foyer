@@ -7,7 +7,7 @@ This is a framework for AI agents in software development, derived from Gilles M
 - `Manifeste-Foyer.md`: Identity and values of the agent (Architect Solution)
 - `Methode-Foyer.md`: Operational method for agent work
 - `Boucle-de-retroaction.md`: Core feedback loop
-- `skills/`: Tools for objective evaluation (cycle-dev, gates, convergence-iac, adoption, etc.)
+- `skills/`: Tools for objective evaluation (cycle-dev, gates, convergence-iac, adoption, deploiement-heberge-infogere, etc.)
 - `personas/`: Roles that hold the feedback loop (chef-de-projet, scrum-master, lead-developer, etc.)
 - `pilote/`: **Agentic driver** — makes the method executable by agents across heterogeneous tools.
 
@@ -20,20 +20,32 @@ scripts), thin per-tool adapters. Devs run it on Claude Code, POs on ChatGPT/Qwe
 **same committed state register**.
 
 - Launcher: `pilote/BOOTSTRAP.md` (Claude Code, from this repo's root: `/foyer`) · Dispatcher: `pilote/parcours.md`
+- User guide for the human driving a project (what to type, what to prepare before going live, when the driver stops): `pilote/MODE-D-EMPLOI.md`
 - Shared state (PO↔dev source of truth): `pilote/state.template.md`
 - Irreversible-point arbitration (modality, never destination): `pilote/arbitrage.md`
 - Gate CLI contract (stable names, exit codes): `pilote/gates/README.md`
-- Adapters: `pilote/adapters/{claude,generic,opencode}/`
+- Adapters: `pilote/adapters/{claude,generic,opencode}/` — Claude Code gets one sub-agent per role
+  of `pilote/roles/` (`pilote/adapters/claude/agents/`, installed at this repo's root in
+  `.claude/agents/`); OpenCode and generic chats read the role files directly (announced gap).
+- Delivery (**phase L**, end of the new-project and release journeys): when every blocking gate is
+  green on the head, `deploiement` gate included, the pilote ships without being asked (role
+  `pilote/roles/deployeur-heberge.md`), proves it with one public smoke run, and rolls back by
+  itself if that proof fails. Only stop of a routine redeploy: a schema migration. The deployment
+  target lives in the state register (asked once); no token, password or account name is ever
+  committed. The first successful delivery opens the `exploitation` door.
+- Who plays what at which step (persona / skill → journey step → role): tables in `pilote/README.md`.
 
 The pilote does not reinvent anything: it **sequences** the existing `skills/`, `personas/` and
-`bmad/` into three journeys with a state register and arbitration gates. See `pilote/README.md`.
+`bmad/` into three journeys (plus the `exploitation` door) with a state register and arbitration
+gates. See `pilote/README.md`.
 
 ## Workflow
 
 1. **Conception (BMAD)** - Create backlog with validated "Agent IA Ready" stories
 2. **Pilotage** - Project manager coordinates timeline, costs, and choice of methodology
 3. **Fabrication** - Lead developer and scrum master execute cycle-dev with gates
-4. **Production** - Platform engineer manages convergence-iac
+4. **Production** - Platform engineer manages convergence-iac (a server you administer) or
+   deploiement-heberge-infogere (managed hosting you do not administer)
 5. **Pilotage continu** - CSI engineer refines estimates; Support engineer evaluates adoption
 
 ## Agent Instructions
@@ -60,11 +72,15 @@ The framework encourages AI agents to:
 ## Repository Structure
 
 This is a methodology repository for the Foyer framework. Key directories:
-- `kit-php/` - **Kit de référence exécutable** (PHP hexagonal + îlots, gates sur images Docker
-  publiques). « Clone → `bash docker/build.sh` → `bash harness/ci.sh` » passe au vert. Famille de
-  kits (autres stacks à venir) : voir `KITS.md`.
+- `kit-php/`, `kit-fastapi/`, `kit-actix/` - **Kits de référence exécutables** (hexagonal + îlots,
+  gates sur images Docker publiques). « Clone → `bash docker/build.sh` → `bash harness/ci.sh` »
+  passe au vert. Chaque kit porte son propre `AGENTS.md`, un outil de migration tracé, et
+  `deploiement/alwaysdata/` (script rejouable et guide ; gate `deploiement` = répétition locale
+  sur une cible jetable). kit-php et kit-fastapi portent une authentification avec cloisonnement
+  par propriétaire (`docs/adr/ADR-001-authentification.md`). Voir `KITS.md`.
 - `bmad/` - Conception phase (TOGAF pipeline)
-- `skills/` - Objective evaluation tools (cycle-dev, gates, convergence-iac, adoption)
+- `skills/` - Objective evaluation tools (cycle-dev, gates, convergence-iac, adoption,
+  deploiement-heberge-infogere)
 - `tools/` - Executable counterpart to the skills. Currently `tools/gates/`:
   the consolidated tool list (`ADR-outillage.md`) plus CI templates per stack.
   **Templates carry a `.example` suffix and never run on this repository** —

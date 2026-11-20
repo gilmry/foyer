@@ -12,3 +12,7 @@
 # Sorties du harnais visuel (les goldens sont versionnés).
 /harness/visual/test-results/
 /harness/demo/vitrine/videos/apercu.png
+
+# Déploiement : binaires construits pour la cible, et jeton d'API de l'hébergeur.
+/deploiement/alwaysdata/dist/
+/.env

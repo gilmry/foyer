@@ -1,0 +1,4 @@
+# Version figée : le poste, la CI et le binaire livré à l'hébergeur sortent de la même chaîne
+# (docker/rust.Dockerfile porte la même version).
+[toolchain]
+channel = "1.97.0"

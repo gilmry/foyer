@@ -19,6 +19,9 @@ class TodoRecord
     #[ORM\Column(type: 'string', length: 64)]
     public string $id = '';
 
+    #[ORM\Column(name: 'owner_id', type: 'string', length: 64)]
+    public string $ownerId = '';
+
     #[ORM\Column(type: 'string', length: 255)]
     public string $title = '';
 

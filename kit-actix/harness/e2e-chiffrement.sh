@@ -19,7 +19,7 @@ trap 'arreter; docker stop todo-openbao >/dev/null 2>&1 || true' EXIT
 demarrer() { # $1 = variante
   arreter
   cid=$(docker run -d --rm --network host -v "$ROOT":/app -w /app "${CARGO_VOLS[@]}" \
-    -e DB_HOST=127.0.0.1 -e DB_PORT="$KIT_PG_PORT" -e DB_NAME=todo -e DB_USER=todo -e DB_PASSWORD=todo \
+    "${DB_ENV[@]}" \
     -e HTTP_HOST=127.0.0.1 -e HTTP_PORT=$PORT \
     -e CHIFFREMENT="$1" -e CHIFFREMENT_CACHE_TTL_S=$TTL \
     -e OPENBAO_ADDR="http://127.0.0.1:$OPENBAO_PORT" -e OPENBAO_JETON="$OPENBAO_JETON_DEV" \
@@ -33,7 +33,7 @@ fail=0
 assert() { if [ "$2" = "$3" ]; then echo "  ✓ $1"; else echo "  ✗ $1 : attendu « $2 », obtenu « $3 »"; fail=1; fi; }
 champ() { printf '%s' "$1" | sed -n "s/.*\"$2\":\"\([^\"]*\)\".*/\1/p"; }
 compteur() { curl -s "$BASE/api/mesure/compteurs" | sed -n "s/.*\"$1\":\([0-9]*\).*/\1/p"; }
-sql() { docker exec todo-postgres psql -U todo -d todo -tAc "$1"; }
+sql() { docker exec todo-postgres psql -U "$KIT_DB" -d "$KIT_DB" -tAc "$1"; }
 
 NOM="Ada Lovelace"; COURRIEL="ada@exemple.invalid"; TEL="+32 2 000 00 00"
 ecrire() {
