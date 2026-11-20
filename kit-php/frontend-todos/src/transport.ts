@@ -1,13 +1,43 @@
 // Couche réseau de l'îlot : fetch + gestion d'erreur. Aucune URL d'endpoint en dur ici —
 // les chemins et les types viennent du client généré (src/generated/api.ts, issu d'OpenAPI).
-import type { Transport } from './generated/api';
+import type { Problem, Transport } from './generated/api';
 
-export function createBrowserTransport(): Transport {
+/** Erreur de l'API : porte le code HTTP, pour que l'îlot distingue « non connecté » (401) du reste. */
+export class ApiError extends Error {
+  constructor(
+    public readonly status: number,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
+/** Message lisible d'une erreur au format problème (RFC 9457). */
+function messageOf(status: number, data: unknown): string {
+  const problem = (data ?? {}) as Partial<Problem>;
+  const violations = Array.isArray(problem.violations) ? problem.violations.map((v) => v.message) : [];
+  if (violations.length) return violations.join(' ');
+  return problem.detail ?? problem.title ?? `HTTP ${status}`;
+}
+
+/**
+ * Transport du navigateur.
+ * - Session : le cookie part tout seul (`credentials: 'same-origin'`) ; le navigateur joint
+ *   l'en-tête Origin aux requêtes non sûres, que l'API contrôle (protection CSRF).
+ * - Jeton porteur : `getToken` le fournit ; il n'est gardé qu'en mémoire, le temps de la page.
+ */
+export function createBrowserTransport(getToken: () => string | null = () => null): Transport {
   return async (url, options = {}) => {
+    const token = getToken();
     const res = await fetch(url, {
       method: options.method ?? 'GET',
       credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/json', ...(options.headers ?? {}) },
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(options.headers ?? {}),
+      },
       body: options.body,
     });
     const text = await res.text();
@@ -19,14 +49,7 @@ export function createBrowserTransport(): Transport {
         data = text;
       }
     }
-    if (!res.ok) {
-      const errs = (data as { errors?: string[] })?.errors;
-      const msg =
-        (Array.isArray(errs) && errs.length ? errs.join(' ') : null) ??
-        (data as { error?: string })?.error ??
-        `HTTP ${res.status}`;
-      throw new Error(msg);
-    }
+    if (!res.ok) throw new ApiError(res.status, messageOf(res.status, data));
     return data;
   };
 }

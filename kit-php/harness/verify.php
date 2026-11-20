@@ -5,8 +5,10 @@ declare(strict_types=1);
 /**
  * Gate `verify` / `plancher` — invariants structurels (exit 0 = 🟢, ≠0 = 🔴).
  * Exécuté via Docker : bash harness/run-verify.sh (ou docker run … php harness/verify.php).
- * Checks : G1 (secrets hors dépôt), G2 (migrations réversibles + SQL portable),
- *          H1 (pureté hexagonale Domain/Application), C1 (contrat OpenAPI présent).
+ * Checks : G1 (secrets hors dépôt, secret du noyau fourni par configuration),
+ *          G2 (migrations réversibles + SQL portable),
+ *          H1 (pureté hexagonale Domain/Application), C1 (contrat OpenAPI présent),
+ *          D1 (déployable : composer.lock versionné, un seul PHP dans public/, outils bin/ sans Composer).
  */
 $root = dirname(__DIR__);
 $failures = [];
@@ -22,6 +24,23 @@ if (is_file($root . '/src/config.php')) {
 $example = @file_get_contents($root . '/src/config.example.php') ?: '';
 if (preg_match('/password\s*=>\s*[\'"][^\'"]{3,}[\'"]/', $example)) {
     $failures[] = 'G1: un mot de passe en clair figure dans config.example.php.';
+}
+
+// Le secret du noyau Symfony vient de la configuration de l'instance, jamais d'un littéral.
+foreach (rglob($root . '/src', '*.php') as $file) {
+    $code = strip_php_comments((string) file_get_contents($file));
+    if (preg_match('/[\'"]secret[\'"]\s*=>\s*[\'"](?!%env\()[^\'"]+[\'"]/', $code) && basename($file) !== 'config.example.php') {
+        $failures[] = 'G1: secret du noyau en dur dans ' . substr($file, strlen($root) + 1);
+    }
+}
+if (preg_match('/[\'"]secret[\'"]\s*=>\s*[\'"][^\'"]+[\'"]/', strip_php_comments($example))) {
+    $failures[] = 'G1: un secret en clair figure dans config.example.php.';
+}
+$gitignore = @file_get_contents($root . '/.gitignore') ?: '';
+foreach (['/src/config.php', '/var/'] as $ignored) {
+    if (!preg_match('#^' . preg_quote($ignored, '#') . '$#m', $gitignore)) {
+        $failures[] = 'G1: ' . $ignored . ' (configuration ou état de l\'instance) doit être ignoré par .gitignore.';
+    }
 }
 
 /** G2 — chaque migration *.up.sql a son *.down.sql ; pas de SQL non portable. */
@@ -42,7 +61,7 @@ $pureDirs = ['/src/Domain', '/src/Application'];
 foreach ($pureDirs as $dir) {
     foreach (rglob($root . $dir, '*.php') as $file) {
         $code = strip_php_comments((string) file_get_contents($file));
-        if (preg_match('/\bPDO\b|\bnew\s+PDO|Doctrine|Symfony\\\\|Laravel\\\\|\$this->db|->query\(|->prepare\(/', $code)) {
+        if (preg_match('/\bPDO\b|\bnew\s+PDO|Doctrine|Symfony\\\\|ApiPlatform\\\\|Laravel\\\\|\$this->db|->query\(|->prepare\(/', $code)) {
             $failures[] = 'H1: dépendance infrastructure dans une couche pure : ' . substr($file, strlen($root) + 1);
         }
     }
@@ -52,6 +71,24 @@ foreach ($pureDirs as $dir) {
  *  vs OpenAPI est vérifiée par le gate `contrat` (harness/run-contract.sh, image node). */
 if (!is_file($root . '/openapi/todos.openapi.json')) {
     $failures[] = 'C1: openapi/todos.openapi.json absent (contrat matérialisé manquant).';
+}
+
+/** D1 — le kit est déployable tel quel sur un hébergement PHP infogéré. */
+if (!is_file($root . '/composer.lock') || preg_match('#^/?composer\.lock$#m', $gitignore)) {
+    $failures[] = 'D1: composer.lock doit être présent et versionné (dépendances identiques au gate et au déploiement).';
+}
+$servedPhp = array_map(static fn (string $f): string => substr($f, strlen($root) + 1), rglob($root . '/public', '*.php'));
+if ($servedPhp !== ['public/index.php']) {
+    $failures[] = 'D1: public/ ne doit contenir qu\'un fichier PHP, le contrôleur frontal index.php (trouvé : ' . implode(', ', $servedPhp) . ').';
+}
+if (!is_file($root . '/public/.htaccess')) {
+    $failures[] = 'D1: public/.htaccess absent (réécriture de /api/* vers le contrôleur frontal).';
+}
+foreach (['bin/migrate.php', 'bin/account.php'] as $tool) {
+    $code = strip_php_comments((string) @file_get_contents($root . '/' . $tool));
+    if ($code === '' || str_contains($code, 'vendor/')) {
+        $failures[] = 'D1: ' . $tool . ' doit exister et tourner sans Composer (commande courte sur le serveur).';
+    }
 }
 
 if ($failures === []) {

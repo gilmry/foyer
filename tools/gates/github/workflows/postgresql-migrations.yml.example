@@ -21,6 +21,7 @@ jobs:
   # jugement — et son absence devient irréversible une fois jouée en
   # production. Même critère que les gates du document de cadrage.
   gate-migrations-reversibility:
+    name: sluis/retour-migration  # contrat du dépôt cible de Sluis (ADR-034)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4.4.0

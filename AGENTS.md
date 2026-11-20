@@ -20,13 +20,24 @@ scripts), thin per-tool adapters. Devs run it on Claude Code, POs on ChatGPT/Qwe
 **same committed state register**.
 
 - Launcher: `pilote/BOOTSTRAP.md` (Claude Code, from this repo's root: `/foyer`) · Dispatcher: `pilote/parcours.md`
+- User guide for the human driving a project (what to type, what to prepare before going live, when the driver stops): `pilote/MODE-D-EMPLOI.md`
 - Shared state (PO↔dev source of truth): `pilote/state.template.md`
 - Irreversible-point arbitration (modality, never destination): `pilote/arbitrage.md`
 - Gate CLI contract (stable names, exit codes): `pilote/gates/README.md`
-- Adapters: `pilote/adapters/{claude,generic,opencode}/`
+- Adapters: `pilote/adapters/{claude,generic,opencode}/` — Claude Code gets one sub-agent per role
+  of `pilote/roles/` (`pilote/adapters/claude/agents/`, installed at this repo's root in
+  `.claude/agents/`); OpenCode and generic chats read the role files directly (announced gap).
+- Delivery (**phase L**, end of the new-project and release journeys): when every blocking gate is
+  green on the head, `deploiement` gate included, the pilote ships without being asked (role
+  `pilote/roles/deployeur-heberge.md`), proves it with one public smoke run, and rolls back by
+  itself if that proof fails. Only stop of a routine redeploy: a schema migration. The deployment
+  target lives in the state register (asked once); no token, password or account name is ever
+  committed. The first successful delivery opens the `exploitation` door.
+- Who plays what at which step (persona / skill → journey step → role): tables in `pilote/README.md`.
 
 The pilote does not reinvent anything: it **sequences** the existing `skills/`, `personas/` and
-`bmad/` into three journeys with a state register and arbitration gates. See `pilote/README.md`.
+`bmad/` into three journeys (plus the `exploitation` door) with a state register and arbitration
+gates. See `pilote/README.md`.
 
 ## Workflow
 
@@ -61,9 +72,12 @@ The framework encourages AI agents to:
 ## Repository Structure
 
 This is a methodology repository for the Foyer framework. Key directories:
-- `kit-php/` - **Kit de référence exécutable** (PHP hexagonal + îlots, gates sur images Docker
-  publiques). « Clone → `bash docker/build.sh` → `bash harness/ci.sh` » passe au vert. Famille de
-  kits (autres stacks à venir) : voir `KITS.md`.
+- `kit-php/`, `kit-fastapi/`, `kit-actix/` - **Kits de référence exécutables** (hexagonal + îlots,
+  gates sur images Docker publiques). « Clone → `bash docker/build.sh` → `bash harness/ci.sh` »
+  passe au vert. Chaque kit porte son propre `AGENTS.md`, un outil de migration tracé, et
+  `deploiement/alwaysdata/` (script rejouable et guide ; gate `deploiement` = répétition locale
+  sur une cible jetable). kit-php et kit-fastapi portent une authentification avec cloisonnement
+  par propriétaire (`docs/adr/ADR-001-authentification.md`). Voir `KITS.md`.
 - `bmad/` - Conception phase (TOGAF pipeline)
 - `skills/` - Objective evaluation tools (cycle-dev, gates, convergence-iac, adoption,
   deploiement-heberge-infogere)

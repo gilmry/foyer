@@ -4,7 +4,7 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-echo "▶ todo-kit-rust:local (rust:1-slim-bookworm)…"
+echo "▶ todo-kit-rust:local (rust:1.97.0-slim-bookworm)…"
 docker build -q -t todo-kit-rust:local -f "$ROOT/docker/rust.Dockerfile" "$ROOT/docker" >/dev/null
 
 echo "▶ todo-kit-visual:local (node:22-bookworm + Chromium Playwright)…"

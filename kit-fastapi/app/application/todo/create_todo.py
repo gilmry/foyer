@@ -1,6 +1,8 @@
-"""Cas d'usage : créer une tâche. Valide, construit l'entité, persiste."""
+"""Cas d'usage : créer une tâche. Valide, construit l'entité, persiste.
+Le propriétaire est l'identité de l'appelant, jamais une donnée de la requête."""
 from __future__ import annotations
 
+from app.domain.identity.current_user import CurrentUser
 from app.domain.todo import rules
 from app.domain.todo.clock import Clock
 from app.domain.todo.exceptions import TodoValidationError
@@ -15,17 +17,18 @@ class CreateTodo:
         self._clock = clock
         self._ids = ids
 
-    def execute(self, data: dict) -> Todo:
+    def execute(self, current_user: CurrentUser, data: dict) -> Todo:
         errors = rules.validate(data)
         if errors:
             raise TodoValidationError(errors)
         now = self._clock.now()
         todo = Todo(
             id=self._ids.uuid(),
+            owner_id=current_user.id(),
             title=rules.normalize_title(str(data["title"])),
             done=False,
             created_at=now,
             updated_at=now,
         )
-        self._todos.save(todo)
+        self._todos.save(current_user.id(), todo)
         return todo

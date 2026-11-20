@@ -1,13 +1,18 @@
 //! Use-cases — orchestration, **Rust pur** (dépend uniquement du domaine). Génériques sur le port
 //! `TodoRepository` (dispatch statique) → aucune fuite d'infra. Tests dans `tests/application.rs`.
 
+/// Écriture et relecture des fiches de personne chiffrées (mesure foyer#28).
+pub mod personne;
+
 use crate::domain::{normalize_title, Clock, IdGenerator, Todo, TodoError, TodoRepository};
 
-/// Erreur de use-case — sépare validation (400), introuvable (404) et infra (500).
+/// Erreur de use-case — sépare validation (400), introuvable (404), service de clés
+/// indisponible (503) et infra (500).
 #[derive(Debug)]
 pub enum Error {
     Validation(Vec<String>),
     NotFound(String),
+    Indisponible(String),
     Repo(String),
 }
 

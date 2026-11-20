@@ -15,13 +15,23 @@ path = "src/main.rs"
 name = "integration"
 path = "src/bin/integration.rs"
 
+# Outil de migration : `migrate up|down|status` (les migrations sont embarquées à la compilation).
+[[bin]]
+name = "migrate"
+path = "src/bin/migrate.rs"
+
 [dependencies]
 actix-web = "4"
 actix-files = "0.6"
-sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "tls-none", "postgres", "chrono", "macros"] }
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "tls-none", "postgres", "chrono", "macros", "migrate"] }
 sea-orm = { version = "1.1", default-features = false, features = ["sqlx-postgres", "runtime-tokio-rustls", "macros", "with-chrono"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 uuid = { version = "1", features = ["v4"] }
 chrono = { version = "0.4", features = ["serde"] }
+# Port Chiffreur (foyer#28) : AES-256-GCM (RustCrypto, MIT/Apache-2.0) et client du moteur
+# transit d'OpenBao.
+aes-gcm = "0.10"
+base64 = "0.22"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }

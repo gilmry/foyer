@@ -14,6 +14,8 @@
 
 Le GitOps *est* la primitive en continu : un réconciliateur compare en boucle l'état déclaré à l'état réel. Une **alerte AlertManager** = une divergence qui ré-entre dans le cercle (et déclenche le platform engineer).
 
+Avant le premier cercle, le dépôt cible doit être **admis par Sluis** : c'est `depot-cible-sluis.md`, qui le fait juger par `sluis_verifier_depot`.
+
 ## Deux moteurs
 
 **Config + durcissement** — `salt-ssh`, **idempotent**. Cible : conteneur **ou** VM. La ré-exécution sans effet est la preuve d'Évaluation.

@@ -19,7 +19,7 @@ final class TodoTest extends TestCase
     /** @happy */
     public function testConstructValidTodoIsOpen(): void
     {
-        $todo = new Todo('id-1', 'acheter du pain', false, $this->now(), $this->now());
+        $todo = new Todo('id-1', 'compte-a', 'acheter du pain', false, $this->now(), $this->now());
         self::assertSame('id-1', $todo->id());
         self::assertSame('acheter du pain', $todo->title());
         self::assertFalse($todo->isDone());
@@ -29,16 +29,24 @@ final class TodoTest extends TestCase
     public function testConstructEmptyTitleThrows(): void
     {
         $this->expectException(TodoValidationException::class);
-        new Todo('id-1', '   ', false, $this->now(), $this->now());
+        new Todo('id-1', 'compte-a', '   ', false, $this->now(), $this->now());
+    }
+
+    /** @negative — une tâche sans propriétaire n'existe pas (invariant) */
+    public function testConstructWithoutOwnerThrows(): void
+    {
+        $this->expectException(TodoValidationException::class);
+        new Todo('id-1', '', 'tâche', false, $this->now(), $this->now());
     }
 
     /** @edge — bascule idempotente de transition (open→done→open) */
     public function testToggleInvertsStatus(): void
     {
-        $todo = new Todo('id-1', 'tâche', false, $this->now(), $this->now());
+        $todo = new Todo('id-1', 'compte-a', 'tâche', false, $this->now(), $this->now());
         $done = $todo->toggled($this->now());
         self::assertTrue($done->isDone());
         self::assertFalse($done->toggled($this->now())->isDone());
+        self::assertSame('compte-a', $done->ownerId());
         // Immuabilité : l'original reste inchangé.
         self::assertFalse($todo->isDone());
     }
@@ -47,7 +55,7 @@ final class TodoTest extends TestCase
     public function testTitleIsStoredVerbatim(): void
     {
         $payload = '<script>alert(1)</script>';
-        $todo = new Todo('id-1', $payload, false, $this->now(), $this->now());
+        $todo = new Todo('id-1', 'compte-a', $payload, false, $this->now(), $this->now());
         self::assertSame($payload, $todo->title());
         self::assertSame($payload, $todo->toView()['title']);
     }
@@ -55,7 +63,7 @@ final class TodoTest extends TestCase
     /** @happy — vue sérialisée : clés stables */
     public function testToViewShape(): void
     {
-        $todo = new Todo('id-1', 'tâche', true, $this->now(), $this->now());
+        $todo = new Todo('id-1', 'compte-a', 'tâche', true, $this->now(), $this->now());
         self::assertSame(
             ['id', 'title', 'done', 'createdAt', 'updatedAt'],
             array_keys($todo->toView()),

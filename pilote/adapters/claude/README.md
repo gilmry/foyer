@@ -13,6 +13,9 @@ session dans le projet cible (ou `/add-dir <cible>`) afin d'éviter les demandes
 `/foyer-status`, `/foyer-next` et `/foyer-bascule` sont également disponibles à la racine : elles
 renvoient aux commandes ci-dessous et retrouvent le registre dans le projet cible voisin.
 
+Les **dix sous-agents** (un par rôle) y sont installés de la même façon, dans `.claude/agents/` :
+de fins pointeurs vers [`agents/`](agents/), qui n'ajoutent que la localisation du projet cible.
+
 ## Installation dans un projet
 Rendre les commandes et sous-agents visibles de Claude Code (copie ou lien) :
 
@@ -28,7 +31,9 @@ Rendre les commandes et sous-agents visibles de Claude Code (copie ou lien) :
 - `/foyer-bascule` — prépare un point irréversible et demande l'arbitrage de modalité.
 
 ## Sous-agents
-Un sous-agent par rôle (`pilote/roles/*.md`) — voir [`agents/README.md`](agents/README.md).
+Un sous-agent par rôle (`pilote/roles/*.md`), dix en tout — voir [`agents/README.md`](agents/README.md).
+Le pilote leur délègue l'étape que le parcours désigne ; `foyer-deployeur-heberge` joue la phase
+« livrer » (phase L) quand tous les gates bloquants sont verts.
 
 ## Rappel
 Le dev et le **PO (ChatGPT/Qwen)** partagent **le même registre d'état** commité. Les commandes

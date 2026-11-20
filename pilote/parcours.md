@@ -23,6 +23,8 @@
    > En cas de doute : *legacy qui tourne et qu'on veut migrer* → **rétrofit** ;
    > *rien encore* → **nouveau** ; *ça tourne et conforme, on ajoute gros* → **release** ;
    > *c'est en production et on le fait vivre* → **exploitation**, qui coexiste avec une autre porte.
+   > Elle n'a pas besoin de Q0 pour s'ouvrir : **la première livraison réussie** (phase L d'un
+   > parcours `nouveau` ou `release`, smoke public vert) l'ajoute au registre à côté de la porte active.
 
 3. **Créer le registre** depuis `state.template.md`, y inscrire la porte active, la date,
    l'archétype (voir `bmad/archetypes.md`), puis démarrer le parcours.
@@ -56,8 +58,32 @@ Pour qu'un PO **n'installe rien** et ne voie jamais un « command not found » :
 5. Sinon → jouer le rôle, produire la sortie, faire passer les gates, **mettre à jour le
    registre** (avancer l'étape), **committer** (`<porte>(<périmètre>): <étape>`).
 6. **Ne pas rendre la main avant la fin de l'étape.** L'agent enchaîne les sous-étapes tant
-   qu'aucun blocage réel (0bis) ni point irréversible (4) ne l'arrête. Rendre la main « à mi-story »
-   en marquant des gates « déférés » est une **déviation** (friction F3 du dogfood n°1).
+   qu'aucun blocage réel (0bis), ni point irréversible (4), ni la **question unique sur la cible**
+   (ci-dessous) ne l'arrête. Rendre la main « à mi-story » en marquant des gates « déférés » est
+   une **déviation** (friction F3 du dogfood n°1).
+7. **Tous les gates bloquants verts sur le head, `deploiement` compris → livrer.** Le parcours
+   passe à sa **phase L** sans attendre qu'on le demande : rôle
+   [`roles/deployeur-heberge.md`](roles/deployeur-heberge.md). Ce n'est pas une promotion de
+   branche : on livre le head d'une branche dont la promotion est déjà jugée.
+
+### Cible de déploiement — demandée une fois, jamais devinée
+
+Avant la phase L, lire le bloc « Cible de déploiement » du registre :
+
+- **Remplie** → entrer dans la phase **sans poser de question**.
+- **« pas encore demandée »**, ou **bloc absent** (registre antérieur à ce gabarit : le recopier
+  depuis [`state.template.md`](state.template.md)) → poser **une** question, en langage clair (« où met-on l'application
+  en ligne ? » : hébergeur, alias SSH, nom de l'instance, adresse), puis **inscrire la réponse**,
+  datée. Ce qui identifie le compte va dans `.foyer/cible.env` du projet, pas au registre : avant
+  d'y écrire, ajouter `/.foyer/` au `.gitignore` du projet et vérifier par
+  `git check-ignore -q .foyer/cible.env` (échec = on n'écrit pas). Le jeton d'API, lui, est posé
+  par l'humain dans le `.env` du projet : le pilote ne le demande pas dans la conversation et ne
+  l'affiche jamais.
+- **« aucune »** (l'humain a répondu qu'on ne livre pas, ou pas par ce moyen) → inscrit et daté de
+  la même façon ; la phase L est sans objet.
+
+Dans les trois cas la ligne « Cible » du registre porte une date : **le pilote ne redemande plus**.
+Seul l'humain rouvre la question, en modifiant le registre.
 
 ### Definition of Done — une story full-stack va JUSQU'À la preuve de valeur
 
@@ -98,3 +124,6 @@ trois sont verts — l'agent ne s'arrête pas au premier :
 | Point irréversible atteint | entrée **🔴 arbitrage en attente** : preuve jointe + question de modalité |
 | Arbitrage tranché par le PO | déplacer en **✅**, référencer l'ADR + qui/quand |
 | Périmètre migré (rétrofit) / story livrée (nouveau/release) | ligne au tableau des périmètres/backlog |
+| Cible de déploiement donnée (ou refusée) par l'humain | bloc « Cible de déploiement », ligne « Cible » datée ; rien qui identifie le compte |
+| Livraison réussie (smoke public vert) | version en service + commit, version précédente, ligne au tableau *Livraisons* ; à la première : ajouter la porte `exploitation` |
+| Livraison échouée, retour arrière | ligne *Livraisons* : l'échec, sa sortie (étape, code de sortie), la version restaurée ; jamais de sortie brute ni de secret |

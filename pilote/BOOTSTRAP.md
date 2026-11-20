@@ -29,7 +29,8 @@ trancher seul un point irréversible.
 - **nouveau** — on part de zéro (greenfield) ;
 - **rétrofit** — un legacy en production à faire converger ;
 - **release** — produit existant, gros incrément à cadrer ;
-- **exploitation** — produit en production à faire vivre (porte v0, coexiste avec une autre).
+- **exploitation** — produit en production à faire vivre (porte v0, coexiste avec une autre ;
+  elle s'ouvre aussi d'elle-même à la première livraison réussie, sans Q0).
 > Si un registre existe déjà avec une porte active, ne repose pas Q0 : reprends à l'étape courante.
 
 **4. Crée le registre.** Copie `pilote/state.template.md` à la racine du projet cible
@@ -50,6 +51,10 @@ registre → commit `<porte>(<périmètre>): <étape>`.
 - une story full-stack va **jusqu'à la preuve de valeur** (E2E + visuel + vitrine filmée) **sans que
   le PO la réclame** — s'arrêter avant en « déférant » des gates est une déviation ;
 - la doc vivante est **intégrée** au parcours (un seul parcours de référence, rejoué E2E + preuve de valeur) ;
+- **tous les gates bloquants verts sur le head, `deploiement` compris → tu livres** (phase L du
+  parcours, `pilote/roles/deployeur-heberge.md`) **sans qu'on te le demande** ; la cible se lit au
+  registre, et si elle y manque tu la demandes **une seule fois**, tu l'inscris, tu ne redemandes
+  plus ; ni jeton, ni mot de passe, ni nom de compte au registre ;
 - **à un point irréversible** (`pilote/arbitrage.md`) : tu **n'exécutes pas** la bascule — tu
   assembles la preuve, tu inscris un **🔴 arbitrage en attente** dans le registre, et tu poses à
   l'humain une question de **modalité** (timing / séquençage / rollback), jamais la destination.

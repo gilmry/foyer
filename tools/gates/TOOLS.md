@@ -80,6 +80,11 @@ Dependency-Track (voir annexe « Agrégateur » en fin de document).
 - Pratique recommandée : faire tourner les deux en CI, Trivy bloquant,
   Docker Scout en rapport informatif — deux bases de données différentes
   couvrent plus qu'une seule.
+- Les deux vivent dans des workflows séparés : Trivy dans
+  `gate-container.yml` (bloquant), Docker Scout dans
+  `guidance-docker-scout.yml` (manuel). Un job sauté dans le workflow d'une
+  gate compterait rouge pour Sluis, qui lit tous les check-runs
+  `sluis/scan-conteneur / …`.
 
 ## SAST — Opengrep plutôt que Semgrep CE
 

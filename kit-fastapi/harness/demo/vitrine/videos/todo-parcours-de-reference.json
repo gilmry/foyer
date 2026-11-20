@@ -7,27 +7,39 @@
       "texte": "Todo — application de test. Preuve de valeur : le parcours de référence, rejoué en cadence."
     },
     {
-      "t": 6,
+      "t": 7,
+      "texte": "Sans session, l'API refuse (401) : l'application propose de se connecter. Créons un compte."
+    },
+    {
+      "t": 17,
+      "texte": "Compte créé, session ouverte : chacun ne voit que ses propres tâches."
+    },
+    {
+      "t": 23,
       "texte": "1) Ajouter une tâche : « acheter du pain »."
     },
     {
-      "t": 12,
+      "t": 29,
       "texte": "2) Ajouter une deuxième tâche : « réviser Foyer »."
     },
     {
-      "t": 19,
+      "t": 35,
       "texte": "3) Marquer « acheter du pain » comme faite (elle se barre)."
     },
     {
-      "t": 25,
+      "t": 42,
       "texte": "4) Supprimer la tâche faite."
     },
     {
-      "t": 29,
-      "texte": "La liste est persistée en base : elle survit au rechargement."
+      "t": 46,
+      "texte": "La liste est persistée en base, et la session tient : tout survit au rechargement."
     },
     {
-      "t": 36,
+      "t": 54,
+      "texte": "Se déconnecter révoque la session côté serveur : retour au formulaire."
+    },
+    {
+      "t": 61,
       "texte": "Parcours terminé — même parcours que l'E2E (correctness) et le golden (apparence)."
     }
   ]

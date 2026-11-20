@@ -48,16 +48,7 @@ fn to_domain(m: Model) -> Todo {
 
 /// Connexion sea-orm depuis l'environnement (mêmes variables que l'adaptateur CQRS).
 pub async fn connect() -> Result<DatabaseConnection, sea_orm::DbErr> {
-    let url = std::env::var("DATABASE_URL").unwrap_or_else(|_| {
-        format!(
-            "postgres://{u}:{pw}@{h}:{p}/{d}",
-            u = std::env::var("DB_USER").unwrap_or_else(|_| "todo".into()),
-            pw = std::env::var("DB_PASSWORD").unwrap_or_else(|_| "todo".into()),
-            h = std::env::var("DB_HOST").unwrap_or_else(|_| "localhost".into()),
-            p = std::env::var("DB_PORT").unwrap_or_else(|_| "5432".into()),
-            d = std::env::var("DB_NAME").unwrap_or_else(|_| "todo".into()),
-        )
-    });
+    let url = super::database_url().map_err(sea_orm::DbErr::Custom)?;
     Database::connect(url).await
 }
 

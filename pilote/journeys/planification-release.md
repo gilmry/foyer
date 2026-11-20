@@ -38,10 +38,31 @@
   story = un parcours filmé si elle touche un écran critique).
 - **Points irréversibles possibles** : bascule de rendu D2 sur un écran refondu, rupture de
   contrat → arbitrage (`../arbitrage.md`).
-- **Sortie** : release livrée, gates verts, preuve de valeur à jour, un commit par étape
+- **Sortie** : release prête, gates verts, preuve de valeur à jour, un commit par étape
   (`release(<périmètre>): <étape>`).
 
 ## Phase D — Clôture
 - **Rôle** : [`../roles/verrouillage-convergence.md`](../roles/verrouillage-convergence.md)
 - **Faire** : CI verte bloquante, tag de release, registre à jour (backlog soldé, ADR des
   arbitrages tranchés).
+- **Sortie** : le head de la branche source de vérité porte le tag. Une promotion de branche, s'il
+  y en avait une, est déjà jugée (gate `promotion`, `../roles/arbitre-de-promotion.md`) : la
+  phase L livre ce head, elle ne promeut rien.
+
+## Phase L — Livrer (quand tout est vert, sans qu'on le demande)
+- **Déclencheur** : **tous les gates bloquants verts sur le head**, gate `deploiement` compris
+  ([`../gates/README.md`](../gates/README.md)). Le pilote n'attend pas qu'on lui demande de livrer.
+- **Rôle** : [`../roles/deployeur-heberge.md`](../roles/deployeur-heberge.md) (persona
+  `../../personas/platform-engineer.md`, skill `../../skills/deploiement-heberge-infogere.md`).
+  Le rôle choisit lui-même sa séquence : premier déploiement, ou redéploiement.
+- **Cible** : lue au bloc « Cible de déploiement » du registre. Remplie : on entre dans la phase
+  **sans poser de question**. Absente : le pilote la demande **une fois**
+  ([`../parcours.md`](../parcours.md), § Cible de déploiement).
+- **Seul arrêt d'un redéploiement** : une **migration de schéma** dans la release (`../arbitrage.md`).
+  Un smoke public rouge n'est pas un arrêt : le rôle remet la version précédente et l'écrit.
+- **Sortie** : smoke e2e vert contre l'adresse publique, **version en service inscrite au
+  registre**. À la première livraison réussie, la porte `exploitation` s'ouvre
+  ([`exploitation.md`](exploitation.md), E0) et coexiste avec celle-ci.
+- **Hors de cette phase** : un projet livré par un serveur que l'on administre ou par une
+  plateforme (`../../skills/convergence-iac.md`) ne passe pas par ce rôle : la phase est alors
+  sans objet, et le registre le dit (cible « aucune »).

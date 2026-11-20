@@ -12,8 +12,8 @@ if grep -rniE 'password[[:space:]]*[:=][[:space:]]*"[^"]{3,}"' "$ROOT/src" 2>/de
   add "G1: secret potentiel en dur dans src/"
 fi
 
-# G2 — chaque *.up.sql a son *.down.sql ; SQL portable.
-for up in "$ROOT"/database/migrations/pending/*.up.sql; do
+# G2 — chaque *.up.sql a son *.down.sql ; SQL portable (gabarit et module de mesure).
+for up in "$ROOT"/database/migrations/pending/*.up.sql "$ROOT"/database/mesure/*.up.sql; do
   down="${up/.up.sql/.down.sql}"
   [ -f "$down" ] || add "G2: migration sans réversion : $(basename "$up")"
   if sed 's/--.*//' "$up" | grep -qiE '\bNOW\(\)|\bSERIAL\b|\bAUTO_INCREMENT\b'; then
