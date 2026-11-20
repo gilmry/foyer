@@ -26,9 +26,11 @@ respecte l'ordre des couches et les gates, et **ne tranche jamais un point irré
 | `foyer-extracteur-couche` | `roles/extracteur-couche.md` | extraction ou cycle-dev (domaine→app→adaptateurs→contrat) |
 | `foyer-frontend-ilots` | `roles/frontend-ilots.md` | D1/D2 + doc vivante |
 | `foyer-gate-runner` | `roles/gate-runner.md` | invoquer/lire les gates |
+| `foyer-verrouillage` | `roles/verrouillage-convergence.md` | phases 3-4 |
+| `foyer-deployeur-heberge` | `roles/deployeur-heberge.md` | déployer ou reprendre sur un hébergement infogéré (sonder, prouver, préparer la bascule) |
 | `foyer-arbitre-de-promotion` | `roles/arbitre-de-promotion.md` | avant de promouvoir une branche (preuve réunie, décision posée à l'humain) |
 | `foyer-verrouillage-convergence` | `roles/verrouillage-convergence.md` | rétrofit phases 3-4, clôture d'une release |
-| `foyer-deployeur-heberge` | `roles/deployeur-heberge.md` | phase L : premier déploiement ou reprise, puis redéploiement autonome sur un hébergement infogéré |
+
 
 Le nom d'un sous-agent est `foyer-` suivi du **nom du fichier de rôle**, sans exception (l'ancien
 tableau annonçait `foyer-verrouillage` : c'est `foyer-verrouillage-convergence`).
